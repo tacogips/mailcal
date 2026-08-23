@@ -1,13 +1,13 @@
 # Command Design
 
-The `yabumi` CLI (`apps/cli`) is a thin operator/developer tool over the same
+The `schre` CLI (`apps/cli`) is a thin operator/developer tool over the same
 GraphQL API. It holds no business logic of its own: every subcommand is a
 GraphQL call, apart from `client serve`, which serves the browser mail client.
 
 ## Subcommands
 
 ```
-yabumi
+schre
 ├── client
 │   └── serve            Serve the browser mail client locally
 ├── domain
@@ -28,15 +28,15 @@ yabumi
     └── set <key> <value>
 ```
 
-### `yabumi client serve`
+### `schre client serve`
 
 The headline command. Serves the built SolidJS bundle from `apps/web/dist` on
 a local port and reverse-proxies `/graphql`, `/api/*` and `/files/*` to the
-configured yabumi endpoint, so a developer or operator gets a full mail client
+configured schre endpoint, so a developer or operator gets a full mail client
 against a remote deployment without hosting anything.
 
 ```bash
-yabumi client serve --endpoint https://mail.example.com --port 5173 --open
+schre client serve --endpoint https://mail.example.com --port 5173 --open
 ```
 
 The proxy injects `Authorization: Bearer <api key>` when one is configured, so
@@ -52,8 +52,8 @@ that key.
 
 | Flag | Type | Default | Description |
 |------|------|---------|-------------|
-| `--endpoint <url>` | string | `$YABUMI_ENDPOINT` or config file | Base URL of the yabumi deployment |
-| `--api-key <key>` | string | `$YABUMI_API_KEY` or config file | API key used for requests |
+| `--endpoint <url>` | string | `$SCHRE_ENDPOINT` or config file | Base URL of the schre deployment |
+| `--api-key <key>` | string | `$SCHRE_API_KEY` or config file | API key used for requests |
 | `--json` | boolean | `false` | Emit machine-readable JSON instead of tables |
 | `--quiet` | boolean | `false` | Suppress non-essential output |
 | `--help` / `--version` | boolean | `false` | Standard |
@@ -115,9 +115,9 @@ that key.
 
 | Variable | Required | Default | Description |
 |----------|----------|---------|-------------|
-| `YABUMI_ENDPOINT` | no | config file value | Deployment base URL |
-| `YABUMI_API_KEY` | no | config file value | API key |
-| `YABUMI_CONFIG` | no | `~/.config/yabumi/config.json` | Config file path |
+| `SCHRE_ENDPOINT` | no | config file value | Deployment base URL |
+| `SCHRE_API_KEY` | no | config file value | API key |
+| `SCHRE_CONFIG` | no | `~/.config/schre/config.json` | Config file path |
 | `NO_COLOR` | no | - | Disables ANSI color when set |
 
 The API key is read from the environment or the config file and is never

@@ -1,16 +1,16 @@
-name = "yabumi-api"
+name = "schre-api"
 main = "src/worker.ts"
 compatibility_date = "2026-08-23"
 compatibility_flags = ["nodejs_compat"]
 
 [[d1_databases]]
 binding = "DB"
-database_name = "yabumi-db"
+database_name = "schre-db"
 database_id = "af5d4b55-4646-4961-8f74-768289351c6e"
 
 [[r2_buckets]]
 binding = "BLOB"
-bucket_name = "yabumi-mail"
+bucket_name = "schre-mail"
 
 [[send_email]]
 name = "EMAIL"
@@ -27,20 +27,20 @@ not_found_handling = "single-page-application"
 # and file links are returned as relative paths. A set-but-invalid value
 # fails deployment fast instead of silently degrading -- see
 # composition/config.ts's resolvePublicOrigin.
-YABUMI_PUBLIC_ORIGIN = "https://yabumi-api.tacotest.workers.dev"
+SCHRE_PUBLIC_ORIGIN = "https://schre-api.tacotest.workers.dev"
 
 # Uncomment and set to one verified Cloudflare Email Service sender mailbox
 # on an onboarded domain (e.g. "postmaster@example.com") to enable outbound
 # system mail (login links). Until it is set, every login-link request fails
 # with a clear "email delivery is not configured on this server" error.
-# YABUMI_MAIL_FROM = "postmaster@example.com"
+# SCHRE_MAIL_FROM = "postmaster@example.com"
 
 # Self-service signup is closed by default: this is a mail server, not a SaaS
 # trial. Set to "open" only when you intend anyone to be able to register.
-YABUMI_SIGNUP = "closed"
+SCHRE_SIGNUP = "closed"
 
 # Spam score at or above which the SPAM system tag is applied on ingest.
-YABUMI_SPAM_THRESHOLD = "0.6"
+SCHRE_SPAM_THRESHOLD = "0.6"
 
 # Hard cap, in seconds, on a file link's requested ttlSeconds (7 days).
-YABUMI_FILE_LINK_MAX_TTL = "604800"
+SCHRE_FILE_LINK_MAX_TTL = "604800"

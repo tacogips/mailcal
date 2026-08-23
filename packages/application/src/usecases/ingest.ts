@@ -2,23 +2,23 @@ import {
   buildAttachmentBlobKey,
   buildRawMessageBlobKey,
   createAttachment,
-} from "@yabumi/domain/entities/attachment";
+} from "@schre/domain/entities/attachment";
 import {
   canReceiveMail,
   type MailDomain,
-} from "@yabumi/domain/entities/mail-domain";
+} from "@schre/domain/entities/mail-domain";
 import {
   createInboundMessage,
   type Message,
   type MessageRecipient,
   RecipientKind,
-} from "@yabumi/domain/entities/message";
+} from "@schre/domain/entities/message";
 import {
   createEmailAddress,
   type EmailAddress,
   parseEmailAddress,
-} from "@yabumi/domain/value-objects/email-address";
-import { parseDomainName } from "@yabumi/domain/value-objects/domain-name";
+} from "@schre/domain/value-objects/email-address";
+import { parseDomainName } from "@schre/domain/value-objects/domain-name";
 import {
   type DomainId,
   createAttachmentId,
@@ -26,7 +26,7 @@ import {
   createThreadId,
   type TagId,
   type ThreadId,
-} from "@yabumi/domain/value-objects/ids";
+} from "@schre/domain/value-objects/ids";
 import type { AppDependencies } from "../dependencies";
 import type {
   ParsedMime,
@@ -37,11 +37,8 @@ import {
   RuleAction,
   type RuleMatchInput,
   ruleMatches,
-} from "@yabumi/domain/entities/classification-rule";
-import {
-  createSpamMark,
-  SpamMarkedBy,
-} from "@yabumi/domain/entities/spam-mark";
+} from "@schre/domain/entities/classification-rule";
+import { createSpamMark, SpamMarkedBy } from "@schre/domain/entities/spam-mark";
 import { isSpam, scoreSpam } from "./spam";
 
 /** Caps from `design-docs/specs/design-mail-pipeline.md#limits-summary`.

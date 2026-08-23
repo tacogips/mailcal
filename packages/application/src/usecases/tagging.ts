@@ -1,11 +1,8 @@
-import { Capability } from "@yabumi/domain/entities/api-key";
-import type { Message } from "@yabumi/domain/entities/message";
-import {
-  createSpamMark,
-  SpamMarkedBy,
-} from "@yabumi/domain/entities/spam-mark";
-import type { Tag } from "@yabumi/domain/entities/tag";
-import type { MessageId, TagId } from "@yabumi/domain/value-objects/ids";
+import { Capability } from "@schre/domain/entities/api-key";
+import type { Message } from "@schre/domain/entities/message";
+import { createSpamMark, SpamMarkedBy } from "@schre/domain/entities/spam-mark";
+import type { Tag } from "@schre/domain/entities/tag";
+import type { MessageId, TagId } from "@schre/domain/value-objects/ids";
 import type { AppDependencies } from "../dependencies";
 import { NotFoundError } from "../errors";
 import type { Viewer } from "../policies/viewer";

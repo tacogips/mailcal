@@ -1,9 +1,9 @@
 import {
   isApiKeyUsable,
   recordApiKeyUsage,
-} from "@yabumi/domain/entities/api-key";
-import { isSessionExpired } from "@yabumi/domain/entities/session";
-import { isUserActive, type User } from "@yabumi/domain/entities/user";
+} from "@schre/domain/entities/api-key";
+import { isSessionExpired } from "@schre/domain/entities/session";
+import { isUserActive, type User } from "@schre/domain/entities/user";
 import type { AppDependencies } from "../dependencies";
 import type { Viewer } from "../policies/viewer";
 

@@ -1,5 +1,5 @@
-import type { ApiKey, ApiKeyScope } from "@yabumi/domain/entities/api-key";
-import type { ApiKeyId, ApiKeyScopeId } from "@yabumi/domain/value-objects/ids";
+import type { ApiKey, ApiKeyScope } from "@schre/domain/entities/api-key";
+import type { ApiKeyId, ApiKeyScopeId } from "@schre/domain/value-objects/ids";
 
 export interface ApiKeyRepository {
   /** Returns revoked and expired keys too; the caller checks

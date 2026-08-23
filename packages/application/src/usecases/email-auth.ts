@@ -1,29 +1,29 @@
 import {
   consumeEmailAuthChallenge,
   createEmailAuthChallenge,
-} from "@yabumi/domain/entities/email-auth-challenge";
+} from "@schre/domain/entities/email-auth-challenge";
 import {
   type ApiKey,
   Capability,
   createApiKey,
   createApiKeyScope,
-} from "@yabumi/domain/entities/api-key";
-import { createSession, type Session } from "@yabumi/domain/entities/session";
-import { MATCH_ALL_ADDRESSES } from "@yabumi/domain/value-objects/address-pattern";
+} from "@schre/domain/entities/api-key";
+import { createSession, type Session } from "@schre/domain/entities/session";
+import { MATCH_ALL_ADDRESSES } from "@schre/domain/value-objects/address-pattern";
 import {
   createUser,
   isUserActive,
   type User,
   UserRole,
-} from "@yabumi/domain/entities/user";
-import { createEmailAddress } from "@yabumi/domain/value-objects/email-address";
+} from "@schre/domain/entities/user";
+import { createEmailAddress } from "@schre/domain/value-objects/email-address";
 import {
   createApiKeyId,
   createApiKeyScopeId,
   createEmailAuthChallengeId,
   createSessionId,
   createUserId,
-} from "@yabumi/domain/value-objects/ids";
+} from "@schre/domain/value-objects/ids";
 import type { AppDependencies } from "../dependencies";
 import {
   ConflictError,
@@ -130,9 +130,9 @@ export function createRequestEmailAuthUseCase(
       await deps.mailSender.send({
         from: mail.from,
         to: [email],
-        subject: "Your yabumi sign-in link",
-        text: `Sign in to yabumi:\n\n${url}\n\nThis link expires in 15 minutes and can be used once.`,
-        html: `<p>Sign in to yabumi:</p><p><a href="${url}">${url}</a></p><p>This link expires in 15 minutes and can be used once.</p>`,
+        subject: "Your schre sign-in link",
+        text: `Sign in to schre:\n\n${url}\n\nThis link expires in 15 minutes and can be used once.`,
+        html: `<p>Sign in to schre:</p><p><a href="${url}">${url}</a></p><p>This link expires in 15 minutes and can be used once.</p>`,
       });
       return true;
     });

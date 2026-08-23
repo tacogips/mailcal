@@ -1,21 +1,21 @@
 import {
   createMailDomain,
   verifyMailDomain,
-} from "@yabumi/domain/entities/mail-domain";
+} from "@schre/domain/entities/mail-domain";
 import {
   createInboundMessage,
   DeliveryStatus,
   MailStatus,
-} from "@yabumi/domain/entities/message";
-import { createEmailAddress } from "@yabumi/domain/value-objects/email-address";
-import { createDomainName } from "@yabumi/domain/value-objects/domain-name";
+} from "@schre/domain/entities/message";
+import { createEmailAddress } from "@schre/domain/value-objects/email-address";
+import { createDomainName } from "@schre/domain/value-objects/domain-name";
 import {
   createDomainId,
   createMessageId,
   createThreadId,
-} from "@yabumi/domain/value-objects/ids";
+} from "@schre/domain/value-objects/ids";
 import { beforeEach, describe, expect, test } from "vitest";
-import { createUserId } from "@yabumi/domain/value-objects/ids";
+import { createUserId } from "@schre/domain/value-objects/ids";
 import { BadUserInputError, ForbiddenError, NotFoundError } from "../errors";
 import {
   createFakeDependencies,

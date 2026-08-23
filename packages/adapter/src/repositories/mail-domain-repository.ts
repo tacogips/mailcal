@@ -1,11 +1,11 @@
-import type { MailDomainRepository } from "@yabumi/application/ports/mail-domain-repository";
-import type { SqlDatabase } from "@yabumi/application/ports/sql-database";
+import type { MailDomainRepository } from "@schre/application/ports/mail-domain-repository";
+import type { SqlDatabase } from "@schre/application/ports/sql-database";
 import {
   DomainStatus,
   type MailDomain,
-} from "@yabumi/domain/entities/mail-domain";
-import { createDomainName } from "@yabumi/domain/value-objects/domain-name";
-import { createDomainId } from "@yabumi/domain/value-objects/ids";
+} from "@schre/domain/entities/mail-domain";
+import { createDomainName } from "@schre/domain/value-objects/domain-name";
+import { createDomainId } from "@schre/domain/value-objects/ids";
 import { assertEnumValue, boolToSql, sqlToBool } from "./sql-helpers";
 
 interface DomainRow {

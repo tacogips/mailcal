@@ -1,6 +1,6 @@
-import { Capability } from "@yabumi/domain/entities/api-key";
-import { createEmailAddress } from "@yabumi/domain/value-objects/email-address";
-import { createDomainId, createUserId } from "@yabumi/domain/value-objects/ids";
+import { Capability } from "@schre/domain/entities/api-key";
+import { createEmailAddress } from "@schre/domain/value-objects/email-address";
+import { createDomainId, createUserId } from "@schre/domain/value-objects/ids";
 import { describe, expect, test } from "vitest";
 import { ForbiddenError, UnauthenticatedError } from "../errors";
 import {

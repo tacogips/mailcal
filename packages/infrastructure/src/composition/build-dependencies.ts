@@ -1,36 +1,36 @@
-import { createMemoryBlobStore } from "@yabumi/adapter/blob/memory";
-import { createR2BlobStore } from "@yabumi/adapter/blob/r2";
-import { createS3BlobStore } from "@yabumi/adapter/blob/s3";
+import { createMemoryBlobStore } from "@schre/adapter/blob/memory";
+import { createR2BlobStore } from "@schre/adapter/blob/r2";
+import { createS3BlobStore } from "@schre/adapter/blob/s3";
 import {
   createCryptoRandomSource,
   createSha256TokenHasher,
-} from "@yabumi/adapter/crypto";
-import { createDohResolver } from "@yabumi/adapter/dns/doh-resolver";
+} from "@schre/adapter/crypto";
+import { createDohResolver } from "@schre/adapter/dns/doh-resolver";
 import {
   createCloudflareMailSender,
   createUnavailableMailSender,
-} from "@yabumi/adapter/mail/cloudflare-email";
-import { createMimeTextBuilder } from "@yabumi/adapter/mime/mime-builder";
-import { createPostalMimeParser } from "@yabumi/adapter/mime/postal-mime-parser";
-import { createApiKeyRepository } from "@yabumi/adapter/repositories/api-key-repository";
+} from "@schre/adapter/mail/cloudflare-email";
+import { createMimeTextBuilder } from "@schre/adapter/mime/mime-builder";
+import { createPostalMimeParser } from "@schre/adapter/mime/postal-mime-parser";
+import { createApiKeyRepository } from "@schre/adapter/repositories/api-key-repository";
 import {
   createEmailAuthChallengeRepository,
   createSessionRepository,
   createUserRepository,
-} from "@yabumi/adapter/repositories/auth-repository";
-import { createClassificationRuleRepository } from "@yabumi/adapter/repositories/classification-rule-repository";
-import { createFileLinkRepository } from "@yabumi/adapter/repositories/file-link-repository";
-import { createMessageEventRepository } from "@yabumi/adapter/repositories/message-event-repository";
-import { createMailDomainRepository } from "@yabumi/adapter/repositories/mail-domain-repository";
-import { createMessageRepository } from "@yabumi/adapter/repositories/message-repository";
-import { createTagRepository } from "@yabumi/adapter/repositories/tag-repository";
-import { createUserMailPermissionRepository } from "@yabumi/adapter/repositories/user-mail-permission-repository";
-import { createD1Database } from "@yabumi/adapter/sql/d1";
-import { createLibsqlDatabase } from "@yabumi/adapter/sql/libsql";
-import type { AppDependencies } from "@yabumi/application/dependencies";
-import type { BlobStore } from "@yabumi/application/ports/blob-store";
-import type { Clock } from "@yabumi/application/ports/runtime-ports";
-import type { SqlDatabase } from "@yabumi/application/ports/sql-database";
+} from "@schre/adapter/repositories/auth-repository";
+import { createClassificationRuleRepository } from "@schre/adapter/repositories/classification-rule-repository";
+import { createFileLinkRepository } from "@schre/adapter/repositories/file-link-repository";
+import { createMessageEventRepository } from "@schre/adapter/repositories/message-event-repository";
+import { createMailDomainRepository } from "@schre/adapter/repositories/mail-domain-repository";
+import { createMessageRepository } from "@schre/adapter/repositories/message-repository";
+import { createTagRepository } from "@schre/adapter/repositories/tag-repository";
+import { createUserMailPermissionRepository } from "@schre/adapter/repositories/user-mail-permission-repository";
+import { createD1Database } from "@schre/adapter/sql/d1";
+import { createLibsqlDatabase } from "@schre/adapter/sql/libsql";
+import type { AppDependencies } from "@schre/application/dependencies";
+import type { BlobStore } from "@schre/application/ports/blob-store";
+import type { Clock } from "@schre/application/ports/runtime-ports";
+import type { SqlDatabase } from "@schre/application/ports/sql-database";
 import {
   type BuildDependenciesConfig,
   DEFAULT_FILE_LINK_MAX_TTL_SECONDS,

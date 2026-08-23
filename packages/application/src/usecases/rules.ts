@@ -1,4 +1,4 @@
-import { Capability } from "@yabumi/domain/entities/api-key";
+import { Capability } from "@schre/domain/entities/api-key";
 import {
   type ClassificationRule,
   createClassificationRule,
@@ -8,18 +8,15 @@ import {
   type RuleField,
   type RuleMatcher,
   setRuleEnabled,
-} from "@yabumi/domain/entities/classification-rule";
+} from "@schre/domain/entities/classification-rule";
 import {
   type ClassificationRuleId,
   createClassificationRuleId,
   type DomainId,
   type TagId,
-} from "@yabumi/domain/value-objects/ids";
-import { MessageDirection } from "@yabumi/domain/entities/message";
-import {
-  createSpamMark,
-  SpamMarkedBy,
-} from "@yabumi/domain/entities/spam-mark";
+} from "@schre/domain/value-objects/ids";
+import { MessageDirection } from "@schre/domain/entities/message";
+import { createSpamMark, SpamMarkedBy } from "@schre/domain/entities/spam-mark";
 import type { AppDependencies } from "../dependencies";
 import { NotFoundError } from "../errors";
 import { requireGlobalCapability } from "../policies/authorization";

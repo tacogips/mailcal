@@ -1,4 +1,4 @@
-import type { DnsResolver } from "@yabumi/application/ports/dns-resolver";
+import type { DnsResolver } from "@schre/application/ports/dns-resolver";
 
 interface DohAnswer {
   readonly type: number;

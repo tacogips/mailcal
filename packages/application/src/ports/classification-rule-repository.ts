@@ -1,8 +1,8 @@
-import type { ClassificationRule } from "@yabumi/domain/entities/classification-rule";
+import type { ClassificationRule } from "@schre/domain/entities/classification-rule";
 import type {
   ClassificationRuleId,
   DomainId,
-} from "@yabumi/domain/value-objects/ids";
+} from "@schre/domain/value-objects/ids";
 
 export interface ClassificationRuleRepository {
   findById(id: ClassificationRuleId): Promise<ClassificationRule | null>;

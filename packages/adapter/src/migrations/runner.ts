@@ -1,7 +1,7 @@
 import type {
   SqlDatabase,
   SqlStatement,
-} from "@yabumi/application/ports/sql-database";
+} from "@schre/application/ports/sql-database";
 
 /** One `.sql` migration file, keyed by its filename (e.g.
  * `"0001_init.sql"`); applied in lexicographic `name` order. */

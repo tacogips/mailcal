@@ -1,5 +1,5 @@
 {
-  "name": "@yabumi/adapter",
+  "name": "@schre/adapter",
   "version": "0.1.0",
   "private": true,
   "type": "module",
@@ -23,8 +23,8 @@
   },
   "dependencies": {
     "@libsql/client": "0.17.4",
-    "@yabumi/application": "workspace:*",
-    "@yabumi/domain": "workspace:*",
+    "@schre/application": "workspace:*",
+    "@schre/domain": "workspace:*",
     "aws4fetch": "1.0.20",
     "mimetext": "3.0.28",
     "postal-mime": "2.7.6"

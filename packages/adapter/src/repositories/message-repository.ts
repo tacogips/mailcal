@@ -2,20 +2,20 @@ import type {
   InsertMessageInput,
   MessagePage,
   MessageRepository,
-} from "@yabumi/application/ports/message-repository";
+} from "@schre/application/ports/message-repository";
 import type {
   SqlDatabase,
   SqlStatement,
   SqlValue,
-} from "@yabumi/application/ports/sql-database";
+} from "@schre/application/ports/sql-database";
 import {
   type Attachment,
   AttachmentKind,
-} from "@yabumi/domain/entities/attachment";
+} from "@schre/domain/entities/attachment";
 import {
   FetchStatus,
   type MessageFetchState,
-} from "@yabumi/domain/entities/fetch-state";
+} from "@schre/domain/entities/fetch-state";
 import {
   DeliveryStatus,
   MailStatus,
@@ -23,9 +23,9 @@ import {
   MessageDirection,
   type MessageRecipient,
   RecipientKind,
-} from "@yabumi/domain/entities/message";
-import { SpamMarkedBy } from "@yabumi/domain/entities/spam-mark";
-import { createEmailAddress } from "@yabumi/domain/value-objects/email-address";
+} from "@schre/domain/entities/message";
+import { SpamMarkedBy } from "@schre/domain/entities/spam-mark";
+import { createEmailAddress } from "@schre/domain/value-objects/email-address";
 import {
   createApiKeyId,
   createAttachmentId,
@@ -35,7 +35,7 @@ import {
   createThreadId,
   type MessageId,
   type TagId,
-} from "@yabumi/domain/value-objects/ids";
+} from "@schre/domain/value-objects/ids";
 import { buildMessageListQuery } from "./message-repository-queries";
 import {
   assertEnumValue,

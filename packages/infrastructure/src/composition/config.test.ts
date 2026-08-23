@@ -23,15 +23,15 @@ describe("resolvePublicOrigin", () => {
   test("normalizes to scheme and host", () => {
     expect(
       resolvePublicOrigin({
-        YABUMI_PUBLIC_ORIGIN: "https://mail.example.com/some/path/",
+        SCHRE_PUBLIC_ORIGIN: "https://mail.example.com/some/path/",
       }),
     ).toBe("https://mail.example.com");
   });
 
   test.each([
     ["unset", {}],
-    ["empty", { YABUMI_PUBLIC_ORIGIN: "" }],
-    ["whitespace", { YABUMI_PUBLIC_ORIGIN: "   " }],
+    ["empty", { SCHRE_PUBLIC_ORIGIN: "" }],
+    ["whitespace", { SCHRE_PUBLIC_ORIGIN: "   " }],
   ])("is undefined when %s", (_label, env) => {
     expect(resolvePublicOrigin(env)).toBeUndefined();
   });
@@ -40,7 +40,7 @@ describe("resolvePublicOrigin", () => {
     ["not a url", "mail.example.com"],
     ["an unsupported scheme", "ftp://mail.example.com"],
   ])("throws for %s", (_label, value) => {
-    expect(() => resolvePublicOrigin({ YABUMI_PUBLIC_ORIGIN: value })).toThrow(
+    expect(() => resolvePublicOrigin({ SCHRE_PUBLIC_ORIGIN: value })).toThrow(
       PublicOriginConfigurationError,
     );
   });
@@ -49,7 +49,7 @@ describe("resolvePublicOrigin", () => {
 describe("resolveMailFrom", () => {
   test("accepts a normalized mailbox", () => {
     expect(
-      resolveMailFrom({ YABUMI_MAIL_FROM: " PostMaster@Example.com " }),
+      resolveMailFrom({ SCHRE_MAIL_FROM: " PostMaster@Example.com " }),
     ).toBe("postmaster@example.com");
   });
 
@@ -60,7 +60,7 @@ describe("resolveMailFrom", () => {
   test.each(["Name <a@example.com>", "nobody", "a@localhost"])(
     "throws for %j",
     (value) => {
-      expect(() => resolveMailFrom({ YABUMI_MAIL_FROM: value })).toThrow(
+      expect(() => resolveMailFrom({ SCHRE_MAIL_FROM: value })).toThrow(
         MailConfigurationError,
       );
     },
@@ -94,16 +94,16 @@ describe("assertMailOriginConsistency", () => {
 describe("scalar env resolution", () => {
   test("signup defaults closed", () => {
     expect(resolveSignupMode({})).toBe("closed");
-    expect(resolveSignupMode({ YABUMI_SIGNUP: "yes" })).toBe("closed");
-    expect(resolveSignupMode({ YABUMI_SIGNUP: "open" })).toBe("open");
+    expect(resolveSignupMode({ SCHRE_SIGNUP: "yes" })).toBe("closed");
+    expect(resolveSignupMode({ SCHRE_SIGNUP: "open" })).toBe("open");
   });
 
   test("spam threshold falls back for anything out of range", () => {
     expect(resolveSpamThreshold({})).toBe(DEFAULT_SPAM_THRESHOLD);
-    expect(resolveSpamThreshold({ YABUMI_SPAM_THRESHOLD: "0.8" })).toBe(0.8);
-    expect(resolveSpamThreshold({ YABUMI_SPAM_THRESHOLD: "0" })).toBe(0);
+    expect(resolveSpamThreshold({ SCHRE_SPAM_THRESHOLD: "0.8" })).toBe(0.8);
+    expect(resolveSpamThreshold({ SCHRE_SPAM_THRESHOLD: "0" })).toBe(0);
     for (const bad of ["-1", "2", "nonsense", ""]) {
-      expect(resolveSpamThreshold({ YABUMI_SPAM_THRESHOLD: bad })).toBe(
+      expect(resolveSpamThreshold({ SCHRE_SPAM_THRESHOLD: bad })).toBe(
         DEFAULT_SPAM_THRESHOLD,
       );
     }
@@ -111,11 +111,11 @@ describe("scalar env resolution", () => {
 
   test("file link ttl falls back for anything below the floor", () => {
     expect(resolveFileLinkMaxTtl({})).toBe(DEFAULT_FILE_LINK_MAX_TTL_SECONDS);
-    expect(resolveFileLinkMaxTtl({ YABUMI_FILE_LINK_MAX_TTL: "3600" })).toBe(
+    expect(resolveFileLinkMaxTtl({ SCHRE_FILE_LINK_MAX_TTL: "3600" })).toBe(
       3600,
     );
     for (const bad of ["10", "1.5", "nope"]) {
-      expect(resolveFileLinkMaxTtl({ YABUMI_FILE_LINK_MAX_TTL: bad })).toBe(
+      expect(resolveFileLinkMaxTtl({ SCHRE_FILE_LINK_MAX_TTL: bad })).toBe(
         DEFAULT_FILE_LINK_MAX_TTL_SECONDS,
       );
     }
@@ -123,11 +123,9 @@ describe("scalar env resolution", () => {
 
   test("blob backend defaults to r2", () => {
     expect(resolveBlobBackend({})).toBe("r2");
-    expect(resolveBlobBackend({ YABUMI_BLOB_BACKEND: "s3" })).toBe("s3");
-    expect(resolveBlobBackend({ YABUMI_BLOB_BACKEND: "memory" })).toBe(
-      "memory",
-    );
-    expect(resolveBlobBackend({ YABUMI_BLOB_BACKEND: "nonsense" })).toBe("r2");
+    expect(resolveBlobBackend({ SCHRE_BLOB_BACKEND: "s3" })).toBe("s3");
+    expect(resolveBlobBackend({ SCHRE_BLOB_BACKEND: "memory" })).toBe("memory");
+    expect(resolveBlobBackend({ SCHRE_BLOB_BACKEND: "nonsense" })).toBe("r2");
   });
 });
 
@@ -135,16 +133,16 @@ describe("normalizeSqliteUrl", () => {
   test.each([
     // A bare path is what an operator naturally writes; libsql rejects it
     // with an opaque URL_INVALID, so it is promoted rather than refused.
-    ["/tmp/yabumi.db", "file:/tmp/yabumi.db"],
-    ["./data/yabumi.db", "file:./data/yabumi.db"],
-    ["yabumi.db", "file:yabumi.db"],
+    ["/tmp/schre.db", "file:/tmp/schre.db"],
+    ["./data/schre.db", "file:./data/schre.db"],
+    ["schre.db", "file:schre.db"],
   ])("promotes the bare path %j to %j", (input, expected) => {
     expect(normalizeSqliteUrl(input)).toBe(expected);
   });
 
   test.each([
     ":memory:",
-    "file:./data/yabumi.db",
+    "file:./data/schre.db",
     "libsql://example.turso.io",
     "https://example.turso.io",
   ])("leaves %j untouched", (value) => {
@@ -152,7 +150,7 @@ describe("normalizeSqliteUrl", () => {
   });
 
   test("falls back to the default for a blank value", () => {
-    expect(normalizeSqliteUrl("   ")).toBe("file:./data/yabumi.db");
+    expect(normalizeSqliteUrl("   ")).toBe("file:./data/schre.db");
   });
 });
 
@@ -160,7 +158,7 @@ describe("loadConfigFromEnv", () => {
   test("a bare environment yields a runnable local config", () => {
     const config = loadConfigFromEnv({});
     expect(config.sqlBackend).toBe("sqlite");
-    expect(config.sqliteUrl).toBe("file:./data/yabumi.db");
+    expect(config.sqliteUrl).toBe("file:./data/schre.db");
     // Local defaults to memory blobs so a clean checkout runs with no setup.
     expect(config.blobBackend).toBe("memory");
     expect(config.signupMode).toBe("closed");
@@ -168,26 +166,26 @@ describe("loadConfigFromEnv", () => {
 
   test("normalizes a bare sqlite path from the environment", () => {
     expect(
-      loadConfigFromEnv({ YABUMI_SQLITE_URL: "/tmp/yabumi.db" }).sqliteUrl,
-    ).toBe("file:/tmp/yabumi.db");
+      loadConfigFromEnv({ SCHRE_SQLITE_URL: "/tmp/schre.db" }).sqliteUrl,
+    ).toBe("file:/tmp/schre.db");
   });
 
   test("honours an explicit s3 backend", () => {
     const config = loadConfigFromEnv({
-      YABUMI_BLOB_BACKEND: "s3",
-      YABUMI_S3_ENDPOINT: "http://localhost:9000",
-      YABUMI_S3_BUCKET: "yabumi",
-      YABUMI_S3_ACCESS_KEY_ID: "key",
-      YABUMI_S3_SECRET_ACCESS_KEY: "secret",
+      SCHRE_BLOB_BACKEND: "s3",
+      SCHRE_S3_ENDPOINT: "http://localhost:9000",
+      SCHRE_S3_BUCKET: "schre",
+      SCHRE_S3_ACCESS_KEY_ID: "key",
+      SCHRE_S3_SECRET_ACCESS_KEY: "secret",
     });
     expect(config.blobBackend).toBe("s3");
-    expect(config.s3?.bucket).toBe("yabumi");
+    expect(config.s3?.bucket).toBe("schre");
     expect(config.s3?.forcePathStyle).toBe(true);
   });
 
   test("an s3 backend missing a credential fails fast", () => {
-    expect(() => loadConfigFromEnv({ YABUMI_BLOB_BACKEND: "s3" })).toThrow(
-      /YABUMI_S3_ENDPOINT/,
+    expect(() => loadConfigFromEnv({ SCHRE_BLOB_BACKEND: "s3" })).toThrow(
+      /SCHRE_S3_ENDPOINT/,
     );
   });
 });

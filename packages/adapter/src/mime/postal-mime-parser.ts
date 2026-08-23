@@ -3,7 +3,7 @@ import type {
   ParsedMime,
   ParsedMimeAddress,
   ParsedMimeAttachment,
-} from "@yabumi/application/ports/mime";
+} from "@schre/application/ports/mime";
 import PostalMime, {
   type Address,
   type Attachment as PostalAttachment,

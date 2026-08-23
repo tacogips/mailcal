@@ -1,16 +1,16 @@
-import { Capability } from "@yabumi/domain/entities/api-key";
+import { Capability } from "@schre/domain/entities/api-key";
 import {
   createMailDomain,
   DomainStatus,
   verifyMailDomain,
-} from "@yabumi/domain/entities/mail-domain";
-import { SystemTagSlug } from "@yabumi/domain/entities/tag";
-import { createDomainName } from "@yabumi/domain/value-objects/domain-name";
+} from "@schre/domain/entities/mail-domain";
+import { SystemTagSlug } from "@schre/domain/entities/tag";
+import { createDomainName } from "@schre/domain/value-objects/domain-name";
 import {
   createApiKeyId,
   createDomainId,
   createTagId,
-} from "@yabumi/domain/value-objects/ids";
+} from "@schre/domain/value-objects/ids";
 import { beforeEach, describe, expect, test } from "vitest";
 import {
   BadUserInputError,
@@ -108,8 +108,8 @@ describe("domains", () => {
   test("verification checks the ownership TXT record and activates", async () => {
     const create = createCreateDomainUseCase(fake.deps);
     const domain = await create(adminViewer(), "example.com", true);
-    fake.dns.setTxt(`_yabumi.example.com`, [
-      `yabumi-verification=${domain.verificationToken}`,
+    fake.dns.setTxt(`_schre.example.com`, [
+      `schre-verification=${domain.verificationToken}`,
     ]);
     const verify = createVerifyDomainUseCase(fake.deps);
     const verified = await verify(adminViewer(), domain.id);
@@ -126,7 +126,7 @@ describe("domains", () => {
       ConflictError,
     );
     // A record with the wrong token proves nothing.
-    fake.dns.setTxt("_yabumi.example.com", ["yabumi-verification=stolen"]);
+    fake.dns.setTxt("_schre.example.com", ["schre-verification=stolen"]);
     await expect(verify(adminViewer(), domain.id)).rejects.toBeInstanceOf(
       ConflictError,
     );
@@ -217,9 +217,7 @@ describe("domains", () => {
     const records = buildDomainDnsRecords(domain);
     expect(records.some((record) => record.type === "MX")).toBe(true);
     expect(
-      records.some((record) =>
-        record.value.includes("yabumi-verification=abc"),
-      ),
+      records.some((record) => record.value.includes("schre-verification=abc")),
     ).toBe(true);
     expect(records.some((record) => record.value.startsWith("v=spf1"))).toBe(
       true,

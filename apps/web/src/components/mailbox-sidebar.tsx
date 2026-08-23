@@ -94,7 +94,7 @@ export function MailboxSidebar(props: {
 
   return (
     <nav class="mailbox-sidebar">
-      <div class="sidebar-brand">yabumi</div>
+      <div class="sidebar-brand">schre</div>
 
       <button
         type="button"

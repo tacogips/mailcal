@@ -30,7 +30,7 @@ export default function LoginPage(): JSX.Element {
 
   return (
     <main class="login-page">
-      <h1>yabumi</h1>
+      <h1>schre</h1>
       <Show
         when={!sent()}
         fallback={

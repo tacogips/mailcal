@@ -17,14 +17,14 @@ describe("createDohResolver", () => {
     stubFetch({
       Status: 0,
       Answer: [
-        { type: 16, data: '"yabumi-verification=tok123"' },
+        { type: 16, data: '"schre-verification=tok123"' },
         // A different record type on the same name must be ignored.
         { type: 5, data: "cname.example." },
       ],
     });
     const resolver = createDohResolver();
-    expect(await resolver.lookupTxt("_yabumi.example.com")).toEqual([
-      "yabumi-verification=tok123",
+    expect(await resolver.lookupTxt("_schre.example.com")).toEqual([
+      "schre-verification=tok123",
     ]);
   });
 
@@ -60,11 +60,11 @@ describe("createDohResolver", () => {
   test("asks the endpoint for the right name and type", async () => {
     stubFetch({ Status: 0, Answer: [] });
     const resolver = createDohResolver("https://doh.test/dns-query");
-    await resolver.lookupTxt("_yabumi.example.com");
+    await resolver.lookupTxt("_schre.example.com");
     const called = (fetch as unknown as ReturnType<typeof vi.fn>).mock
       .calls[0]?.[0] as URL;
     expect(called.origin).toBe("https://doh.test");
-    expect(called.searchParams.get("name")).toBe("_yabumi.example.com");
+    expect(called.searchParams.get("name")).toBe("_schre.example.com");
     expect(called.searchParams.get("type")).toBe("TXT");
   });
 });

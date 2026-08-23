@@ -1,5 +1,5 @@
-import type { SqlDatabase } from "@yabumi/application/ports/sql-database";
-import { FetchStatus, markFetched } from "@yabumi/domain/entities/fetch-state";
+import type { SqlDatabase } from "@schre/application/ports/sql-database";
+import { FetchStatus, markFetched } from "@schre/domain/entities/fetch-state";
 import {
   createInboundMessage,
   MailStatus,
@@ -7,16 +7,13 @@ import {
   MessageDirection,
   type MessageRecipient,
   RecipientKind,
-} from "@yabumi/domain/entities/message";
-import {
-  createSpamMark,
-  SpamMarkedBy,
-} from "@yabumi/domain/entities/spam-mark";
+} from "@schre/domain/entities/message";
+import { createSpamMark, SpamMarkedBy } from "@schre/domain/entities/spam-mark";
 import {
   createAddressPattern,
   MATCH_ALL_ADDRESSES,
-} from "@yabumi/domain/value-objects/address-pattern";
-import { createEmailAddress } from "@yabumi/domain/value-objects/email-address";
+} from "@schre/domain/value-objects/address-pattern";
+import { createEmailAddress } from "@schre/domain/value-objects/email-address";
 import {
   createApiKeyId,
   createAttachmentId,
@@ -24,11 +21,11 @@ import {
   createMessageId,
   createTagId,
   createThreadId,
-} from "@yabumi/domain/value-objects/ids";
+} from "@schre/domain/value-objects/ids";
 import {
   AttachmentKind,
   createAttachment,
-} from "@yabumi/domain/entities/attachment";
+} from "@schre/domain/entities/attachment";
 import { beforeEach, describe, expect, test } from "vitest";
 import { createMessageRepository } from "./message-repository";
 import {

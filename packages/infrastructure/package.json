@@ -1,5 +1,5 @@
 {
-  "name": "@yabumi/infrastructure",
+  "name": "@schre/infrastructure",
   "version": "0.1.0",
   "private": true,
   "type": "module",
@@ -23,9 +23,9 @@
     "test": "vitest run"
   },
   "dependencies": {
-    "@yabumi/adapter": "workspace:*",
-    "@yabumi/application": "workspace:*",
-    "@yabumi/domain": "workspace:*",
+    "@schre/adapter": "workspace:*",
+    "@schre/application": "workspace:*",
+    "@schre/domain": "workspace:*",
     "graphql": "17.0.2",
     "graphql-yoga": "5.21.3",
     "hono": "4.13.2"

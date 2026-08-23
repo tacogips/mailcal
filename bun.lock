@@ -3,7 +3,7 @@
   "configVersion": 1,
   "workspaces": {
     "": {
-      "name": "yabumi",
+      "name": "schre",
       "devDependencies": {
         "@types/bun": "1.3.14",
         "@vitest/ui": "4.1.10",
@@ -12,15 +12,15 @@
       },
     },
     "apps/api": {
-      "name": "yabumi-api",
+      "name": "schre-api",
       "version": "0.1.0",
       "dependencies": {
         "@hono/node-server": "2.1.1",
         "@libsql/client": "0.17.4",
-        "@yabumi/adapter": "workspace:*",
-        "@yabumi/application": "workspace:*",
-        "@yabumi/domain": "workspace:*",
-        "@yabumi/infrastructure": "workspace:*",
+        "@schre/adapter": "workspace:*",
+        "@schre/application": "workspace:*",
+        "@schre/domain": "workspace:*",
+        "@schre/infrastructure": "workspace:*",
         "hono": "4.13.2",
       },
       "devDependencies": {
@@ -30,10 +30,10 @@
       },
     },
     "apps/cli": {
-      "name": "yabumi-cli",
+      "name": "schre-cli",
       "version": "0.1.0",
       "bin": {
-        "yabumi": "./src/main.ts",
+        "schre": "./src/main.ts",
       },
       "dependencies": {
         "@hono/node-server": "2.1.1",
@@ -45,7 +45,7 @@
       },
     },
     "apps/web": {
-      "name": "yabumi-web",
+      "name": "schre-web",
       "version": "0.1.0",
       "dependencies": {
         "@solidjs/router": "1.0.0",
@@ -61,12 +61,12 @@
       },
     },
     "packages/adapter": {
-      "name": "@yabumi/adapter",
+      "name": "@schre/adapter",
       "version": "0.1.0",
       "dependencies": {
         "@libsql/client": "0.17.4",
-        "@yabumi/application": "workspace:*",
-        "@yabumi/domain": "workspace:*",
+        "@schre/application": "workspace:*",
+        "@schre/domain": "workspace:*",
         "aws4fetch": "1.0.20",
         "mimetext": "3.0.28",
         "postal-mime": "2.7.6",
@@ -77,29 +77,29 @@
       },
     },
     "packages/application": {
-      "name": "@yabumi/application",
+      "name": "@schre/application",
       "version": "0.1.0",
       "dependencies": {
-        "@yabumi/domain": "workspace:*",
+        "@schre/domain": "workspace:*",
       },
       "devDependencies": {
         "typescript": "5.7.2",
       },
     },
     "packages/domain": {
-      "name": "@yabumi/domain",
+      "name": "@schre/domain",
       "version": "0.1.0",
       "devDependencies": {
         "typescript": "5.7.2",
       },
     },
     "packages/infrastructure": {
-      "name": "@yabumi/infrastructure",
+      "name": "@schre/infrastructure",
       "version": "0.1.0",
       "dependencies": {
-        "@yabumi/adapter": "workspace:*",
-        "@yabumi/application": "workspace:*",
-        "@yabumi/domain": "workspace:*",
+        "@schre/adapter": "workspace:*",
+        "@schre/application": "workspace:*",
+        "@schre/domain": "workspace:*",
         "graphql": "17.0.2",
         "graphql-yoga": "5.21.3",
         "hono": "4.13.2",
@@ -462,13 +462,13 @@
 
     "@whatwg-node/server": ["@whatwg-node/server@0.11.0", "", { "dependencies": { "@envelop/instrumentation": "^1.0.0", "@whatwg-node/disposablestack": "^0.0.6", "@whatwg-node/fetch": "^0.10.13", "@whatwg-node/promise-helpers": "^1.3.2", "tslib": "^2.6.3" } }, "sha512-VSdkwnJRr8Yv9UgB2aXB3VUPWwd6Oqnn0hycFwhg9pZgWxJXb7JmhsiXe9tmpMwjHFxli12PGcz9aI63YYloGQ=="],
 
-    "@yabumi/adapter": ["@yabumi/adapter@workspace:packages/adapter"],
+    "@schre/adapter": ["@schre/adapter@workspace:packages/adapter"],
 
-    "@yabumi/application": ["@yabumi/application@workspace:packages/application"],
+    "@schre/application": ["@schre/application@workspace:packages/application"],
 
-    "@yabumi/domain": ["@yabumi/domain@workspace:packages/domain"],
+    "@schre/domain": ["@schre/domain@workspace:packages/domain"],
 
-    "@yabumi/infrastructure": ["@yabumi/infrastructure@workspace:packages/infrastructure"],
+    "@schre/infrastructure": ["@schre/infrastructure@workspace:packages/infrastructure"],
 
     "assertion-error": ["assertion-error@2.0.1", "", {}, "sha512-Izi8RQcffqCeNVgFigKli1ssklIbpHnCYc6AknXGYoB6grJqyeby7jv12JUQgmTAnIDnbck1uxksT4dzN3PWBA=="],
 
@@ -728,11 +728,11 @@
 
     "xmlchars": ["xmlchars@2.2.0", "", {}, "sha512-JZnDKK8B0RCDw84FNdDAIpZK+JuJw+s7Lz8nksI7SIuU3UXJJslUthsi+uWBUYOwPFwW7W7PRLRfUKpxjtjFCw=="],
 
-    "yabumi-api": ["yabumi-api@workspace:apps/api"],
+    "schre-api": ["schre-api@workspace:apps/api"],
 
-    "yabumi-cli": ["yabumi-cli@workspace:apps/cli"],
+    "schre-cli": ["schre-cli@workspace:apps/cli"],
 
-    "yabumi-web": ["yabumi-web@workspace:apps/web"],
+    "schre-web": ["schre-web@workspace:apps/web"],
 
     "yallist": ["yallist@3.1.1", "", {}, "sha512-a4UGQaWPH59mOXUYnAG2ewncQS4i4F43Tv3JoAM+s2VDAmS9NsK8GpDMLrCHPksFT7h3K6TOoUNn2pb7RoXx4g=="],
 

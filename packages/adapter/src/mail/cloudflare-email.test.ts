@@ -1,4 +1,4 @@
-import type { OutboundMail } from "@yabumi/application/ports/mail-sender";
+import type { OutboundMail } from "@schre/application/ports/mail-sender";
 import { describe, expect, test } from "vitest";
 import {
   type CloudflareEmailMessage,

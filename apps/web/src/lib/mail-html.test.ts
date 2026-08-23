@@ -71,7 +71,7 @@ describe("sanitizeMailHtml", () => {
       const html = sanitizeMailHtml(
         '<img src="https://tracker.example/p.gif">',
       );
-      // Matched on an attribute boundary: `data-yabumi-blocked-src="..."`
+      // Matched on an attribute boundary: `data-schre-blocked-src="..."`
       // ends in `-src="..."`, so a plain substring check would pass even if
       // the real `src` had survived.
       expect(html).not.toMatch(/(^|\s)src=/);

@@ -7,21 +7,21 @@ import {
   isGlobalCapability,
   revokeApiKey,
   scopesAuthorizeGlobal,
-} from "@yabumi/domain/entities/api-key";
+} from "@schre/domain/entities/api-key";
 import {
   type AddressPattern,
   createAddressPattern,
   MATCH_ALL_ADDRESSES,
   matchAddressPattern,
-} from "@yabumi/domain/value-objects/address-pattern";
-import { parseEmailAddress } from "@yabumi/domain/value-objects/email-address";
+} from "@schre/domain/value-objects/address-pattern";
+import { parseEmailAddress } from "@schre/domain/value-objects/email-address";
 import {
   type ApiKeyId,
   type ApiKeyScopeId,
   createApiKeyId,
   createApiKeyScopeId,
   type DomainId,
-} from "@yabumi/domain/value-objects/ids";
+} from "@schre/domain/value-objects/ids";
 import type { AppDependencies } from "../dependencies";
 import { BadUserInputError, ForbiddenError, NotFoundError } from "../errors";
 import { requireGlobalCapability } from "../policies/authorization";

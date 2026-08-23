@@ -4,10 +4,10 @@ import {
   InvalidStateTransitionError,
   SystemTagImmutableError,
   ValidationError,
-} from "@yabumi/domain/errors";
+} from "@schre/domain/errors";
 import { ApplicationError, BadUserInputError, ConflictError } from "../errors";
 
-/** Re-throws a `@yabumi/domain` error as the matching `ApplicationError`.
+/** Re-throws a `@schre/domain` error as the matching `ApplicationError`.
  * Anything that is not a `DomainError` -- including an `ApplicationError`
  * a use case raised deliberately -- is re-thrown untouched, so this can be
  * wrapped around a whole operation without swallowing intent. */

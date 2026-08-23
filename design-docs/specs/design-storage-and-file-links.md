@@ -27,7 +27,7 @@ across many messages) composes its writes into a single `batch()`.
 | Backend | SQL | Blob |
 |---------|-----|------|
 | Workers (production) | D1 (`DB`) | R2 (`BLOB`) |
-| Local Bun/Node | libsql file (`./data/yabumi.db`) | S3/MinIO or memory |
+| Local Bun/Node | libsql file (`./data/schre.db`) | S3/MinIO or memory |
 | Tests | in-memory libsql | in-memory map |
 
 ## R2 key layout

@@ -1,7 +1,7 @@
-import type { ApiKeyScope } from "@yabumi/domain/entities/api-key";
-import type { UserMailPermission } from "@yabumi/domain/entities/user-mail-permission";
-import { UserRole } from "@yabumi/domain/entities/user";
-import type { ApiKeyId, UserId } from "@yabumi/domain/value-objects/ids";
+import type { ApiKeyScope } from "@schre/domain/entities/api-key";
+import type { UserMailPermission } from "@schre/domain/entities/user-mail-permission";
+import { UserRole } from "@schre/domain/entities/user";
+import type { ApiKeyId, UserId } from "@schre/domain/value-objects/ids";
 
 /** Both credential kinds resolve to this one union, which every use case
  * takes as its first argument.

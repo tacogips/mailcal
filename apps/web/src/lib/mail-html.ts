@@ -16,7 +16,7 @@ import DOMPurify from "dompurify";
 
 /** Attribute the original remote source is parked on while images are
  * blocked, so "load images" can restore it without re-sanitizing. */
-export const BLOCKED_SRC_ATTRIBUTE = "data-yabumi-blocked-src";
+export const BLOCKED_SRC_ATTRIBUTE = "data-schre-blocked-src";
 
 const ALLOWED_TAGS = [
   "a",

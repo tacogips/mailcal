@@ -1,51 +1,51 @@
-import type { SqlDatabase } from "@yabumi/application/ports/sql-database";
+import type { SqlDatabase } from "@schre/application/ports/sql-database";
 import {
   Capability,
   createApiKey,
   createApiKeyScope,
   revokeApiKey,
-} from "@yabumi/domain/entities/api-key";
-import { createAttachment } from "@yabumi/domain/entities/attachment";
+} from "@schre/domain/entities/api-key";
+import { createAttachment } from "@schre/domain/entities/attachment";
 import {
   createAttachmentFileLink,
   consumeFileLink,
   createRawMessageFileLink,
   FileLinkTarget,
   revokeFileLink,
-} from "@yabumi/domain/entities/file-link";
+} from "@schre/domain/entities/file-link";
 import {
   createMailDomain,
   DomainStatus,
   setMailDomainStatus,
   verifyMailDomain,
-} from "@yabumi/domain/entities/mail-domain";
+} from "@schre/domain/entities/mail-domain";
 import {
   createInboundMessage,
   createOutboundMessage,
   RecipientKind,
-} from "@yabumi/domain/entities/message";
-import { createSession } from "@yabumi/domain/entities/session";
+} from "@schre/domain/entities/message";
+import { createSession } from "@schre/domain/entities/session";
 import {
   createUserTag,
   renameTag,
   SystemTagSlug,
   TagKind,
-} from "@yabumi/domain/entities/tag";
+} from "@schre/domain/entities/tag";
 import {
   createEmailAuthChallenge,
   consumeEmailAuthChallenge,
-} from "@yabumi/domain/entities/email-auth-challenge";
+} from "@schre/domain/entities/email-auth-challenge";
 import {
   createUser,
   deactivateUser,
   UserRole,
-} from "@yabumi/domain/entities/user";
+} from "@schre/domain/entities/user";
 import {
   createAddressPattern,
   MATCH_ALL_ADDRESSES,
-} from "@yabumi/domain/value-objects/address-pattern";
-import { createDomainName } from "@yabumi/domain/value-objects/domain-name";
-import { createEmailAddress } from "@yabumi/domain/value-objects/email-address";
+} from "@schre/domain/value-objects/address-pattern";
+import { createDomainName } from "@schre/domain/value-objects/domain-name";
+import { createEmailAddress } from "@schre/domain/value-objects/email-address";
 import {
   createApiKeyId,
   createApiKeyScopeId,
@@ -58,7 +58,7 @@ import {
   createTagId,
   createThreadId,
   createUserId,
-} from "@yabumi/domain/value-objects/ids";
+} from "@schre/domain/value-objects/ids";
 import { beforeEach, describe, expect, test } from "vitest";
 import { createApiKeyRepository } from "./api-key-repository";
 import {

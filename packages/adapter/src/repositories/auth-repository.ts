@@ -2,17 +2,17 @@ import type {
   EmailAuthChallengeRepository,
   SessionRepository,
   UserRepository,
-} from "@yabumi/application/ports/auth-repository";
-import type { SqlDatabase } from "@yabumi/application/ports/sql-database";
-import type { EmailAuthChallenge } from "@yabumi/domain/entities/email-auth-challenge";
-import type { Session } from "@yabumi/domain/entities/session";
-import { type User, UserRole } from "@yabumi/domain/entities/user";
-import { createEmailAddress } from "@yabumi/domain/value-objects/email-address";
+} from "@schre/application/ports/auth-repository";
+import type { SqlDatabase } from "@schre/application/ports/sql-database";
+import type { EmailAuthChallenge } from "@schre/domain/entities/email-auth-challenge";
+import type { Session } from "@schre/domain/entities/session";
+import { type User, UserRole } from "@schre/domain/entities/user";
+import { createEmailAddress } from "@schre/domain/value-objects/email-address";
 import {
   createEmailAuthChallengeId,
   createSessionId,
   createUserId,
-} from "@yabumi/domain/value-objects/ids";
+} from "@schre/domain/value-objects/ids";
 import { assertEnumValue } from "./sql-helpers";
 
 interface UserRow {

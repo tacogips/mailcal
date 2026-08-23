@@ -1,5 +1,5 @@
-import { createUseCases, type UseCases } from "@yabumi/application/usecases";
-import { buildDependencies } from "@yabumi/infrastructure/composition/build-dependencies";
+import { createUseCases, type UseCases } from "@schre/application/usecases";
+import { buildDependencies } from "@schre/infrastructure/composition/build-dependencies";
 import {
   assertMailOriginConsistency,
   type BuildDependenciesConfig,
@@ -11,9 +11,9 @@ import {
   resolveSignupMode,
   resolveSpamPhrases,
   resolveSpamThreshold,
-} from "@yabumi/infrastructure/composition/config";
-import { createApp } from "@yabumi/infrastructure/http/app";
-import type { AuthVariables } from "@yabumi/infrastructure/http/auth-middleware";
+} from "@schre/infrastructure/composition/config";
+import { createApp } from "@schre/infrastructure/http/app";
+import type { AuthVariables } from "@schre/infrastructure/http/auth-middleware";
 import type { Hono } from "hono";
 import {
   type Env,
@@ -26,7 +26,7 @@ import {
 /** Builds the composition config from Workers bindings and vars.
  *
  * Throws `PublicOriginConfigurationError` / `MailConfigurationError` for a
- * set-but-invalid `YABUMI_PUBLIC_ORIGIN`, or a `YABUMI_MAIL_FROM` with no
+ * set-but-invalid `SCHRE_PUBLIC_ORIGIN`, or a `SCHRE_MAIL_FROM` with no
  * resolvable origin -- both deployment mistakes that would otherwise
  * silently disable passwordless login. Exported for unit testing. */
 export function buildWorkerConfig(env: Env): BuildDependenciesConfig {

@@ -1,5 +1,5 @@
-import type { EmailAddress } from "@yabumi/domain/value-objects/email-address";
-import { emailDomainName } from "@yabumi/domain/value-objects/email-address";
+import type { EmailAddress } from "@schre/domain/value-objects/email-address";
+import { emailDomainName } from "@schre/domain/value-objects/email-address";
 
 /** Deliberately a small, explainable rule set rather than a trained
  * classifier: this is a self-hosted mail server, the score is shown to the

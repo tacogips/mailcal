@@ -1,4 +1,4 @@
-import type { UseCases } from "@yabumi/application/usecases";
+import type { UseCases } from "@schre/application/usecases";
 import { Hono } from "hono";
 import { buildDownloadResponse } from "./downloads";
 

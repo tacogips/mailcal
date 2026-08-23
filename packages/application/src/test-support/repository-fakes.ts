@@ -1,17 +1,17 @@
-import type { ApiKey, ApiKeyScope } from "@yabumi/domain/entities/api-key";
-import type { EmailAuthChallenge } from "@yabumi/domain/entities/email-auth-challenge";
-import type { FileLink } from "@yabumi/domain/entities/file-link";
-import type { MailDomain } from "@yabumi/domain/entities/mail-domain";
-import type { Session } from "@yabumi/domain/entities/session";
+import type { ApiKey, ApiKeyScope } from "@schre/domain/entities/api-key";
+import type { EmailAuthChallenge } from "@schre/domain/entities/email-auth-challenge";
+import type { FileLink } from "@schre/domain/entities/file-link";
+import type { MailDomain } from "@schre/domain/entities/mail-domain";
+import type { Session } from "@schre/domain/entities/session";
 import {
   createSystemTag,
   SYSTEM_TAG_DEFAULTS,
   type SystemTagSlug,
   type Tag,
-} from "@yabumi/domain/entities/tag";
-import type { User } from "@yabumi/domain/entities/user";
-import type { UserMailPermission } from "@yabumi/domain/entities/user-mail-permission";
-import { createTagId } from "@yabumi/domain/value-objects/ids";
+} from "@schre/domain/entities/tag";
+import type { User } from "@schre/domain/entities/user";
+import type { UserMailPermission } from "@schre/domain/entities/user-mail-permission";
+import { createTagId } from "@schre/domain/value-objects/ids";
 import type { ApiKeyRepository } from "../ports/api-key-repository";
 import type {
   EmailAuthChallengeRepository,

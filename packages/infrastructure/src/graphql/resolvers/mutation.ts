@@ -1,12 +1,12 @@
-import type { ApiKeyScopeInput } from "@yabumi/application/usecases/api-keys";
-import type { SendMessageInput } from "@yabumi/application/usecases/send";
+import type { ApiKeyScopeInput } from "@schre/application/usecases/api-keys";
+import type { SendMessageInput } from "@schre/application/usecases/send";
 import type {
   CreateUserInput,
   UserMailPermissionInput,
-} from "@yabumi/application/usecases/users";
-import type { Capability } from "@yabumi/domain/entities/api-key";
-import type { DomainStatus } from "@yabumi/domain/entities/mail-domain";
-import type { UserRole } from "@yabumi/domain/entities/user";
+} from "@schre/application/usecases/users";
+import type { Capability } from "@schre/domain/entities/api-key";
+import type { DomainStatus } from "@schre/domain/entities/mail-domain";
+import type { UserRole } from "@schre/domain/entities/user";
 import {
   createClassificationRuleId,
   createMessageEventId,
@@ -19,15 +19,15 @@ import {
   createTagId,
   createUserId,
   createUserMailPermissionId,
-} from "@yabumi/domain/value-objects/ids";
+} from "@schre/domain/value-objects/ids";
 import type { GraphQLContext } from "../context";
 import type {
   RuleAction,
   RuleField,
   RuleMatcher,
-} from "@yabumi/domain/entities/classification-rule";
-import type { MessageEventKind } from "@yabumi/domain/entities/message-event";
-import type { UserPermissionEffect } from "@yabumi/domain/entities/user-mail-permission";
+} from "@schre/domain/entities/classification-rule";
+import type { MessageEventKind } from "@schre/domain/entities/message-event";
+import type { UserPermissionEffect } from "@schre/domain/entities/user-mail-permission";
 import { requireViewerOrThrow } from "./helpers";
 import type { ViewerSource } from "./types";
 

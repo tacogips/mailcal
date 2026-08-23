@@ -1,12 +1,12 @@
-import type { EmailAuthChallenge } from "@yabumi/domain/entities/email-auth-challenge";
-import type { Session } from "@yabumi/domain/entities/session";
-import type { User } from "@yabumi/domain/entities/user";
-import type { EmailAddress } from "@yabumi/domain/value-objects/email-address";
+import type { EmailAuthChallenge } from "@schre/domain/entities/email-auth-challenge";
+import type { Session } from "@schre/domain/entities/session";
+import type { User } from "@schre/domain/entities/user";
+import type { EmailAddress } from "@schre/domain/value-objects/email-address";
 import type {
   EmailAuthChallengeId,
   SessionId,
   UserId,
-} from "@yabumi/domain/value-objects/ids";
+} from "@schre/domain/value-objects/ids";
 
 export interface UserRepository {
   findById(id: UserId): Promise<User | null>;

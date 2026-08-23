@@ -1,8 +1,8 @@
-import type { UserMailPermission } from "@yabumi/domain/entities/user-mail-permission";
+import type { UserMailPermission } from "@schre/domain/entities/user-mail-permission";
 import type {
   UserId,
   UserMailPermissionId,
-} from "@yabumi/domain/value-objects/ids";
+} from "@schre/domain/value-objects/ids";
 
 /** Persistence boundary for interactive-user mailbox permission rules. */
 export interface UserMailPermissionRepository {

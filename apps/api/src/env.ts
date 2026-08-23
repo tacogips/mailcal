@@ -1,6 +1,6 @@
-import type { R2BucketLike } from "@yabumi/adapter/blob/r2";
-import type { CloudflareSendEmailBinding } from "@yabumi/adapter/mail/cloudflare-email";
-import type { D1DatabaseLike } from "@yabumi/adapter/sql/d1";
+import type { R2BucketLike } from "@schre/adapter/blob/r2";
+import type { CloudflareSendEmailBinding } from "@schre/adapter/mail/cloudflare-email";
+import type { D1DatabaseLike } from "@schre/adapter/sql/d1";
 
 /** Minimal structural surface of the Workers Static Assets binding, used by
  * `worker.ts`'s SPA fallthrough. Kept local (see `D1DatabaseLike` and
@@ -20,7 +20,7 @@ export interface ExecutionContextLike {
   waitUntil(promise: Promise<unknown>): void;
   passThroughOnException(): void;
   /** Present for structural compatibility with hono's own `ExecutionContext`
-   * type; yabumi never reads it. */
+   * type; schre never reads it. */
   readonly props: unknown;
 }
 
@@ -45,18 +45,18 @@ export interface Env {
   readonly BLOB: R2BucketLike;
   readonly ASSETS: FetcherLike;
   readonly EMAIL: CloudflareSendEmailBinding;
-  readonly YABUMI_PUBLIC_ORIGIN?: string;
-  readonly YABUMI_MAIL_FROM?: string;
-  readonly YABUMI_SIGNUP?: string;
-  readonly YABUMI_SPAM_THRESHOLD?: string;
-  readonly YABUMI_SPAM_PHRASES?: string;
-  readonly YABUMI_FILE_LINK_MAX_TTL?: string;
-  readonly YABUMI_BLOB_BACKEND?: string;
-  readonly YABUMI_S3_ENDPOINT?: string;
-  readonly YABUMI_S3_BUCKET?: string;
-  readonly YABUMI_S3_ACCESS_KEY_ID?: string;
-  readonly YABUMI_S3_SECRET_ACCESS_KEY?: string;
-  readonly YABUMI_S3_REGION?: string;
+  readonly SCHRE_PUBLIC_ORIGIN?: string;
+  readonly SCHRE_MAIL_FROM?: string;
+  readonly SCHRE_SIGNUP?: string;
+  readonly SCHRE_SPAM_THRESHOLD?: string;
+  readonly SCHRE_SPAM_PHRASES?: string;
+  readonly SCHRE_FILE_LINK_MAX_TTL?: string;
+  readonly SCHRE_BLOB_BACKEND?: string;
+  readonly SCHRE_S3_ENDPOINT?: string;
+  readonly SCHRE_S3_BUCKET?: string;
+  readonly SCHRE_S3_ACCESS_KEY_ID?: string;
+  readonly SCHRE_S3_SECRET_ACCESS_KEY?: string;
+  readonly SCHRE_S3_REGION?: string;
 }
 
 /** Workers vars arrive on the `Env` object rather than in `process.env`, so
@@ -64,18 +64,18 @@ export interface Env {
  * string map -- are fed through this. */
 export function envToRecord(env: Env): Record<string, string | undefined> {
   return {
-    YABUMI_PUBLIC_ORIGIN: env.YABUMI_PUBLIC_ORIGIN,
-    YABUMI_MAIL_FROM: env.YABUMI_MAIL_FROM,
-    YABUMI_SIGNUP: env.YABUMI_SIGNUP,
-    YABUMI_SPAM_THRESHOLD: env.YABUMI_SPAM_THRESHOLD,
-    YABUMI_SPAM_PHRASES: env.YABUMI_SPAM_PHRASES,
-    YABUMI_FILE_LINK_MAX_TTL: env.YABUMI_FILE_LINK_MAX_TTL,
-    YABUMI_BLOB_BACKEND: env.YABUMI_BLOB_BACKEND,
-    YABUMI_S3_ENDPOINT: env.YABUMI_S3_ENDPOINT,
-    YABUMI_S3_BUCKET: env.YABUMI_S3_BUCKET,
-    YABUMI_S3_ACCESS_KEY_ID: env.YABUMI_S3_ACCESS_KEY_ID,
-    YABUMI_S3_SECRET_ACCESS_KEY: env.YABUMI_S3_SECRET_ACCESS_KEY,
-    YABUMI_S3_REGION: env.YABUMI_S3_REGION,
+    SCHRE_PUBLIC_ORIGIN: env.SCHRE_PUBLIC_ORIGIN,
+    SCHRE_MAIL_FROM: env.SCHRE_MAIL_FROM,
+    SCHRE_SIGNUP: env.SCHRE_SIGNUP,
+    SCHRE_SPAM_THRESHOLD: env.SCHRE_SPAM_THRESHOLD,
+    SCHRE_SPAM_PHRASES: env.SCHRE_SPAM_PHRASES,
+    SCHRE_FILE_LINK_MAX_TTL: env.SCHRE_FILE_LINK_MAX_TTL,
+    SCHRE_BLOB_BACKEND: env.SCHRE_BLOB_BACKEND,
+    SCHRE_S3_ENDPOINT: env.SCHRE_S3_ENDPOINT,
+    SCHRE_S3_BUCKET: env.SCHRE_S3_BUCKET,
+    SCHRE_S3_ACCESS_KEY_ID: env.SCHRE_S3_ACCESS_KEY_ID,
+    SCHRE_S3_SECRET_ACCESS_KEY: env.SCHRE_S3_SECRET_ACCESS_KEY,
+    SCHRE_S3_REGION: env.SCHRE_S3_REGION,
   };
 }
 

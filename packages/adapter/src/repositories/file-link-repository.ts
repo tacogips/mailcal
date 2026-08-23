@@ -1,16 +1,16 @@
-import type { FileLinkRepository } from "@yabumi/application/ports/file-link-repository";
-import type { SqlDatabase } from "@yabumi/application/ports/sql-database";
+import type { FileLinkRepository } from "@schre/application/ports/file-link-repository";
+import type { SqlDatabase } from "@schre/application/ports/sql-database";
 import {
   type FileLink,
   FileLinkTarget,
-} from "@yabumi/domain/entities/file-link";
+} from "@schre/domain/entities/file-link";
 import {
   createApiKeyId,
   createAttachmentId,
   createFileLinkId,
   createMessageId,
   createUserId,
-} from "@yabumi/domain/value-objects/ids";
+} from "@schre/domain/value-objects/ids";
 import { assertEnumValue } from "./sql-helpers";
 
 interface FileLinkRow {

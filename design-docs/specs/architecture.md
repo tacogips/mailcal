@@ -1,6 +1,6 @@
 # Architecture Design
 
-yabumi is a self-hosted, multi-domain mail service that runs entirely on
+schre is a self-hosted, multi-domain mail service that runs entirely on
 Cloudflare Workers. It receives mail through Cloudflare Email Routing,
 stores messages and attachments in D1 + R2, and exposes everything through a
 single GraphQL endpoint designed to be driven by AI agents and programmatic
@@ -35,7 +35,7 @@ Two independent client shapes talk to the same `/graphql`:
 | Caller | Credential | Transport |
 |--------|-----------|-----------|
 | AI agent / programmatic client | API key (`Authorization: Bearer ybm_...`) | GraphQL over HTTPS |
-| Browser mail client (`yabumi client serve`, or the Worker's own SPA) | `HttpOnly` session cookie | GraphQL over HTTPS |
+| Browser mail client (`schre client serve`, or the Worker's own SPA) | `HttpOnly` session cookie | GraphQL over HTTPS |
 
 ## Layering
 
@@ -45,16 +45,16 @@ layering as the reference project `xxip`. The dependency rule points inward:
 
 | Package | Depends on | Responsibility |
 |---------|-----------|----------------|
-| `@yabumi/domain` | - | Entities, branded value objects, invariants, `DomainError` |
-| `@yabumi/application` | domain | Ports (interfaces), use cases, permission policies, `ApplicationError` |
-| `@yabumi/adapter` | application, domain | Concrete ports: D1/libsql, R2/S3/memory, WebCrypto, MIME parse/build, Cloudflare mail, repositories, migration runner |
-| `@yabumi/infrastructure` | adapter, application, domain | GraphQL schema/resolvers, hono HTTP app, auth middleware, file-link routes, composition root |
+| `@schre/domain` | - | Entities, branded value objects, invariants, `DomainError` |
+| `@schre/application` | domain | Ports (interfaces), use cases, permission policies, `ApplicationError` |
+| `@schre/adapter` | application, domain | Concrete ports: D1/libsql, R2/S3/memory, WebCrypto, MIME parse/build, Cloudflare mail, repositories, migration runner |
+| `@schre/infrastructure` | adapter, application, domain | GraphQL schema/resolvers, hono HTTP app, auth middleware, file-link routes, composition root |
 
 | App | Runtime | Responsibility |
 |-----|---------|----------------|
 | `apps/api` | Workers / Bun / Node | `fetch` + `email` handlers, wrangler config, D1 migrations |
 | `apps/web` | Browser (Vite + SolidJS) | Mail client SPA |
-| `apps/cli` | Bun / Node | `yabumi` CLI, including `yabumi client serve` |
+| `apps/cli` | Bun / Node | `schre` CLI, including `schre client serve` |
 
 ## Storage
 

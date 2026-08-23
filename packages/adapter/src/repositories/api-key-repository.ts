@@ -1,20 +1,20 @@
-import type { ApiKeyRepository } from "@yabumi/application/ports/api-key-repository";
-import type { SqlDatabase } from "@yabumi/application/ports/sql-database";
+import type { ApiKeyRepository } from "@schre/application/ports/api-key-repository";
+import type { SqlDatabase } from "@schre/application/ports/sql-database";
 import {
   type ApiKey,
   type ApiKeyScope,
   Capability,
-} from "@yabumi/domain/entities/api-key";
+} from "@schre/domain/entities/api-key";
 import {
   createAddressPattern,
   MATCH_ALL_ADDRESSES,
-} from "@yabumi/domain/value-objects/address-pattern";
+} from "@schre/domain/value-objects/address-pattern";
 import {
   createApiKeyId,
   createApiKeyScopeId,
   createDomainId,
   createUserId,
-} from "@yabumi/domain/value-objects/ids";
+} from "@schre/domain/value-objects/ids";
 import { assertEnumValue, buildInPlaceholders } from "./sql-helpers";
 
 interface ApiKeyRow {

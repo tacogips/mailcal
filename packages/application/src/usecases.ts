@@ -1,16 +1,16 @@
-import type { ApiKey, ApiKeyScope } from "@yabumi/domain/entities/api-key";
-import type { MessageFetchState } from "@yabumi/domain/entities/fetch-state";
-import type { FileLink } from "@yabumi/domain/entities/file-link";
+import type { ApiKey, ApiKeyScope } from "@schre/domain/entities/api-key";
+import type { MessageFetchState } from "@schre/domain/entities/fetch-state";
+import type { FileLink } from "@schre/domain/entities/file-link";
 import type {
   DomainStatus,
   MailDomain,
-} from "@yabumi/domain/entities/mail-domain";
-import type { ClassificationRule } from "@yabumi/domain/entities/classification-rule";
-import type { Message } from "@yabumi/domain/entities/message";
-import type { MessageEvent } from "@yabumi/domain/entities/message-event";
-import type { Tag } from "@yabumi/domain/entities/tag";
-import type { User, UserRole } from "@yabumi/domain/entities/user";
-import type { UserMailPermission } from "@yabumi/domain/entities/user-mail-permission";
+} from "@schre/domain/entities/mail-domain";
+import type { ClassificationRule } from "@schre/domain/entities/classification-rule";
+import type { Message } from "@schre/domain/entities/message";
+import type { MessageEvent } from "@schre/domain/entities/message-event";
+import type { Tag } from "@schre/domain/entities/tag";
+import type { User, UserRole } from "@schre/domain/entities/user";
+import type { UserMailPermission } from "@schre/domain/entities/user-mail-permission";
 import type {
   ClassificationRuleId,
   MessageEventId,
@@ -24,7 +24,7 @@ import type {
   ThreadId,
   UserId,
   UserMailPermissionId,
-} from "@yabumi/domain/value-objects/ids";
+} from "@schre/domain/value-objects/ids";
 import type { AppDependencies } from "./dependencies";
 import type { Viewer } from "./policies/viewer";
 import type { MessagePage } from "./ports/message-repository";

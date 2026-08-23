@@ -30,7 +30,7 @@ headers, the `/graphql` handler, the attachment REST routes, the
 **Status**: NOT_STARTED
 
 ```typescript
-const SESSION_COOKIE_NAME = "yabumi_session";
+const SESSION_COOKIE_NAME = "schre_session";
 
 interface AuthVariables { viewer: Viewer | null; token: string | null; }
 
@@ -203,8 +203,8 @@ function resolveFileLinkMaxTtl(env: Record<string, string | undefined>): number;
 function loadConfigFromEnv(env: Record<string, string | undefined>): BuildDependenciesConfig;
 ```
 
-A set-but-invalid `YABUMI_PUBLIC_ORIGIN` throws rather than silently disabling
-login; a configured `YABUMI_MAIL_FROM` without a resolvable origin throws too,
+A set-but-invalid `SCHRE_PUBLIC_ORIGIN` throws rather than silently disabling
+login; a configured `SCHRE_MAIL_FROM` without a resolvable origin throws too,
 because that combination mails links that cannot work.
 
 #### packages/infrastructure/src/composition/build-dependencies.ts

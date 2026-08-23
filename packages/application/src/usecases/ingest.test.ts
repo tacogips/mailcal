@@ -3,34 +3,34 @@ import {
   DomainStatus,
   setMailDomainStatus,
   verifyMailDomain,
-} from "@yabumi/domain/entities/mail-domain";
+} from "@schre/domain/entities/mail-domain";
 import {
   createInboundMessage,
   RecipientKind,
-} from "@yabumi/domain/entities/message";
+} from "@schre/domain/entities/message";
 import {
   createClassificationRule,
   RuleAction,
   RuleField,
   RuleMatcher,
-} from "@yabumi/domain/entities/classification-rule";
-import { SpamMarkedBy } from "@yabumi/domain/entities/spam-mark";
+} from "@schre/domain/entities/classification-rule";
+import { SpamMarkedBy } from "@schre/domain/entities/spam-mark";
 import { ForbiddenError } from "../errors";
 import {
   adminViewer,
   mailboxAgentViewer,
 } from "../test-support/viewer-fixtures";
 import { createApplyClassificationRuleUseCase } from "./rules";
-import { createUserTag } from "@yabumi/domain/entities/tag";
-import { createDomainName } from "@yabumi/domain/value-objects/domain-name";
-import { createEmailAddress } from "@yabumi/domain/value-objects/email-address";
+import { createUserTag } from "@schre/domain/entities/tag";
+import { createDomainName } from "@schre/domain/value-objects/domain-name";
+import { createEmailAddress } from "@schre/domain/value-objects/email-address";
 import {
   createClassificationRuleId,
   createTagId,
   createDomainId,
   createMessageId,
   createThreadId,
-} from "@yabumi/domain/value-objects/ids";
+} from "@schre/domain/value-objects/ids";
 import { beforeEach, describe, expect, test } from "vitest";
 import {
   createFakeDependencies,

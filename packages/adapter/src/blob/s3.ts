@@ -2,7 +2,7 @@ import { AwsClient } from "aws4fetch";
 import type {
   BlobObject,
   BlobStore,
-} from "@yabumi/application/ports/blob-store";
+} from "@schre/application/ports/blob-store";
 
 export interface S3Config {
   readonly endpoint: string;

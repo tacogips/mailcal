@@ -1,6 +1,6 @@
-import type { MailDomain } from "@yabumi/domain/entities/mail-domain";
-import type { DomainName } from "@yabumi/domain/value-objects/domain-name";
-import type { DomainId } from "@yabumi/domain/value-objects/ids";
+import type { MailDomain } from "@schre/domain/entities/mail-domain";
+import type { DomainName } from "@schre/domain/value-objects/domain-name";
+import type { DomainId } from "@schre/domain/value-objects/ids";
 
 export interface MailDomainRepository {
   findById(id: DomainId): Promise<MailDomain | null>;

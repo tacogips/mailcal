@@ -60,7 +60,7 @@ description = "Run the local API server"
 run = "bun run --cwd apps/api start"
 
 [tasks.client-serve]
-description = "Serve the browser mail client via the yabumi CLI"
+description = "Serve the browser mail client via the schre CLI"
 run = "bun run --cwd apps/cli start -- client serve"
 
 [tasks.cf-dev]

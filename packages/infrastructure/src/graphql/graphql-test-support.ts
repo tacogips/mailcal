@@ -1,7 +1,7 @@
-import type { AppDependencies } from "@yabumi/application/dependencies";
-import type { Viewer } from "@yabumi/application/policies";
-import type { FakeDependencies } from "@yabumi/application/test-support/fakes";
-import { createUseCases, type UseCases } from "@yabumi/application/usecases";
+import type { AppDependencies } from "@schre/application/dependencies";
+import type { Viewer } from "@schre/application/policies";
+import type { FakeDependencies } from "@schre/application/test-support/fakes";
+import { createUseCases, type UseCases } from "@schre/application/usecases";
 import { buildGraphQLContext } from "./context";
 import { buildGraphQLSchema, createGraphQLYoga } from "./schema";
 

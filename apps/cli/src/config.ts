@@ -11,13 +11,13 @@ export interface CliConfig {
 export function configFilePath(
   env: Record<string, string | undefined>,
 ): string {
-  const override = env["YABUMI_CONFIG"];
+  const override = env["SCHRE_CONFIG"];
   if (override !== undefined && override.length > 0) {
     return override;
   }
   const configHome =
     env["XDG_CONFIG_HOME"] ?? join(env["HOME"] ?? homedir(), ".config");
-  return join(configHome, "yabumi", "config.json");
+  return join(configHome, "schre", "config.json");
 }
 
 export async function readConfigFile(
@@ -68,12 +68,12 @@ export async function resolveConfig(
   return {
     endpoint:
       flagString(args, "endpoint") ??
-      env["YABUMI_ENDPOINT"] ??
+      env["SCHRE_ENDPOINT"] ??
       file.endpoint ??
       null,
     apiKey:
       flagString(args, "api-key") ??
-      env["YABUMI_API_KEY"] ??
+      env["SCHRE_API_KEY"] ??
       file.apiKey ??
       null,
   };

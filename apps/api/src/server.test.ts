@@ -1,4 +1,4 @@
-import { verifyMailDomain } from "@yabumi/domain/entities/mail-domain";
+import { verifyMailDomain } from "@schre/domain/entities/mail-domain";
 import { afterEach, beforeEach, describe, expect, test } from "vitest";
 import { createLocalApp, detectRuntime } from "./server";
 
@@ -26,10 +26,10 @@ describe("createLocalApp", () => {
 
   beforeEach(() => {
     // A throwaway in-memory database per test, so migrations run fresh.
-    process.env["YABUMI_SQLITE_URL"] = ":memory:";
-    process.env["YABUMI_BLOB_BACKEND"] = "memory";
-    delete process.env["YABUMI_PUBLIC_ORIGIN"];
-    delete process.env["YABUMI_MAIL_FROM"];
+    process.env["SCHRE_SQLITE_URL"] = ":memory:";
+    process.env["SCHRE_BLOB_BACKEND"] = "memory";
+    delete process.env["SCHRE_PUBLIC_ORIGIN"];
+    delete process.env["SCHRE_MAIL_FROM"];
   });
 
   afterEach(() => {

@@ -1,5 +1,5 @@
 {
-  "name": "@yabumi/application",
+  "name": "@schre/application",
   "version": "0.1.0",
   "private": true,
   "type": "module",
@@ -18,7 +18,7 @@
     "test": "vitest run"
   },
   "dependencies": {
-    "@yabumi/domain": "workspace:*"
+    "@schre/domain": "workspace:*"
   },
   "devDependencies": {
     "typescript": "5.7.2"

@@ -1,4 +1,4 @@
-import type { SqlDatabase } from "@yabumi/application/ports/sql-database";
+import type { SqlDatabase } from "@schre/application/ports/sql-database";
 import { describe, expect, test } from "vitest";
 import { createInMemoryDatabase } from "../sql/libsql";
 import { loadMigrationFiles } from "../repositories/test-support";

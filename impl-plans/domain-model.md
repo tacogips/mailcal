@@ -12,7 +12,7 @@
 **Source**: design-docs/specs/design-domain-model.md
 
 ### Summary
-`@yabumi/domain`: branded value objects, entity shapes, pure state-transition
+`@schre/domain`: branded value objects, entity shapes, pure state-transition
 factories, and the `DomainError` hierarchy. No IO, no ID generation, no clock.
 
 ### Scope

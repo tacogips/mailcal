@@ -1,16 +1,16 @@
-import type { MessageEventRepository } from "@yabumi/application/ports/message-event-repository";
+import type { MessageEventRepository } from "@schre/application/ports/message-event-repository";
 import type {
   SqlDatabase,
   SqlValue,
-} from "@yabumi/application/ports/sql-database";
+} from "@schre/application/ports/sql-database";
 import {
   type MessageEvent,
   MessageEventKind,
-} from "@yabumi/domain/entities/message-event";
+} from "@schre/domain/entities/message-event";
 import {
   createMessageEventId,
   createMessageId,
-} from "@yabumi/domain/value-objects/ids";
+} from "@schre/domain/value-objects/ids";
 import {
   buildAllowedPatternsCondition,
   buildMailPermissionFilterCondition,

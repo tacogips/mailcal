@@ -1,19 +1,19 @@
-import { createFakeDependencies } from "@yabumi/application/test-support/fakes";
+import { createFakeDependencies } from "@schre/application/test-support/fakes";
 import {
   adminViewer,
   apiKeyViewer,
   memberViewer,
   viewerViewer,
-} from "@yabumi/application/test-support/viewer-fixtures";
-import { Capability } from "@yabumi/domain/entities/api-key";
+} from "@schre/application/test-support/viewer-fixtures";
+import { Capability } from "@schre/domain/entities/api-key";
 import {
   createMailDomain,
   verifyMailDomain,
-} from "@yabumi/domain/entities/mail-domain";
-import { createUser, UserRole } from "@yabumi/domain/entities/user";
-import { createDomainName } from "@yabumi/domain/value-objects/domain-name";
-import { createEmailAddress } from "@yabumi/domain/value-objects/email-address";
-import { createDomainId, createUserId } from "@yabumi/domain/value-objects/ids";
+} from "@schre/domain/entities/mail-domain";
+import { createUser, UserRole } from "@schre/domain/entities/user";
+import { createDomainName } from "@schre/domain/value-objects/domain-name";
+import { createEmailAddress } from "@schre/domain/value-objects/email-address";
+import { createDomainId, createUserId } from "@schre/domain/value-objects/ids";
 import { beforeEach, describe, expect, test } from "vitest";
 import {
   createGraphQLHarness,

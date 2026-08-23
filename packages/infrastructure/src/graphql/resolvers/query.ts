@@ -1,17 +1,17 @@
-import type { MessageFilterInput } from "@yabumi/application/usecases/messages";
-import type { AttachmentKind } from "@yabumi/domain/entities/attachment";
+import type { MessageFilterInput } from "@schre/application/usecases/messages";
+import type { AttachmentKind } from "@schre/domain/entities/attachment";
 import type {
   MailStatus,
   MessageDirection,
-} from "@yabumi/domain/entities/message";
-import type { SystemTagSlug } from "@yabumi/domain/entities/tag";
+} from "@schre/domain/entities/message";
+import type { SystemTagSlug } from "@schre/domain/entities/tag";
 import {
   createDomainId,
   createMessageId,
   createTagId,
   createThreadId,
   createUserId,
-} from "@yabumi/domain/value-objects/ids";
+} from "@schre/domain/value-objects/ids";
 import type { GraphQLContext } from "../context";
 import { requireViewerOrThrow } from "./helpers";
 import type { ViewerSource } from "./types";

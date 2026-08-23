@@ -1,12 +1,12 @@
 import type {
   MailAuthorizationRule,
   MailPermissionFilter,
-} from "@yabumi/application/policies/authorization";
-import type { MessageListFilter } from "@yabumi/application/ports/message-repository";
-import type { SqlValue } from "@yabumi/application/ports/sql-database";
-import { FetchStatus } from "@yabumi/domain/entities/fetch-state";
-import { RecipientKind } from "@yabumi/domain/entities/message";
-import { addressPatternToLikeExpression } from "@yabumi/domain/value-objects/address-pattern";
+} from "@schre/application/policies/authorization";
+import type { MessageListFilter } from "@schre/application/ports/message-repository";
+import type { SqlValue } from "@schre/application/ports/sql-database";
+import { FetchStatus } from "@schre/domain/entities/fetch-state";
+import { RecipientKind } from "@schre/domain/entities/message";
+import { addressPatternToLikeExpression } from "@schre/domain/value-objects/address-pattern";
 import {
   buildInPlaceholders,
   decodeCursor,

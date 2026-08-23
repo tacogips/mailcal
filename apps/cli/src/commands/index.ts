@@ -139,7 +139,7 @@ export const domainCommands: ReadonlyMap<string, CommandHandler> = new Map([
       const name = ctx.args.positionals[0];
       if (name === undefined) {
         throw new CliError(
-          "Usage: yabumi domain add <name>",
+          "Usage: schre domain add <name>",
           ExitCode.UsageError,
         );
       }
@@ -159,9 +159,7 @@ export const domainCommands: ReadonlyMap<string, CommandHandler> = new Map([
         return ExitCode.Success;
       }
       console.log(`Added ${data.createDomain.name} (${data.createDomain.id}).`);
-      console.log(
-        "Publish these DNS records, then run `yabumi domain verify`:",
-      );
+      console.log("Publish these DNS records, then run `schre domain verify`:");
       printTable(
         ["TYPE", "NAME", "VALUE", "PRIORITY"],
         data.createDomain.dnsRecords.map((record) => [
@@ -180,7 +178,7 @@ export const domainCommands: ReadonlyMap<string, CommandHandler> = new Map([
       const id = ctx.args.positionals[0];
       if (id === undefined) {
         throw new CliError(
-          "Usage: yabumi domain verify <id>",
+          "Usage: schre domain verify <id>",
           ExitCode.UsageError,
         );
       }
@@ -246,7 +244,7 @@ export const keyCommands: ReadonlyMap<string, CommandHandler> = new Map([
       const specs = flagList(ctx.args, "scope");
       if (name === undefined || specs.length === 0) {
         throw new CliError(
-          "Usage: yabumi key create <name> --scope CAPABILITY[:domain[:pattern]] ...",
+          "Usage: schre key create <name> --scope CAPABILITY[:domain[:pattern]] ...",
           ExitCode.UsageError,
         );
       }
@@ -326,10 +324,7 @@ export const keyCommands: ReadonlyMap<string, CommandHandler> = new Map([
     async (ctx) => {
       const id = ctx.args.positionals[0];
       if (id === undefined) {
-        throw new CliError(
-          "Usage: yabumi key revoke <id>",
-          ExitCode.UsageError,
-        );
+        throw new CliError("Usage: schre key revoke <id>", ExitCode.UsageError);
       }
       await ctx.client.request(
         `mutation Revoke($id: ID!) { revokeApiKey(id: $id) { id revokedAt } }`,
@@ -512,7 +507,7 @@ export const mailCommands: ReadonlyMap<string, CommandHandler> = new Map([
     async (ctx) => {
       const id = ctx.args.positionals[0];
       if (id === undefined) {
-        throw new CliError("Usage: yabumi mail show <id>", ExitCode.UsageError);
+        throw new CliError("Usage: schre mail show <id>", ExitCode.UsageError);
       }
       const data = await ctx.client.request<{
         readonly message: {
@@ -607,7 +602,7 @@ export const mailCommands: ReadonlyMap<string, CommandHandler> = new Map([
         subject === undefined
       ) {
         throw new CliError(
-          "Usage: yabumi mail send --from <addr> --to <addr> --subject <text> [--text <body> | --text-file <path>]",
+          "Usage: schre mail send --from <addr> --to <addr> --subject <text> [--text <body> | --text-file <path>]",
           ExitCode.UsageError,
         );
       }
@@ -698,7 +693,7 @@ export const configCommands: ReadonlyMap<string, CommandHandler> = new Map([
       const value = ctx.args.positionals[1];
       if ((key !== "endpoint" && key !== "apiKey") || value === undefined) {
         throw new CliError(
-          "Usage: yabumi config set <endpoint|apiKey> <value>",
+          "Usage: schre config set <endpoint|apiKey> <value>",
           ExitCode.UsageError,
         );
       }

@@ -1,16 +1,13 @@
-import { Capability } from "@yabumi/domain/entities/api-key";
+import { Capability } from "@schre/domain/entities/api-key";
 import {
   createMailDomain,
   DomainStatus,
   type MailDomain,
   setMailDomainStatus,
   verifyMailDomain,
-} from "@yabumi/domain/entities/mail-domain";
-import { createDomainName } from "@yabumi/domain/value-objects/domain-name";
-import {
-  createDomainId,
-  type DomainId,
-} from "@yabumi/domain/value-objects/ids";
+} from "@schre/domain/entities/mail-domain";
+import { createDomainName } from "@schre/domain/value-objects/domain-name";
+import { createDomainId, type DomainId } from "@schre/domain/value-objects/ids";
 import type { AppDependencies } from "../dependencies";
 import {
   ConflictError,
@@ -48,8 +45,8 @@ export function buildDomainDnsRecords(
   return [
     {
       type: "TXT",
-      name: `_yabumi.${domain.name}`,
-      value: `yabumi-verification=${domain.verificationToken}`,
+      name: `_schre.${domain.name}`,
+      value: `schre-verification=${domain.verificationToken}`,
       priority: null,
       purpose: "Proves you control this domain",
     },
@@ -182,8 +179,8 @@ export function createVerifyDomainUseCase(
       // touch. MX correctness is deliberately not checked here -- mail
       // for a domain with wrong MX simply never arrives, while a wrong
       // ownership claim is a security problem.
-      const recordName = `_yabumi.${domain.name}`;
-      const expected = `yabumi-verification=${domain.verificationToken}`;
+      const recordName = `_schre.${domain.name}`;
+      const expected = `schre-verification=${domain.verificationToken}`;
       let values: readonly string[];
       try {
         values = await deps.dns.lookupTxt(recordName);

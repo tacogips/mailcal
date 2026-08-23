@@ -1,7 +1,7 @@
 import type {
   BlobObject,
   BlobStore,
-} from "@yabumi/application/ports/blob-store";
+} from "@schre/application/ports/blob-store";
 
 interface StoredBlob {
   readonly bytes: Uint8Array;

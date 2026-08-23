@@ -1,14 +1,14 @@
-import type { AppDependencies } from "@yabumi/application/dependencies";
-import type { Viewer } from "@yabumi/application/policies";
-import type { Attachment } from "@yabumi/domain/entities/attachment";
-import type { MessageFetchState } from "@yabumi/domain/entities/fetch-state";
-import type { MailDomain } from "@yabumi/domain/entities/mail-domain";
-import type { MessageRecipient } from "@yabumi/domain/entities/message";
-import type { MessageEvent } from "@yabumi/domain/entities/message-event";
-import type { SpamMark } from "@yabumi/domain/entities/spam-mark";
-import type { Tag } from "@yabumi/domain/entities/tag";
-import type { ApiKeyScope } from "@yabumi/domain/entities/api-key";
-import type { UserMailPermission } from "@yabumi/domain/entities/user-mail-permission";
+import type { AppDependencies } from "@schre/application/dependencies";
+import type { Viewer } from "@schre/application/policies";
+import type { Attachment } from "@schre/domain/entities/attachment";
+import type { MessageFetchState } from "@schre/domain/entities/fetch-state";
+import type { MailDomain } from "@schre/domain/entities/mail-domain";
+import type { MessageRecipient } from "@schre/domain/entities/message";
+import type { MessageEvent } from "@schre/domain/entities/message-event";
+import type { SpamMark } from "@schre/domain/entities/spam-mark";
+import type { Tag } from "@schre/domain/entities/tag";
+import type { ApiKeyScope } from "@schre/domain/entities/api-key";
+import type { UserMailPermission } from "@schre/domain/entities/user-mail-permission";
 import {
   type ApiKeyId,
   createTagId,
@@ -16,7 +16,7 @@ import {
   type MessageId,
   type TagId,
   type UserId,
-} from "@yabumi/domain/value-objects/ids";
+} from "@schre/domain/value-objects/ids";
 
 /** Batches keys requested within one microtask turn into a single call.
  *

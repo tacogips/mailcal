@@ -1,22 +1,22 @@
-import { Capability } from "@yabumi/domain/entities/api-key";
+import { Capability } from "@schre/domain/entities/api-key";
 import {
   createFakeDependencies,
   type FakeDependencies,
-} from "@yabumi/application/test-support/fakes";
-import { createUseCases, type UseCases } from "@yabumi/application/usecases";
-import { createAttachment } from "@yabumi/domain/entities/attachment";
+} from "@schre/application/test-support/fakes";
+import { createUseCases, type UseCases } from "@schre/application/usecases";
+import { createAttachment } from "@schre/domain/entities/attachment";
 import {
   createMailDomain,
   verifyMailDomain,
-} from "@yabumi/domain/entities/mail-domain";
+} from "@schre/domain/entities/mail-domain";
 import {
   createInboundMessage,
   RecipientKind,
-} from "@yabumi/domain/entities/message";
-import { createSession } from "@yabumi/domain/entities/session";
-import { createUser, UserRole } from "@yabumi/domain/entities/user";
-import { createDomainName } from "@yabumi/domain/value-objects/domain-name";
-import { createEmailAddress } from "@yabumi/domain/value-objects/email-address";
+} from "@schre/domain/entities/message";
+import { createSession } from "@schre/domain/entities/session";
+import { createUser, UserRole } from "@schre/domain/entities/user";
+import { createDomainName } from "@schre/domain/value-objects/domain-name";
+import { createEmailAddress } from "@schre/domain/value-objects/email-address";
 import {
   createAttachmentId,
   createDomainId,
@@ -24,7 +24,7 @@ import {
   createSessionId,
   createThreadId,
   createUserId,
-} from "@yabumi/domain/value-objects/ids";
+} from "@schre/domain/value-objects/ids";
 import type { Hono } from "hono";
 import { beforeEach, describe, expect, test } from "vitest";
 import { createApp } from "./app";

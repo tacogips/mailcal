@@ -1,29 +1,29 @@
 import {
   createFakeDependencies,
   type FakeDependencies,
-} from "@yabumi/application/test-support/fakes";
+} from "@schre/application/test-support/fakes";
 import {
   adminViewer,
   mailboxAgentViewer,
   memberViewer,
-} from "@yabumi/application/test-support/viewer-fixtures";
-import { createAttachment } from "@yabumi/domain/entities/attachment";
+} from "@schre/application/test-support/viewer-fixtures";
+import { createAttachment } from "@schre/domain/entities/attachment";
 import {
   createMailDomain,
   verifyMailDomain,
-} from "@yabumi/domain/entities/mail-domain";
+} from "@schre/domain/entities/mail-domain";
 import {
   createInboundMessage,
   RecipientKind,
-} from "@yabumi/domain/entities/message";
-import { createDomainName } from "@yabumi/domain/value-objects/domain-name";
-import { createEmailAddress } from "@yabumi/domain/value-objects/email-address";
+} from "@schre/domain/entities/message";
+import { createDomainName } from "@schre/domain/value-objects/domain-name";
+import { createEmailAddress } from "@schre/domain/value-objects/email-address";
 import {
   createAttachmentId,
   createDomainId,
   createMessageId,
   createThreadId,
-} from "@yabumi/domain/value-objects/ids";
+} from "@schre/domain/value-objects/ids";
 import { beforeEach, describe, expect, test } from "vitest";
 import {
   createGraphQLHarness,

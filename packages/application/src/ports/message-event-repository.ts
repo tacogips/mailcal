@@ -1,9 +1,9 @@
-import type { MessageEvent } from "@yabumi/domain/entities/message-event";
-import type { AddressPattern } from "@yabumi/domain/value-objects/address-pattern";
+import type { MessageEvent } from "@schre/domain/entities/message-event";
+import type { AddressPattern } from "@schre/domain/value-objects/address-pattern";
 import type {
   MessageEventId,
   MessageId,
-} from "@yabumi/domain/value-objects/ids";
+} from "@schre/domain/value-objects/ids";
 import type { MailPermissionFilter } from "../policies/authorization";
 
 export interface MessageEventListFilter {

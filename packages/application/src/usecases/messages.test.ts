@@ -1,20 +1,20 @@
-import { Capability } from "@yabumi/domain/entities/api-key";
-import { FetchStatus } from "@yabumi/domain/entities/fetch-state";
+import { Capability } from "@schre/domain/entities/api-key";
+import { FetchStatus } from "@schre/domain/entities/fetch-state";
 import {
   createInboundMessage,
   type Message,
   MessageDirection,
   type MessageRecipient,
   RecipientKind,
-} from "@yabumi/domain/entities/message";
-import { createEmailAddress } from "@yabumi/domain/value-objects/email-address";
+} from "@schre/domain/entities/message";
+import { createEmailAddress } from "@schre/domain/value-objects/email-address";
 import {
   createDomainId,
   createMessageId,
   createThreadId,
   createUserId,
-} from "@yabumi/domain/value-objects/ids";
-import { SystemTagSlug } from "@yabumi/domain/entities/tag";
+} from "@schre/domain/value-objects/ids";
+import { SystemTagSlug } from "@schre/domain/entities/tag";
 import { beforeEach, describe, expect, test } from "vitest";
 import { BadUserInputError } from "../errors";
 import {

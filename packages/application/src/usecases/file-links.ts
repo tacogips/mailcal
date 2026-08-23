@@ -1,19 +1,19 @@
-import { Capability } from "@yabumi/domain/entities/api-key";
-import type { Attachment } from "@yabumi/domain/entities/attachment";
-import { buildRawMessageBlobKey } from "@yabumi/domain/entities/attachment";
+import { Capability } from "@schre/domain/entities/api-key";
+import type { Attachment } from "@schre/domain/entities/attachment";
+import { buildRawMessageBlobKey } from "@schre/domain/entities/attachment";
 import {
   createAttachmentFileLink,
   createRawMessageFileLink,
   type FileLink,
   FileLinkTarget,
   revokeFileLink,
-} from "@yabumi/domain/entities/file-link";
+} from "@schre/domain/entities/file-link";
 import {
   type AttachmentId,
   createFileLinkId,
   type FileLinkId,
   type MessageId,
-} from "@yabumi/domain/value-objects/ids";
+} from "@schre/domain/value-objects/ids";
 import type { AppDependencies } from "../dependencies";
 import { BadUserInputError, NotFoundError } from "../errors";
 import { requireAddressCapability } from "../policies/authorization";

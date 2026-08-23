@@ -74,17 +74,17 @@ interface Env {
   readonly BLOB: R2BucketLike;
   readonly ASSETS: FetcherLike;
   readonly EMAIL: CloudflareSendEmailBinding;
-  readonly YABUMI_PUBLIC_ORIGIN?: string;
-  readonly YABUMI_MAIL_FROM?: string;
-  readonly YABUMI_SIGNUP?: string;
-  readonly YABUMI_SPAM_THRESHOLD?: string;
-  readonly YABUMI_FILE_LINK_MAX_TTL?: string;
-  readonly YABUMI_BLOB_BACKEND?: string;
-  readonly YABUMI_S3_ENDPOINT?: string;
-  readonly YABUMI_S3_BUCKET?: string;
-  readonly YABUMI_S3_ACCESS_KEY_ID?: string;
-  readonly YABUMI_S3_SECRET_ACCESS_KEY?: string;
-  readonly YABUMI_S3_REGION?: string;
+  readonly SCHRE_PUBLIC_ORIGIN?: string;
+  readonly SCHRE_MAIL_FROM?: string;
+  readonly SCHRE_SIGNUP?: string;
+  readonly SCHRE_SPAM_THRESHOLD?: string;
+  readonly SCHRE_FILE_LINK_MAX_TTL?: string;
+  readonly SCHRE_BLOB_BACKEND?: string;
+  readonly SCHRE_S3_ENDPOINT?: string;
+  readonly SCHRE_S3_BUCKET?: string;
+  readonly SCHRE_S3_ACCESS_KEY_ID?: string;
+  readonly SCHRE_S3_SECRET_ACCESS_KEY?: string;
+  readonly SCHRE_S3_REGION?: string;
 }
 
 /** Cloudflare's inbound message, as a local structural type. */

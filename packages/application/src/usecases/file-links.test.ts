@@ -1,17 +1,17 @@
-import { Capability } from "@yabumi/domain/entities/api-key";
-import { createAttachment } from "@yabumi/domain/entities/attachment";
+import { Capability } from "@schre/domain/entities/api-key";
+import { createAttachment } from "@schre/domain/entities/attachment";
 import {
   createInboundMessage,
   RecipientKind,
-} from "@yabumi/domain/entities/message";
-import { createEmailAddress } from "@yabumi/domain/value-objects/email-address";
+} from "@schre/domain/entities/message";
+import { createEmailAddress } from "@schre/domain/value-objects/email-address";
 import {
   createAttachmentId,
   createDomainId,
   createFileLinkId,
   createMessageId,
   createThreadId,
-} from "@yabumi/domain/value-objects/ids";
+} from "@schre/domain/value-objects/ids";
 import { beforeEach, describe, expect, test } from "vitest";
 import { BadUserInputError, NotFoundError } from "../errors";
 import {

@@ -2,18 +2,18 @@ import {
   type ApiKeyScope,
   Capability,
   createApiKeyScope,
-} from "@yabumi/domain/entities/api-key";
-import { UserRole } from "@yabumi/domain/entities/user";
+} from "@schre/domain/entities/api-key";
+import { UserRole } from "@schre/domain/entities/user";
 import {
   createUserMailPermission,
   type UserMailPermission,
   UserPermissionEffect,
-} from "@yabumi/domain/entities/user-mail-permission";
+} from "@schre/domain/entities/user-mail-permission";
 import {
   type AddressPattern,
   createAddressPattern,
   MATCH_ALL_ADDRESSES,
-} from "@yabumi/domain/value-objects/address-pattern";
+} from "@schre/domain/value-objects/address-pattern";
 import {
   type ApiKeyId,
   createApiKeyId,
@@ -22,7 +22,7 @@ import {
   createUserMailPermissionId,
   type DomainId,
   type UserId,
-} from "@yabumi/domain/value-objects/ids";
+} from "@schre/domain/value-objects/ids";
 import type { Viewer } from "../policies/viewer";
 
 const DEFAULT_PERMISSION_CREATED_AT = "2026-08-23T00:00:00.000Z";

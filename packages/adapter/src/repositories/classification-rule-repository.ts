@@ -1,16 +1,16 @@
-import type { ClassificationRuleRepository } from "@yabumi/application/ports/classification-rule-repository";
-import type { SqlDatabase } from "@yabumi/application/ports/sql-database";
+import type { ClassificationRuleRepository } from "@schre/application/ports/classification-rule-repository";
+import type { SqlDatabase } from "@schre/application/ports/sql-database";
 import {
   type ClassificationRule,
   RuleAction,
   RuleField,
   RuleMatcher,
-} from "@yabumi/domain/entities/classification-rule";
+} from "@schre/domain/entities/classification-rule";
 import {
   createClassificationRuleId,
   createDomainId,
   createTagId,
-} from "@yabumi/domain/value-objects/ids";
+} from "@schre/domain/value-objects/ids";
 import { assertEnumValue, boolToSql, sqlToBool } from "./sql-helpers";
 
 interface RuleRow {

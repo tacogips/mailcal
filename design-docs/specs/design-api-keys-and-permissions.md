@@ -1,6 +1,6 @@
 # API Keys and Permissions
 
-yabumi is designed to be called by AI agents and unattended clients, so the
+schre is designed to be called by AI agents and unattended clients, so the
 API key -- not the user session -- is the primary credential. A key is only
 useful in combination with the scopes it was issued with: an unscoped key
 grants nothing.

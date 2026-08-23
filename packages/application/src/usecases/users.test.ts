@@ -1,21 +1,21 @@
-import { Capability } from "@yabumi/domain/entities/api-key";
+import { Capability } from "@schre/domain/entities/api-key";
 import {
   createMailDomain,
   verifyMailDomain,
-} from "@yabumi/domain/entities/mail-domain";
+} from "@schre/domain/entities/mail-domain";
 import {
   createUser,
   isUserActive,
   UserRole,
-} from "@yabumi/domain/entities/user";
-import { UserPermissionEffect } from "@yabumi/domain/entities/user-mail-permission";
-import { createDomainName } from "@yabumi/domain/value-objects/domain-name";
-import { createEmailAddress } from "@yabumi/domain/value-objects/email-address";
+} from "@schre/domain/entities/user";
+import { UserPermissionEffect } from "@schre/domain/entities/user-mail-permission";
+import { createDomainName } from "@schre/domain/value-objects/domain-name";
+import { createEmailAddress } from "@schre/domain/value-objects/email-address";
 import {
   createDomainId,
   createUserId,
   createUserMailPermissionId,
-} from "@yabumi/domain/value-objects/ids";
+} from "@schre/domain/value-objects/ids";
 import { beforeEach, describe, expect, test } from "vitest";
 import {
   BadUserInputError,

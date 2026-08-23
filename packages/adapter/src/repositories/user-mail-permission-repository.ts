@@ -1,18 +1,18 @@
-import type { UserMailPermissionRepository } from "@yabumi/application/ports/user-mail-permission-repository";
-import type { SqlDatabase } from "@yabumi/application/ports/sql-database";
+import type { UserMailPermissionRepository } from "@schre/application/ports/user-mail-permission-repository";
+import type { SqlDatabase } from "@schre/application/ports/sql-database";
 import {
   type UserMailPermission,
   UserPermissionEffect,
-} from "@yabumi/domain/entities/user-mail-permission";
+} from "@schre/domain/entities/user-mail-permission";
 import {
   createAddressPattern,
   MATCH_ALL_ADDRESSES,
-} from "@yabumi/domain/value-objects/address-pattern";
+} from "@schre/domain/value-objects/address-pattern";
 import {
   createDomainId,
   createUserId,
   createUserMailPermissionId,
-} from "@yabumi/domain/value-objects/ids";
+} from "@schre/domain/value-objects/ids";
 import { assertEnumValue } from "./sql-helpers";
 
 interface UserMailPermissionRow {

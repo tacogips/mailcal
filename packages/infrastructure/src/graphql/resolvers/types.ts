@@ -1,20 +1,17 @@
-import type { ApiKey, ApiKeyScope } from "@yabumi/domain/entities/api-key";
-import { Capability } from "@yabumi/domain/entities/api-key";
-import type { Attachment } from "@yabumi/domain/entities/attachment";
-import { FetchStatus } from "@yabumi/domain/entities/fetch-state";
-import type { FileLink } from "@yabumi/domain/entities/file-link";
-import type { MailDomain } from "@yabumi/domain/entities/mail-domain";
-import type {
-  Message,
-  MessageRecipient,
-} from "@yabumi/domain/entities/message";
-import { RecipientKind } from "@yabumi/domain/entities/message";
-import type { ClassificationRule } from "@yabumi/domain/entities/classification-rule";
-import type { MessageEvent } from "@yabumi/domain/entities/message-event";
-import type { SpamMark } from "@yabumi/domain/entities/spam-mark";
-import type { Tag } from "@yabumi/domain/entities/tag";
-import { isUserActive, type User } from "@yabumi/domain/entities/user";
-import type { UserMailPermission } from "@yabumi/domain/entities/user-mail-permission";
+import type { ApiKey, ApiKeyScope } from "@schre/domain/entities/api-key";
+import { Capability } from "@schre/domain/entities/api-key";
+import type { Attachment } from "@schre/domain/entities/attachment";
+import { FetchStatus } from "@schre/domain/entities/fetch-state";
+import type { FileLink } from "@schre/domain/entities/file-link";
+import type { MailDomain } from "@schre/domain/entities/mail-domain";
+import type { Message, MessageRecipient } from "@schre/domain/entities/message";
+import { RecipientKind } from "@schre/domain/entities/message";
+import type { ClassificationRule } from "@schre/domain/entities/classification-rule";
+import type { MessageEvent } from "@schre/domain/entities/message-event";
+import type { SpamMark } from "@schre/domain/entities/spam-mark";
+import type { Tag } from "@schre/domain/entities/tag";
+import { isUserActive, type User } from "@schre/domain/entities/user";
+import type { UserMailPermission } from "@schre/domain/entities/user-mail-permission";
 import type { GraphQLContext } from "../context";
 import { holdsCapability, viewerCapabilities } from "./helpers";
 

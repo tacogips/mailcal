@@ -1,22 +1,22 @@
-import { Capability } from "@yabumi/domain/entities/api-key";
-import type { AttachmentKind } from "@yabumi/domain/entities/attachment";
-import type { MailStatus } from "@yabumi/domain/entities/message";
+import { Capability } from "@schre/domain/entities/api-key";
+import type { AttachmentKind } from "@schre/domain/entities/attachment";
+import type { MailStatus } from "@schre/domain/entities/message";
 import {
   markMessageRead,
   type Message,
   type MessageDirection,
-} from "@yabumi/domain/entities/message";
-import { SystemTagSlug } from "@yabumi/domain/entities/tag";
+} from "@schre/domain/entities/message";
+import { SystemTagSlug } from "@schre/domain/entities/tag";
 import {
   createEmailAddress,
   type EmailAddress,
-} from "@yabumi/domain/value-objects/email-address";
+} from "@schre/domain/value-objects/email-address";
 import type {
   DomainId,
   MessageId,
   TagId,
   ThreadId,
-} from "@yabumi/domain/value-objects/ids";
+} from "@schre/domain/value-objects/ids";
 import type { AppDependencies } from "../dependencies";
 import { BadUserInputError } from "../errors";
 import {

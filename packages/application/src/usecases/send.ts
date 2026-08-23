@@ -1,10 +1,10 @@
-import { Capability } from "@yabumi/domain/entities/api-key";
-import type { Attachment } from "@yabumi/domain/entities/attachment";
+import { Capability } from "@schre/domain/entities/api-key";
+import type { Attachment } from "@schre/domain/entities/attachment";
 import {
   attachToMessage,
   buildRawMessageBlobKey,
-} from "@yabumi/domain/entities/attachment";
-import { assertCanSendMail } from "@yabumi/domain/entities/mail-domain";
+} from "@schre/domain/entities/attachment";
+import { assertCanSendMail } from "@schre/domain/entities/mail-domain";
 import {
   createOutboundMessage,
   DeliveryStatus,
@@ -14,19 +14,19 @@ import {
   type MessageRecipient,
   RecipientKind,
   requeueMessage,
-} from "@yabumi/domain/entities/message";
+} from "@schre/domain/entities/message";
 import {
   createEmailAddress,
   type EmailAddress,
   emailDomainName,
-} from "@yabumi/domain/value-objects/email-address";
+} from "@schre/domain/value-objects/email-address";
 import {
   type AttachmentId,
   createMessageId,
   createThreadId,
   type MessageId,
   type TagId,
-} from "@yabumi/domain/value-objects/ids";
+} from "@schre/domain/value-objects/ids";
 import type { AppDependencies } from "../dependencies";
 import { BadUserInputError, NotFoundError } from "../errors";
 import { requireAddressCapability } from "../policies/authorization";

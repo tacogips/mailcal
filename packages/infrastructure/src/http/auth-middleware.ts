@@ -1,10 +1,10 @@
-import type { AppDependencies } from "@yabumi/application/dependencies";
-import type { Viewer } from "@yabumi/application/policies";
-import type { UseCases } from "@yabumi/application/usecases";
+import type { AppDependencies } from "@schre/application/dependencies";
+import type { Viewer } from "@schre/application/policies";
+import type { UseCases } from "@schre/application/usecases";
 import type { Context, MiddlewareHandler } from "hono";
 
 /** Name of the `HttpOnly` cookie the web client's session lives in. */
-export const SESSION_COOKIE_NAME = "yabumi_session";
+export const SESSION_COOKIE_NAME = "schre_session";
 
 /** Hono context variables set by {@link createAuthMiddleware}. `token` is
  * the raw presented credential, which is not derivable from `viewer` and is

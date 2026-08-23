@@ -1,18 +1,18 @@
 import type {
   Attachment,
   AttachmentKind,
-} from "@yabumi/domain/entities/attachment";
-import type { MessageFetchState } from "@yabumi/domain/entities/fetch-state";
-import { FetchStatus } from "@yabumi/domain/entities/fetch-state";
+} from "@schre/domain/entities/attachment";
+import type { MessageFetchState } from "@schre/domain/entities/fetch-state";
+import { FetchStatus } from "@schre/domain/entities/fetch-state";
 import type {
   MailStatus,
   Message,
   MessageDirection,
   MessageRecipient,
-} from "@yabumi/domain/entities/message";
-import type { SpamMark } from "@yabumi/domain/entities/spam-mark";
-import type { AddressPattern } from "@yabumi/domain/value-objects/address-pattern";
-import type { EmailAddress } from "@yabumi/domain/value-objects/email-address";
+} from "@schre/domain/entities/message";
+import type { SpamMark } from "@schre/domain/entities/spam-mark";
+import type { AddressPattern } from "@schre/domain/value-objects/address-pattern";
+import type { EmailAddress } from "@schre/domain/value-objects/email-address";
 import type {
   ApiKeyId,
   AttachmentId,
@@ -20,7 +20,7 @@ import type {
   MessageId,
   TagId,
   ThreadId,
-} from "@yabumi/domain/value-objects/ids";
+} from "@schre/domain/value-objects/ids";
 import type { MailPermissionFilter } from "../policies/authorization";
 
 export { FetchStatus };

@@ -4,8 +4,8 @@
 
 | Resource | Created with | Binding |
 |----------|--------------|---------|
-| D1 database `yabumi-db` | `wrangler d1 create yabumi-db` | `DB` |
-| R2 bucket `yabumi-mail` | `wrangler r2 bucket create yabumi-mail` | `BLOB` |
+| D1 database `schre-db` | `wrangler d1 create schre-db` | `DB` |
+| R2 bucket `schre-mail` | `wrangler r2 bucket create schre-mail` | `BLOB` |
 | Email send binding | `[[send_email]]` in `wrangler.toml` | `EMAIL` |
 | Static assets | `[assets]` pointing at `apps/web/dist` | `ASSETS` |
 
@@ -17,19 +17,19 @@ billed there too.
 ## wrangler.toml
 
 ```toml
-name = "yabumi-api"
+name = "schre-api"
 main = "src/worker.ts"
 compatibility_date = "2026-08-23"
 compatibility_flags = ["nodejs_compat"]
 
 [[d1_databases]]
 binding = "DB"
-database_name = "yabumi-db"
+database_name = "schre-db"
 database_id = "<set after wrangler d1 create>"
 
 [[r2_buckets]]
 binding = "BLOB"
-bucket_name = "yabumi-mail"
+bucket_name = "schre-mail"
 
 [[send_email]]
 name = "EMAIL"
@@ -44,22 +44,22 @@ not_found_handling = "single-page-application"
 # into the bundle.
 
 [vars]
-YABUMI_PUBLIC_ORIGIN = "https://yabumi-api.<account>.workers.dev"
-# YABUMI_MAIL_FROM = "postmaster@example.com"
+SCHRE_PUBLIC_ORIGIN = "https://schre-api.<account>.workers.dev"
+# SCHRE_MAIL_FROM = "postmaster@example.com"
 ```
 
 ## Environment variables
 
 | Variable | Required | Default | Purpose |
 |----------|----------|---------|---------|
-| `YABUMI_PUBLIC_ORIGIN` | for login + file links | - | Absolute origin used to build login and file-link URLs. Must match the deployed hostname, or links point at the wrong host. Unset disables passwordless login rather than generating broken links; set-but-invalid fails deployment fast. |
-| `YABUMI_MAIL_FROM` | for login mail | - | Verified sender used for system mail (login links). |
-| `YABUMI_SIGNUP` | no | `closed` | `open` allows self-service signup. Defaults closed because this is a mail server. |
-| `YABUMI_SPAM_THRESHOLD` | no | `0.6` | Score at or above which the `SPAM` tag is applied. |
-| `YABUMI_FILE_LINK_MAX_TTL` | no | `604800` | Cap, in seconds, on `ttlSeconds` for file links. |
-| `YABUMI_BLOB_BACKEND` | no | `r2` | `r2` \| `s3` \| `memory`. |
-| `YABUMI_S3_*` | if `s3` | - | `ENDPOINT`, `BUCKET`, `ACCESS_KEY_ID`, `SECRET_ACCESS_KEY`, `REGION`. |
-| `YABUMI_SQLITE_URL` | local only | `file:./data/yabumi.db` | libsql location for the Bun/Node server. A bare filesystem path is accepted and promoted to a `file:` URL. |
+| `SCHRE_PUBLIC_ORIGIN` | for login + file links | - | Absolute origin used to build login and file-link URLs. Must match the deployed hostname, or links point at the wrong host. Unset disables passwordless login rather than generating broken links; set-but-invalid fails deployment fast. |
+| `SCHRE_MAIL_FROM` | for login mail | - | Verified sender used for system mail (login links). |
+| `SCHRE_SIGNUP` | no | `closed` | `open` allows self-service signup. Defaults closed because this is a mail server. |
+| `SCHRE_SPAM_THRESHOLD` | no | `0.6` | Score at or above which the `SPAM` tag is applied. |
+| `SCHRE_FILE_LINK_MAX_TTL` | no | `604800` | Cap, in seconds, on `ttlSeconds` for file links. |
+| `SCHRE_BLOB_BACKEND` | no | `r2` | `r2` \| `s3` \| `memory`. |
+| `SCHRE_S3_*` | if `s3` | - | `ENDPOINT`, `BUCKET`, `ACCESS_KEY_ID`, `SECRET_ACCESS_KEY`, `REGION`. |
+| `SCHRE_SQLITE_URL` | local only | `file:./data/schre.db` | libsql location for the Bun/Node server. A bare filesystem path is accepted and promoted to a `file:` URL. |
 
 Secrets go through `wrangler secret put`, never into `wrangler.toml`. Local
 secret-dependent commands run under `kinko exec`.
@@ -67,15 +67,15 @@ secret-dependent commands run under `kinko exec`.
 ## Bring-up order
 
 1. `mise install && bun install`
-2. `wrangler d1 create yabumi-db` and `wrangler r2 bucket create yabumi-mail`;
+2. `wrangler d1 create schre-db` and `wrangler r2 bucket create schre-mail`;
    paste the database id into `wrangler.toml`.
 3. `mise run build-web` then `mise run cf-deploy` (applies remote migrations,
    then deploys).
 4. Add the mail domain to Cloudflare and enable **Email Routing** on it.
-5. Create a catch-all Email Routing rule that delivers to the `yabumi-api`
+5. Create a catch-all Email Routing rule that delivers to the `schre-api`
    Worker.
 6. Verify the domain for **sending** under Email Service, then set
-   `YABUMI_MAIL_FROM`.
+   `SCHRE_MAIL_FROM`.
 7. Bootstrap the instance. A deployed Worker has no shell, and passwordless
    login needs a verified sending domain that only an authenticated admin
    can add -- so `bootstrapAdmin` returns a full-capability API key along
@@ -90,7 +90,7 @@ secret-dependent commands run under `kinko exec`.
    ```
 
 8. Using that key, `createDomain` + `verifyDomain` through GraphQL, the CLI,
-   or the settings UI, so yabumi itself will accept mail for the domain.
+   or the settings UI, so schre itself will accept mail for the domain.
 9. Issue narrowly scoped API keys for agents, and revoke the bootstrap key
    once they exist -- it is unrestricted by design and is only needed for
    the setup above.

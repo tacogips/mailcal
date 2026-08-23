@@ -20,10 +20,10 @@ import { colorize } from "./output";
 
 const VERSION = "0.1.0";
 
-const HELP = `yabumi - self-hosted mail on Cloudflare Workers
+const HELP = `schre - self-hosted mail on Cloudflare Workers
 
 Usage
-  yabumi <command> <subcommand> [flags]
+  schre <command> <subcommand> [flags]
 
 Commands
   client serve                Serve the browser mail client locally
@@ -33,8 +33,8 @@ Commands
   config show|set             Manage local CLI configuration
 
 Global flags
-  --endpoint <url>            Deployment base URL ($YABUMI_ENDPOINT)
-  --api-key <key>             API key ($YABUMI_API_KEY)
+  --endpoint <url>            Deployment base URL ($SCHRE_ENDPOINT)
+  --api-key <key>             API key ($SCHRE_API_KEY)
   --json                      Machine-readable output
   --help, --version
 
@@ -143,7 +143,7 @@ export async function runCli(
   if (group === "client") {
     if (subcommand !== "serve") {
       throw new CliError(
-        `Unknown client subcommand "${subcommand ?? ""}". Try: yabumi client serve`,
+        `Unknown client subcommand "${subcommand ?? ""}". Try: schre client serve`,
         ExitCode.UsageError,
       );
     }
@@ -153,7 +153,7 @@ export async function runCli(
   const handlers = group === undefined ? undefined : COMMAND_GROUPS.get(group);
   if (handlers === undefined) {
     throw new CliError(
-      `Unknown command "${group ?? ""}". Run \`yabumi --help\`.`,
+      `Unknown command "${group ?? ""}". Run \`schre --help\`.`,
       ExitCode.UsageError,
     );
   }

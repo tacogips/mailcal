@@ -1,7 +1,7 @@
 import type {
   BuildMimeInput,
   MimeBuilder,
-} from "@yabumi/application/ports/mime";
+} from "@schre/application/ports/mime";
 import { createMimeMessage, type MIMEMessage } from "mimetext/browser";
 
 /** Thrown when a caller-supplied header value contains CR or LF.

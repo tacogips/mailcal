@@ -1,16 +1,16 @@
-import { Capability } from "@yabumi/domain/entities/api-key";
+import { Capability } from "@schre/domain/entities/api-key";
 import {
   createMessageEvent,
   type MessageEvent,
   type MessageEventKind,
   setMessageEventCompleted,
   updateMessageEvent,
-} from "@yabumi/domain/entities/message-event";
+} from "@schre/domain/entities/message-event";
 import {
   createMessageEventId,
   type MessageEventId,
   type MessageId,
-} from "@yabumi/domain/value-objects/ids";
+} from "@schre/domain/value-objects/ids";
 import type { AppDependencies } from "../dependencies";
 import { NotFoundError } from "../errors";
 import {

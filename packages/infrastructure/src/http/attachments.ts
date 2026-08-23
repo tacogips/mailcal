@@ -1,11 +1,11 @@
-import { ApplicationError } from "@yabumi/application/errors";
-import type { AppDependencies } from "@yabumi/application/dependencies";
-import type { UseCases } from "@yabumi/application/usecases";
+import { ApplicationError } from "@schre/application/errors";
+import type { AppDependencies } from "@schre/application/dependencies";
+import type { UseCases } from "@schre/application/usecases";
 import {
   buildAttachmentBlobKey,
   createAttachment,
-} from "@yabumi/domain/entities/attachment";
-import { createAttachmentId } from "@yabumi/domain/value-objects/ids";
+} from "@schre/domain/entities/attachment";
+import { createAttachmentId } from "@schre/domain/value-objects/ids";
 import { Hono } from "hono";
 import type { AuthVariables } from "./auth-middleware";
 import { buildDownloadResponse } from "./downloads";

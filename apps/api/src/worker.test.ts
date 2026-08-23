@@ -1,10 +1,10 @@
-import { createInMemoryDatabase } from "@yabumi/adapter/sql/libsql";
-import { createMigrationRunner } from "@yabumi/adapter/migrations/runner";
-import type { SqlDatabase } from "@yabumi/application/ports/sql-database";
+import { createInMemoryDatabase } from "@schre/adapter/sql/libsql";
+import { createMigrationRunner } from "@schre/adapter/migrations/runner";
+import type { SqlDatabase } from "@schre/application/ports/sql-database";
 import {
   MailConfigurationError,
   PublicOriginConfigurationError,
-} from "@yabumi/infrastructure/composition/config";
+} from "@schre/infrastructure/composition/config";
 import { readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -12,12 +12,12 @@ import { beforeEach, describe, expect, test } from "vitest";
 import type {
   D1DatabaseLike,
   D1PreparedStatementLike,
-} from "@yabumi/adapter/sql/d1";
-import type { R2BucketLike } from "@yabumi/adapter/blob/r2";
+} from "@schre/adapter/sql/d1";
+import type { R2BucketLike } from "@schre/adapter/blob/r2";
 import type {
   CloudflareEmailMessage,
   CloudflareSendEmailBinding,
-} from "@yabumi/adapter/mail/cloudflare-email";
+} from "@schre/adapter/mail/cloudflare-email";
 import { buildWorkerConfig, clearWorkerCacheForTesting } from "./worker";
 import worker from "./worker";
 import { type Env, envToRecord, headersToMap } from "./env";
@@ -157,7 +157,7 @@ async function createWorkerEnv(
         });
       },
     },
-    YABUMI_PUBLIC_ORIGIN: "https://mail.example.com",
+    SCHRE_PUBLIC_ORIGIN: "https://mail.example.com",
     ...overrides,
   };
   for (const key of Object.keys(merged)) {
@@ -211,7 +211,7 @@ function inboundMessage(options: {
         rejections.push(reason);
       },
       async forward() {
-        // Not used by yabumi.
+        // Not used by schre.
       },
     },
   };
@@ -231,12 +231,12 @@ const SAMPLE_EML = [
 describe("env helpers", () => {
   test("envToRecord exposes every var the config resolvers read", () => {
     const record = envToRecord({
-      YABUMI_PUBLIC_ORIGIN: "https://mail.example.com",
-      YABUMI_SIGNUP: "open",
+      SCHRE_PUBLIC_ORIGIN: "https://mail.example.com",
+      SCHRE_SIGNUP: "open",
     } as Env);
-    expect(record["YABUMI_PUBLIC_ORIGIN"]).toBe("https://mail.example.com");
-    expect(record["YABUMI_SIGNUP"]).toBe("open");
-    expect(record["YABUMI_MAIL_FROM"]).toBeUndefined();
+    expect(record["SCHRE_PUBLIC_ORIGIN"]).toBe("https://mail.example.com");
+    expect(record["SCHRE_SIGNUP"]).toBe("open");
+    expect(record["SCHRE_MAIL_FROM"]).toBeUndefined();
   });
 
   test("headersToMap lower-cases keys and joins repeats", () => {
@@ -266,21 +266,21 @@ describe("buildWorkerConfig", () => {
 
   test("selects the S3 backend when asked", async () => {
     const { env } = await createWorkerEnv({
-      YABUMI_BLOB_BACKEND: "s3",
-      YABUMI_S3_ENDPOINT: "https://s3.example.com",
-      YABUMI_S3_BUCKET: "yabumi",
-      YABUMI_S3_ACCESS_KEY_ID: "key",
-      YABUMI_S3_SECRET_ACCESS_KEY: "secret",
+      SCHRE_BLOB_BACKEND: "s3",
+      SCHRE_S3_ENDPOINT: "https://s3.example.com",
+      SCHRE_S3_BUCKET: "schre",
+      SCHRE_S3_ACCESS_KEY_ID: "key",
+      SCHRE_S3_SECRET_ACCESS_KEY: "secret",
     });
     const config = buildWorkerConfig(env);
     expect(config.blobBackend).toBe("s3");
-    expect(config.s3?.bucket).toBe("yabumi");
+    expect(config.s3?.bucket).toBe("schre");
     expect(config.r2).toBeUndefined();
   });
 
   test("throws for an invalid public origin", async () => {
     const { env } = await createWorkerEnv({
-      YABUMI_PUBLIC_ORIGIN: "not-a-url",
+      SCHRE_PUBLIC_ORIGIN: "not-a-url",
     });
     expect(() => buildWorkerConfig(env)).toThrow(
       PublicOriginConfigurationError,
@@ -289,8 +289,8 @@ describe("buildWorkerConfig", () => {
 
   test("throws for a sender configured without an origin", async () => {
     const { env } = await createWorkerEnv({
-      YABUMI_PUBLIC_ORIGIN: undefined,
-      YABUMI_MAIL_FROM: "postmaster@example.com",
+      SCHRE_PUBLIC_ORIGIN: undefined,
+      SCHRE_MAIL_FROM: "postmaster@example.com",
     });
     expect(() => buildWorkerConfig(env)).toThrow(MailConfigurationError);
   });
@@ -363,7 +363,7 @@ describe("worker fetch", () => {
 
   test("a construction failure is masked and not cached", async () => {
     const { env } = await createWorkerEnv({
-      YABUMI_PUBLIC_ORIGIN: "not-a-url",
+      SCHRE_PUBLIC_ORIGIN: "not-a-url",
     });
     const response = await worker.fetch(
       new Request("https://mail.example.com/graphql"),

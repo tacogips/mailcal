@@ -244,7 +244,7 @@ export interface FakeDnsResolver extends DnsResolver {
   failNextLookup(error: Error): void;
 }
 
-/** By default answers every `_yabumi.<domain>` lookup with whatever the
+/** By default answers every `_schre.<domain>` lookup with whatever the
  * caller staged; unknown names resolve to no records. */
 export function fakeDnsResolver(): FakeDnsResolver {
   const records = new Map<string, readonly string[]>();

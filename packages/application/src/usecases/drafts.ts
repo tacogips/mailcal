@@ -1,5 +1,5 @@
-import { Capability } from "@yabumi/domain/entities/api-key";
-import { attachToMessage } from "@yabumi/domain/entities/attachment";
+import { Capability } from "@schre/domain/entities/api-key";
+import { attachToMessage } from "@schre/domain/entities/attachment";
 import {
   createDraftMessage,
   MailStatus,
@@ -7,22 +7,22 @@ import {
   RecipientKind,
   submitDraft,
   updateDraftMessage,
-} from "@yabumi/domain/entities/message";
+} from "@schre/domain/entities/message";
 import {
   createEmailAddress,
   type EmailAddress,
   emailDomainName,
-} from "@yabumi/domain/value-objects/email-address";
+} from "@schre/domain/value-objects/email-address";
 import {
   type AttachmentId,
   createMessageId,
   createThreadId,
   type MessageId,
-} from "@yabumi/domain/value-objects/ids";
-import { buildRawMessageBlobKey } from "@yabumi/domain/entities/attachment";
+} from "@schre/domain/value-objects/ids";
+import { buildRawMessageBlobKey } from "@schre/domain/entities/attachment";
 import type { AppDependencies } from "../dependencies";
 import { BadUserInputError, NotFoundError } from "../errors";
-import { assertCanSendMail } from "@yabumi/domain/entities/mail-domain";
+import { assertCanSendMail } from "@schre/domain/entities/mail-domain";
 import { requireAddressCapability } from "../policies/authorization";
 import type { Viewer } from "../policies/viewer";
 import {

@@ -1,29 +1,29 @@
-import type { SqlDatabase } from "@yabumi/application/ports/sql-database";
+import type { SqlDatabase } from "@schre/application/ports/sql-database";
 import {
   createClassificationRule,
   RuleAction,
   RuleField,
   RuleMatcher,
   setRuleEnabled,
-} from "@yabumi/domain/entities/classification-rule";
+} from "@schre/domain/entities/classification-rule";
 import {
   createInboundMessage,
   RecipientKind,
-} from "@yabumi/domain/entities/message";
+} from "@schre/domain/entities/message";
 import {
   createMessageEvent,
   MessageEventKind,
   setMessageEventCompleted,
-} from "@yabumi/domain/entities/message-event";
-import { createAddressPattern } from "@yabumi/domain/value-objects/address-pattern";
-import { createEmailAddress } from "@yabumi/domain/value-objects/email-address";
+} from "@schre/domain/entities/message-event";
+import { createAddressPattern } from "@schre/domain/value-objects/address-pattern";
+import { createEmailAddress } from "@schre/domain/value-objects/email-address";
 import {
   createClassificationRuleId,
   createDomainId,
   createMessageEventId,
   createMessageId,
   createThreadId,
-} from "@yabumi/domain/value-objects/ids";
+} from "@schre/domain/value-objects/ids";
 import { beforeEach, describe, expect, test } from "vitest";
 import { createClassificationRuleRepository } from "./classification-rule-repository";
 import { createMessageEventRepository } from "./message-event-repository";
