@@ -1,17 +1,17 @@
-import type { ApiKey, ApiKeyScope } from "@schre/domain/entities/api-key";
-import type { EmailAuthChallenge } from "@schre/domain/entities/email-auth-challenge";
-import type { FileLink } from "@schre/domain/entities/file-link";
-import type { MailDomain } from "@schre/domain/entities/mail-domain";
-import type { Session } from "@schre/domain/entities/session";
+import type { ApiKey, ApiKeyScope } from "@mailcal/domain/entities/api-key";
+import type { EmailAuthChallenge } from "@mailcal/domain/entities/email-auth-challenge";
+import type { FileLink } from "@mailcal/domain/entities/file-link";
+import type { MailDomain } from "@mailcal/domain/entities/mail-domain";
+import type { Session } from "@mailcal/domain/entities/session";
 import {
   createSystemTag,
   SYSTEM_TAG_DEFAULTS,
   type SystemTagSlug,
   type Tag,
-} from "@schre/domain/entities/tag";
-import type { User } from "@schre/domain/entities/user";
-import type { UserMailPermission } from "@schre/domain/entities/user-mail-permission";
-import { createTagId } from "@schre/domain/value-objects/ids";
+} from "@mailcal/domain/entities/tag";
+import type { User } from "@mailcal/domain/entities/user";
+import type { UserMailPermission } from "@mailcal/domain/entities/user-mail-permission";
+import { createTagId } from "@mailcal/domain/value-objects/ids";
 import type { ApiKeyRepository } from "../ports/api-key-repository";
 import type {
   EmailAuthChallengeRepository,

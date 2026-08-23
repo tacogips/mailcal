@@ -39,7 +39,7 @@ export interface ParsedMime {
 }
 
 /** Port over MIME parsing. Implemented by `postal-mime` in
- * `@schre/adapter`; kept behind this interface so the application layer
+ * `@mailcal/adapter`; kept behind this interface so the application layer
  * stays testable with canned parse results and the parser stays
  * replaceable. */
 export interface MimeParser {
@@ -74,7 +74,7 @@ export interface BuildMimeInput {
 }
 
 /** Port over RFC 5322 message construction. Implemented by `mimetext` in
- * `@schre/adapter`. Used to produce the `.eml` source stored for outbound
+ * `@mailcal/adapter`. Used to produce the `.eml` source stored for outbound
  * messages; actual delivery prefers the provider's structured send form,
  * which avoids a whole class of header-injection bugs. */
 export interface MimeBuilder {

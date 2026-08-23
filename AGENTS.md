@@ -129,7 +129,7 @@ feat: implement user authentication system
 
 ## Project Overview
 
-This is schre - a TypeScript project with Bun runtime and mise-managed development environment.
+This is mailcal - a TypeScript project with Bun runtime and mise-managed development environment.
 
 ## Development Environment
 - **Language**: TypeScript

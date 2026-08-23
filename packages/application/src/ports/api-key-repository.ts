@@ -1,5 +1,8 @@
-import type { ApiKey, ApiKeyScope } from "@schre/domain/entities/api-key";
-import type { ApiKeyId, ApiKeyScopeId } from "@schre/domain/value-objects/ids";
+import type { ApiKey, ApiKeyScope } from "@mailcal/domain/entities/api-key";
+import type {
+  ApiKeyId,
+  ApiKeyScopeId,
+} from "@mailcal/domain/value-objects/ids";
 
 export interface ApiKeyRepository {
   /** Returns revoked and expired keys too; the caller checks

@@ -1,4 +1,4 @@
-import { createEmailAddress } from "@schre/domain/value-objects/email-address";
+import { createEmailAddress } from "@mailcal/domain/value-objects/email-address";
 import { describe, expect, test } from "vitest";
 import {
   isSpam,

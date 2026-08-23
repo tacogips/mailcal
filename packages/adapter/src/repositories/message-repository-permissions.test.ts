@@ -1,20 +1,20 @@
-import type { SqlDatabase } from "@schre/application/ports/sql-database";
+import type { SqlDatabase } from "@mailcal/application/ports/sql-database";
 import {
   createInboundMessage,
   type Message,
   type MessageRecipient,
   RecipientKind,
-} from "@schre/domain/entities/message";
+} from "@mailcal/domain/entities/message";
 import {
   createAddressPattern,
   MATCH_ALL_ADDRESSES,
-} from "@schre/domain/value-objects/address-pattern";
-import { createEmailAddress } from "@schre/domain/value-objects/email-address";
+} from "@mailcal/domain/value-objects/address-pattern";
+import { createEmailAddress } from "@mailcal/domain/value-objects/email-address";
 import {
   createDomainId,
   createMessageId,
   createThreadId,
-} from "@schre/domain/value-objects/ids";
+} from "@mailcal/domain/value-objects/ids";
 import { beforeEach, describe, expect, test } from "vitest";
 import { createMessageRepository } from "./message-repository";
 import { createMigratedDatabase, seedDomain } from "./test-support";

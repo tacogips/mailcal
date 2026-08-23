@@ -1,21 +1,21 @@
-import type { Attachment } from "@schre/domain/entities/attachment";
+import type { Attachment } from "@mailcal/domain/entities/attachment";
 import {
   FetchStatus,
   type MessageFetchState,
-} from "@schre/domain/entities/fetch-state";
+} from "@mailcal/domain/entities/fetch-state";
 import {
   type Message,
   type MessageRecipient,
   RecipientKind,
-} from "@schre/domain/entities/message";
-import type { SpamMark } from "@schre/domain/entities/spam-mark";
-import { matchAddressPattern } from "@schre/domain/value-objects/address-pattern";
-import type { EmailAddress } from "@schre/domain/value-objects/email-address";
+} from "@mailcal/domain/entities/message";
+import type { SpamMark } from "@mailcal/domain/entities/spam-mark";
+import { matchAddressPattern } from "@mailcal/domain/value-objects/address-pattern";
+import type { EmailAddress } from "@mailcal/domain/value-objects/email-address";
 import {
   createTagId,
   type TagId,
   type ThreadId,
-} from "@schre/domain/value-objects/ids";
+} from "@mailcal/domain/value-objects/ids";
 import { mailPermissionFilterAuthorizesAnyAddress } from "../policies/authorization";
 import type {
   MessageListFilter,

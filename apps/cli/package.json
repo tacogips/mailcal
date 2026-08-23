@@ -1,10 +1,10 @@
 {
-  "name": "schre-cli",
+  "name": "mailcal-cli",
   "version": "0.1.0",
   "private": true,
   "type": "module",
   "bin": {
-    "schre": "./src/main.ts"
+    "mailcal": "./src/main.ts"
   },
   "scripts": {
     "start": "bun run src/main.ts",

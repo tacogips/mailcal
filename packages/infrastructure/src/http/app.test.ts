@@ -1,22 +1,22 @@
-import { Capability } from "@schre/domain/entities/api-key";
+import { Capability } from "@mailcal/domain/entities/api-key";
 import {
   createFakeDependencies,
   type FakeDependencies,
-} from "@schre/application/test-support/fakes";
-import { createUseCases, type UseCases } from "@schre/application/usecases";
-import { createAttachment } from "@schre/domain/entities/attachment";
+} from "@mailcal/application/test-support/fakes";
+import { createUseCases, type UseCases } from "@mailcal/application/usecases";
+import { createAttachment } from "@mailcal/domain/entities/attachment";
 import {
   createMailDomain,
   verifyMailDomain,
-} from "@schre/domain/entities/mail-domain";
+} from "@mailcal/domain/entities/mail-domain";
 import {
   createInboundMessage,
   RecipientKind,
-} from "@schre/domain/entities/message";
-import { createSession } from "@schre/domain/entities/session";
-import { createUser, UserRole } from "@schre/domain/entities/user";
-import { createDomainName } from "@schre/domain/value-objects/domain-name";
-import { createEmailAddress } from "@schre/domain/value-objects/email-address";
+} from "@mailcal/domain/entities/message";
+import { createSession } from "@mailcal/domain/entities/session";
+import { createUser, UserRole } from "@mailcal/domain/entities/user";
+import { createDomainName } from "@mailcal/domain/value-objects/domain-name";
+import { createEmailAddress } from "@mailcal/domain/value-objects/email-address";
 import {
   createAttachmentId,
   createDomainId,
@@ -24,7 +24,7 @@ import {
   createSessionId,
   createThreadId,
   createUserId,
-} from "@schre/domain/value-objects/ids";
+} from "@mailcal/domain/value-objects/ids";
 import type { Hono } from "hono";
 import { beforeEach, describe, expect, test } from "vitest";
 import { createApp } from "./app";

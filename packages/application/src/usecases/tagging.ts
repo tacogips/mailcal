@@ -1,8 +1,11 @@
-import { Capability } from "@schre/domain/entities/api-key";
-import type { Message } from "@schre/domain/entities/message";
-import { createSpamMark, SpamMarkedBy } from "@schre/domain/entities/spam-mark";
-import type { Tag } from "@schre/domain/entities/tag";
-import type { MessageId, TagId } from "@schre/domain/value-objects/ids";
+import { Capability } from "@mailcal/domain/entities/api-key";
+import type { Message } from "@mailcal/domain/entities/message";
+import {
+  createSpamMark,
+  SpamMarkedBy,
+} from "@mailcal/domain/entities/spam-mark";
+import type { Tag } from "@mailcal/domain/entities/tag";
+import type { MessageId, TagId } from "@mailcal/domain/value-objects/ids";
 import type { AppDependencies } from "../dependencies";
 import { NotFoundError } from "../errors";
 import type { Viewer } from "../policies/viewer";

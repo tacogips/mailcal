@@ -1,11 +1,11 @@
-import { ApplicationError } from "@schre/application/errors";
-import type { AppDependencies } from "@schre/application/dependencies";
-import type { UseCases } from "@schre/application/usecases";
+import { ApplicationError } from "@mailcal/application/errors";
+import type { AppDependencies } from "@mailcal/application/dependencies";
+import type { UseCases } from "@mailcal/application/usecases";
 import {
   buildAttachmentBlobKey,
   createAttachment,
-} from "@schre/domain/entities/attachment";
-import { createAttachmentId } from "@schre/domain/value-objects/ids";
+} from "@mailcal/domain/entities/attachment";
+import { createAttachmentId } from "@mailcal/domain/value-objects/ids";
 import { Hono } from "hono";
 import type { AuthVariables } from "./auth-middleware";
 import { buildDownloadResponse } from "./downloads";

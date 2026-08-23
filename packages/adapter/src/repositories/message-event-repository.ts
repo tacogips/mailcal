@@ -1,16 +1,16 @@
-import type { MessageEventRepository } from "@schre/application/ports/message-event-repository";
+import type { MessageEventRepository } from "@mailcal/application/ports/message-event-repository";
 import type {
   SqlDatabase,
   SqlValue,
-} from "@schre/application/ports/sql-database";
+} from "@mailcal/application/ports/sql-database";
 import {
   type MessageEvent,
   MessageEventKind,
-} from "@schre/domain/entities/message-event";
+} from "@mailcal/domain/entities/message-event";
 import {
   createMessageEventId,
   createMessageId,
-} from "@schre/domain/value-objects/ids";
+} from "@mailcal/domain/value-objects/ids";
 import {
   buildAllowedPatternsCondition,
   buildMailPermissionFilterCondition,

@@ -1,29 +1,29 @@
 import {
   consumeEmailAuthChallenge,
   createEmailAuthChallenge,
-} from "@schre/domain/entities/email-auth-challenge";
+} from "@mailcal/domain/entities/email-auth-challenge";
 import {
   type ApiKey,
   Capability,
   createApiKey,
   createApiKeyScope,
-} from "@schre/domain/entities/api-key";
-import { createSession, type Session } from "@schre/domain/entities/session";
-import { MATCH_ALL_ADDRESSES } from "@schre/domain/value-objects/address-pattern";
+} from "@mailcal/domain/entities/api-key";
+import { createSession, type Session } from "@mailcal/domain/entities/session";
+import { MATCH_ALL_ADDRESSES } from "@mailcal/domain/value-objects/address-pattern";
 import {
   createUser,
   isUserActive,
   type User,
   UserRole,
-} from "@schre/domain/entities/user";
-import { createEmailAddress } from "@schre/domain/value-objects/email-address";
+} from "@mailcal/domain/entities/user";
+import { createEmailAddress } from "@mailcal/domain/value-objects/email-address";
 import {
   createApiKeyId,
   createApiKeyScopeId,
   createEmailAuthChallengeId,
   createSessionId,
   createUserId,
-} from "@schre/domain/value-objects/ids";
+} from "@mailcal/domain/value-objects/ids";
 import type { AppDependencies } from "../dependencies";
 import {
   ConflictError,
@@ -130,9 +130,9 @@ export function createRequestEmailAuthUseCase(
       await deps.mailSender.send({
         from: mail.from,
         to: [email],
-        subject: "Your schre sign-in link",
-        text: `Sign in to schre:\n\n${url}\n\nThis link expires in 15 minutes and can be used once.`,
-        html: `<p>Sign in to schre:</p><p><a href="${url}">${url}</a></p><p>This link expires in 15 minutes and can be used once.</p>`,
+        subject: "Your mailcal sign-in link",
+        text: `Sign in to mailcal:\n\n${url}\n\nThis link expires in 15 minutes and can be used once.`,
+        html: `<p>Sign in to mailcal:</p><p><a href="${url}">${url}</a></p><p>This link expires in 15 minutes and can be used once.</p>`,
       });
       return true;
     });

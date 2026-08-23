@@ -22,7 +22,7 @@ export interface ClientServeOptions {
 export const DEFAULT_PORT = 5173;
 export const DEFAULT_HOST = "127.0.0.1";
 
-/** Paths proxied to the schre deployment; everything else is served from
+/** Paths proxied to the mailcal deployment; everything else is served from
  * the local bundle. */
 const PROXY_PREFIXES: readonly string[] = ["/graphql", "/api/", "/files/"];
 
@@ -276,7 +276,7 @@ export function startClientServe(
   const url = `http://${options.host}:${options.port}`;
   if (typeof Bun === "undefined") {
     throw new CliError(
-      "`schre client serve` currently requires the Bun runtime",
+      "`mailcal client serve` currently requires the Bun runtime",
       ExitCode.GeneralError,
     );
   }
@@ -290,7 +290,7 @@ export function startClientServe(
 
 export function describeServe(options: ClientServeOptions): string {
   const lines = [
-    `schre client serving ${options.distDir}`,
+    `mailcal client serving ${options.distDir}`,
     `  local:    http://${options.host}:${options.port}`,
     `  endpoint: ${options.endpoint}`,
   ];

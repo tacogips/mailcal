@@ -1,5 +1,5 @@
-import { createUseCases, type UseCases } from "@schre/application/usecases";
-import { buildDependencies } from "@schre/infrastructure/composition/build-dependencies";
+import { createUseCases, type UseCases } from "@mailcal/application/usecases";
+import { buildDependencies } from "@mailcal/infrastructure/composition/build-dependencies";
 import {
   assertMailOriginConsistency,
   type BuildDependenciesConfig,
@@ -11,9 +11,9 @@ import {
   resolveSignupMode,
   resolveSpamPhrases,
   resolveSpamThreshold,
-} from "@schre/infrastructure/composition/config";
-import { createApp } from "@schre/infrastructure/http/app";
-import type { AuthVariables } from "@schre/infrastructure/http/auth-middleware";
+} from "@mailcal/infrastructure/composition/config";
+import { createApp } from "@mailcal/infrastructure/http/app";
+import type { AuthVariables } from "@mailcal/infrastructure/http/auth-middleware";
 import type { Hono } from "hono";
 import {
   type Env,
@@ -26,7 +26,7 @@ import {
 /** Builds the composition config from Workers bindings and vars.
  *
  * Throws `PublicOriginConfigurationError` / `MailConfigurationError` for a
- * set-but-invalid `SCHRE_PUBLIC_ORIGIN`, or a `SCHRE_MAIL_FROM` with no
+ * set-but-invalid `MAILCAL_PUBLIC_ORIGIN`, or a `MAILCAL_MAIL_FROM` with no
  * resolvable origin -- both deployment mistakes that would otherwise
  * silently disable passwordless login. Exported for unit testing. */
 export function buildWorkerConfig(env: Env): BuildDependenciesConfig {

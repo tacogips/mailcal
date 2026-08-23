@@ -1,21 +1,21 @@
-import { Capability } from "@schre/domain/entities/api-key";
+import { Capability } from "@mailcal/domain/entities/api-key";
 import {
   createMailDomain,
   verifyMailDomain,
-} from "@schre/domain/entities/mail-domain";
+} from "@mailcal/domain/entities/mail-domain";
 import {
   createUser,
   isUserActive,
   UserRole,
-} from "@schre/domain/entities/user";
-import { UserPermissionEffect } from "@schre/domain/entities/user-mail-permission";
-import { createDomainName } from "@schre/domain/value-objects/domain-name";
-import { createEmailAddress } from "@schre/domain/value-objects/email-address";
+} from "@mailcal/domain/entities/user";
+import { UserPermissionEffect } from "@mailcal/domain/entities/user-mail-permission";
+import { createDomainName } from "@mailcal/domain/value-objects/domain-name";
+import { createEmailAddress } from "@mailcal/domain/value-objects/email-address";
 import {
   createDomainId,
   createUserId,
   createUserMailPermissionId,
-} from "@schre/domain/value-objects/ids";
+} from "@mailcal/domain/value-objects/ids";
 import { beforeEach, describe, expect, test } from "vitest";
 import {
   BadUserInputError,

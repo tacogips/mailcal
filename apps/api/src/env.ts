@@ -1,6 +1,6 @@
-import type { R2BucketLike } from "@schre/adapter/blob/r2";
-import type { CloudflareSendEmailBinding } from "@schre/adapter/mail/cloudflare-email";
-import type { D1DatabaseLike } from "@schre/adapter/sql/d1";
+import type { R2BucketLike } from "@mailcal/adapter/blob/r2";
+import type { CloudflareSendEmailBinding } from "@mailcal/adapter/mail/cloudflare-email";
+import type { D1DatabaseLike } from "@mailcal/adapter/sql/d1";
 
 /** Minimal structural surface of the Workers Static Assets binding, used by
  * `worker.ts`'s SPA fallthrough. Kept local (see `D1DatabaseLike` and
@@ -20,7 +20,7 @@ export interface ExecutionContextLike {
   waitUntil(promise: Promise<unknown>): void;
   passThroughOnException(): void;
   /** Present for structural compatibility with hono's own `ExecutionContext`
-   * type; schre never reads it. */
+   * type; mailcal never reads it. */
   readonly props: unknown;
 }
 
@@ -45,18 +45,18 @@ export interface Env {
   readonly BLOB: R2BucketLike;
   readonly ASSETS: FetcherLike;
   readonly EMAIL: CloudflareSendEmailBinding;
-  readonly SCHRE_PUBLIC_ORIGIN?: string;
-  readonly SCHRE_MAIL_FROM?: string;
-  readonly SCHRE_SIGNUP?: string;
-  readonly SCHRE_SPAM_THRESHOLD?: string;
-  readonly SCHRE_SPAM_PHRASES?: string;
-  readonly SCHRE_FILE_LINK_MAX_TTL?: string;
-  readonly SCHRE_BLOB_BACKEND?: string;
-  readonly SCHRE_S3_ENDPOINT?: string;
-  readonly SCHRE_S3_BUCKET?: string;
-  readonly SCHRE_S3_ACCESS_KEY_ID?: string;
-  readonly SCHRE_S3_SECRET_ACCESS_KEY?: string;
-  readonly SCHRE_S3_REGION?: string;
+  readonly MAILCAL_PUBLIC_ORIGIN?: string;
+  readonly MAILCAL_MAIL_FROM?: string;
+  readonly MAILCAL_SIGNUP?: string;
+  readonly MAILCAL_SPAM_THRESHOLD?: string;
+  readonly MAILCAL_SPAM_PHRASES?: string;
+  readonly MAILCAL_FILE_LINK_MAX_TTL?: string;
+  readonly MAILCAL_BLOB_BACKEND?: string;
+  readonly MAILCAL_S3_ENDPOINT?: string;
+  readonly MAILCAL_S3_BUCKET?: string;
+  readonly MAILCAL_S3_ACCESS_KEY_ID?: string;
+  readonly MAILCAL_S3_SECRET_ACCESS_KEY?: string;
+  readonly MAILCAL_S3_REGION?: string;
 }
 
 /** Workers vars arrive on the `Env` object rather than in `process.env`, so
@@ -64,18 +64,18 @@ export interface Env {
  * string map -- are fed through this. */
 export function envToRecord(env: Env): Record<string, string | undefined> {
   return {
-    SCHRE_PUBLIC_ORIGIN: env.SCHRE_PUBLIC_ORIGIN,
-    SCHRE_MAIL_FROM: env.SCHRE_MAIL_FROM,
-    SCHRE_SIGNUP: env.SCHRE_SIGNUP,
-    SCHRE_SPAM_THRESHOLD: env.SCHRE_SPAM_THRESHOLD,
-    SCHRE_SPAM_PHRASES: env.SCHRE_SPAM_PHRASES,
-    SCHRE_FILE_LINK_MAX_TTL: env.SCHRE_FILE_LINK_MAX_TTL,
-    SCHRE_BLOB_BACKEND: env.SCHRE_BLOB_BACKEND,
-    SCHRE_S3_ENDPOINT: env.SCHRE_S3_ENDPOINT,
-    SCHRE_S3_BUCKET: env.SCHRE_S3_BUCKET,
-    SCHRE_S3_ACCESS_KEY_ID: env.SCHRE_S3_ACCESS_KEY_ID,
-    SCHRE_S3_SECRET_ACCESS_KEY: env.SCHRE_S3_SECRET_ACCESS_KEY,
-    SCHRE_S3_REGION: env.SCHRE_S3_REGION,
+    MAILCAL_PUBLIC_ORIGIN: env.MAILCAL_PUBLIC_ORIGIN,
+    MAILCAL_MAIL_FROM: env.MAILCAL_MAIL_FROM,
+    MAILCAL_SIGNUP: env.MAILCAL_SIGNUP,
+    MAILCAL_SPAM_THRESHOLD: env.MAILCAL_SPAM_THRESHOLD,
+    MAILCAL_SPAM_PHRASES: env.MAILCAL_SPAM_PHRASES,
+    MAILCAL_FILE_LINK_MAX_TTL: env.MAILCAL_FILE_LINK_MAX_TTL,
+    MAILCAL_BLOB_BACKEND: env.MAILCAL_BLOB_BACKEND,
+    MAILCAL_S3_ENDPOINT: env.MAILCAL_S3_ENDPOINT,
+    MAILCAL_S3_BUCKET: env.MAILCAL_S3_BUCKET,
+    MAILCAL_S3_ACCESS_KEY_ID: env.MAILCAL_S3_ACCESS_KEY_ID,
+    MAILCAL_S3_SECRET_ACCESS_KEY: env.MAILCAL_S3_SECRET_ACCESS_KEY,
+    MAILCAL_S3_REGION: env.MAILCAL_S3_REGION,
   };
 }
 

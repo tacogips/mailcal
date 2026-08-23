@@ -6,7 +6,7 @@ API of its own -- and is served two ways:
 
 1. Bundled into the Worker as static assets (`[assets] binding = "ASSETS"`),
    so a deployment is self-contained at `https://<worker-host>/`.
-2. Locally by `schre client serve`, which serves the built bundle and proxies
+2. Locally by `mailcal client serve`, which serves the built bundle and proxies
    `/graphql`, `/api` and `/files` to a configured remote endpoint. See
    `command.md`.
 

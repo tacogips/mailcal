@@ -108,9 +108,9 @@ describe("ruleMatches", () => {
       pattern: "dev",
     });
     expect(ruleMatches(byList, INPUT)).toBe(false);
-    expect(ruleMatches(byList, { ...INPUT, listId: "dev.schre.example" })).toBe(
-      true,
-    );
+    expect(
+      ruleMatches(byList, { ...INPUT, listId: "dev.mailcal.example" }),
+    ).toBe(true);
   });
 
   test("a disabled rule matches nothing", () => {

@@ -2,14 +2,14 @@ import { mkdirSync, readdirSync, readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { serve } from "@hono/node-server";
-import type { MigrationFile } from "@schre/adapter/migrations/runner";
-import { createMigrationRunner } from "@schre/adapter/migrations/runner";
-import type { AppDependencies } from "@schre/application/dependencies";
-import { createUseCases, type UseCases } from "@schre/application/usecases";
-import { buildDependencies } from "@schre/infrastructure/composition/build-dependencies";
-import { loadConfigFromEnv } from "@schre/infrastructure/composition/config";
-import { createApp } from "@schre/infrastructure/http/app";
-import type { AuthVariables } from "@schre/infrastructure/http/auth-middleware";
+import type { MigrationFile } from "@mailcal/adapter/migrations/runner";
+import { createMigrationRunner } from "@mailcal/adapter/migrations/runner";
+import type { AppDependencies } from "@mailcal/application/dependencies";
+import { createUseCases, type UseCases } from "@mailcal/application/usecases";
+import { buildDependencies } from "@mailcal/infrastructure/composition/build-dependencies";
+import { loadConfigFromEnv } from "@mailcal/infrastructure/composition/config";
+import { createApp } from "@mailcal/infrastructure/http/app";
+import type { AuthVariables } from "@mailcal/infrastructure/http/auth-middleware";
 import type { Context, Hono } from "hono";
 
 export interface ServerConfig {
@@ -37,7 +37,7 @@ function loadMigrationFiles(dir: string): readonly MigrationFile[] {
 }
 
 /** `@libsql/client` does not create missing parent directories for a
- * `file:` URL -- it errors instead -- so the default `file:./data/schre.db`
+ * `file:` URL -- it errors instead -- so the default `file:./data/mailcal.db`
  * would fail on a clean checkout. A no-op for `:memory:` and non-`file:`
  * URLs. The value is already normalized by `loadConfigFromEnv`, so a bare
  * path has become `file:...` by the time it reaches here. */
@@ -147,7 +147,7 @@ export async function startServer(
   } else {
     serve({ fetch: app.fetch, port });
   }
-  console.log(`schre-api listening on http://localhost:${port} (${runtime})`);
+  console.log(`mailcal-api listening on http://localhost:${port} (${runtime})`);
 }
 
 const isMainModule = process.argv[1] === fileURLToPath(import.meta.url);

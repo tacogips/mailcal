@@ -6,25 +6,25 @@ import {
   setUserRole,
   type User,
   UserRole,
-} from "@schre/domain/entities/user";
+} from "@mailcal/domain/entities/user";
 import {
   createUserMailPermission,
   type UserMailPermission,
   UserPermissionEffect,
-} from "@schre/domain/entities/user-mail-permission";
+} from "@mailcal/domain/entities/user-mail-permission";
 import {
   type AddressPattern,
   createAddressPattern,
   MATCH_ALL_ADDRESSES,
-} from "@schre/domain/value-objects/address-pattern";
-import { createEmailAddress } from "@schre/domain/value-objects/email-address";
+} from "@mailcal/domain/value-objects/address-pattern";
+import { createEmailAddress } from "@mailcal/domain/value-objects/email-address";
 import {
   createUserId,
   createUserMailPermissionId,
   type DomainId,
   type UserId,
   type UserMailPermissionId,
-} from "@schre/domain/value-objects/ids";
+} from "@mailcal/domain/value-objects/ids";
 import type { AppDependencies } from "../dependencies";
 import { ConflictError, ForbiddenError, NotFoundError } from "../errors";
 import type { Viewer } from "../policies/viewer";

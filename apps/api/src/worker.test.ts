@@ -1,10 +1,10 @@
-import { createInMemoryDatabase } from "@schre/adapter/sql/libsql";
-import { createMigrationRunner } from "@schre/adapter/migrations/runner";
-import type { SqlDatabase } from "@schre/application/ports/sql-database";
+import { createInMemoryDatabase } from "@mailcal/adapter/sql/libsql";
+import { createMigrationRunner } from "@mailcal/adapter/migrations/runner";
+import type { SqlDatabase } from "@mailcal/application/ports/sql-database";
 import {
   MailConfigurationError,
   PublicOriginConfigurationError,
-} from "@schre/infrastructure/composition/config";
+} from "@mailcal/infrastructure/composition/config";
 import { readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -12,12 +12,12 @@ import { beforeEach, describe, expect, test } from "vitest";
 import type {
   D1DatabaseLike,
   D1PreparedStatementLike,
-} from "@schre/adapter/sql/d1";
-import type { R2BucketLike } from "@schre/adapter/blob/r2";
+} from "@mailcal/adapter/sql/d1";
+import type { R2BucketLike } from "@mailcal/adapter/blob/r2";
 import type {
   CloudflareEmailMessage,
   CloudflareSendEmailBinding,
-} from "@schre/adapter/mail/cloudflare-email";
+} from "@mailcal/adapter/mail/cloudflare-email";
 import { buildWorkerConfig, clearWorkerCacheForTesting } from "./worker";
 import worker from "./worker";
 import { type Env, envToRecord, headersToMap } from "./env";
@@ -157,7 +157,7 @@ async function createWorkerEnv(
         });
       },
     },
-    SCHRE_PUBLIC_ORIGIN: "https://mail.example.com",
+    MAILCAL_PUBLIC_ORIGIN: "https://mail.example.com",
     ...overrides,
   };
   for (const key of Object.keys(merged)) {
@@ -211,7 +211,7 @@ function inboundMessage(options: {
         rejections.push(reason);
       },
       async forward() {
-        // Not used by schre.
+        // Not used by mailcal.
       },
     },
   };
@@ -231,12 +231,12 @@ const SAMPLE_EML = [
 describe("env helpers", () => {
   test("envToRecord exposes every var the config resolvers read", () => {
     const record = envToRecord({
-      SCHRE_PUBLIC_ORIGIN: "https://mail.example.com",
-      SCHRE_SIGNUP: "open",
+      MAILCAL_PUBLIC_ORIGIN: "https://mail.example.com",
+      MAILCAL_SIGNUP: "open",
     } as Env);
-    expect(record["SCHRE_PUBLIC_ORIGIN"]).toBe("https://mail.example.com");
-    expect(record["SCHRE_SIGNUP"]).toBe("open");
-    expect(record["SCHRE_MAIL_FROM"]).toBeUndefined();
+    expect(record["MAILCAL_PUBLIC_ORIGIN"]).toBe("https://mail.example.com");
+    expect(record["MAILCAL_SIGNUP"]).toBe("open");
+    expect(record["MAILCAL_MAIL_FROM"]).toBeUndefined();
   });
 
   test("headersToMap lower-cases keys and joins repeats", () => {
@@ -266,21 +266,21 @@ describe("buildWorkerConfig", () => {
 
   test("selects the S3 backend when asked", async () => {
     const { env } = await createWorkerEnv({
-      SCHRE_BLOB_BACKEND: "s3",
-      SCHRE_S3_ENDPOINT: "https://s3.example.com",
-      SCHRE_S3_BUCKET: "schre",
-      SCHRE_S3_ACCESS_KEY_ID: "key",
-      SCHRE_S3_SECRET_ACCESS_KEY: "secret",
+      MAILCAL_BLOB_BACKEND: "s3",
+      MAILCAL_S3_ENDPOINT: "https://s3.example.com",
+      MAILCAL_S3_BUCKET: "mailcal",
+      MAILCAL_S3_ACCESS_KEY_ID: "key",
+      MAILCAL_S3_SECRET_ACCESS_KEY: "secret",
     });
     const config = buildWorkerConfig(env);
     expect(config.blobBackend).toBe("s3");
-    expect(config.s3?.bucket).toBe("schre");
+    expect(config.s3?.bucket).toBe("mailcal");
     expect(config.r2).toBeUndefined();
   });
 
   test("throws for an invalid public origin", async () => {
     const { env } = await createWorkerEnv({
-      SCHRE_PUBLIC_ORIGIN: "not-a-url",
+      MAILCAL_PUBLIC_ORIGIN: "not-a-url",
     });
     expect(() => buildWorkerConfig(env)).toThrow(
       PublicOriginConfigurationError,
@@ -289,8 +289,8 @@ describe("buildWorkerConfig", () => {
 
   test("throws for a sender configured without an origin", async () => {
     const { env } = await createWorkerEnv({
-      SCHRE_PUBLIC_ORIGIN: undefined,
-      SCHRE_MAIL_FROM: "postmaster@example.com",
+      MAILCAL_PUBLIC_ORIGIN: undefined,
+      MAILCAL_MAIL_FROM: "postmaster@example.com",
     });
     expect(() => buildWorkerConfig(env)).toThrow(MailConfigurationError);
   });
@@ -363,7 +363,7 @@ describe("worker fetch", () => {
 
   test("a construction failure is masked and not cached", async () => {
     const { env } = await createWorkerEnv({
-      SCHRE_PUBLIC_ORIGIN: "not-a-url",
+      MAILCAL_PUBLIC_ORIGIN: "not-a-url",
     });
     const response = await worker.fetch(
       new Request("https://mail.example.com/graphql"),

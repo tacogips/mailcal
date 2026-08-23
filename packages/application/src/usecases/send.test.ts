@@ -1,16 +1,16 @@
-import { Capability } from "@schre/domain/entities/api-key";
+import { Capability } from "@mailcal/domain/entities/api-key";
 import {
   createMailDomain,
   verifyMailDomain,
-} from "@schre/domain/entities/mail-domain";
-import { DeliveryStatus } from "@schre/domain/entities/message";
-import { createDomainName } from "@schre/domain/value-objects/domain-name";
+} from "@mailcal/domain/entities/mail-domain";
+import { DeliveryStatus } from "@mailcal/domain/entities/message";
+import { createDomainName } from "@mailcal/domain/value-objects/domain-name";
 import {
   createAttachmentId,
   createDomainId,
   createMessageId,
   createUserId,
-} from "@schre/domain/value-objects/ids";
+} from "@mailcal/domain/value-objects/ids";
 import { beforeEach, describe, expect, test } from "vitest";
 import {
   BadUserInputError,

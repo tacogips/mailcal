@@ -1,17 +1,20 @@
-import type { ApiKey, ApiKeyScope } from "@schre/domain/entities/api-key";
-import { Capability } from "@schre/domain/entities/api-key";
-import type { Attachment } from "@schre/domain/entities/attachment";
-import { FetchStatus } from "@schre/domain/entities/fetch-state";
-import type { FileLink } from "@schre/domain/entities/file-link";
-import type { MailDomain } from "@schre/domain/entities/mail-domain";
-import type { Message, MessageRecipient } from "@schre/domain/entities/message";
-import { RecipientKind } from "@schre/domain/entities/message";
-import type { ClassificationRule } from "@schre/domain/entities/classification-rule";
-import type { MessageEvent } from "@schre/domain/entities/message-event";
-import type { SpamMark } from "@schre/domain/entities/spam-mark";
-import type { Tag } from "@schre/domain/entities/tag";
-import { isUserActive, type User } from "@schre/domain/entities/user";
-import type { UserMailPermission } from "@schre/domain/entities/user-mail-permission";
+import type { ApiKey, ApiKeyScope } from "@mailcal/domain/entities/api-key";
+import { Capability } from "@mailcal/domain/entities/api-key";
+import type { Attachment } from "@mailcal/domain/entities/attachment";
+import { FetchStatus } from "@mailcal/domain/entities/fetch-state";
+import type { FileLink } from "@mailcal/domain/entities/file-link";
+import type { MailDomain } from "@mailcal/domain/entities/mail-domain";
+import type {
+  Message,
+  MessageRecipient,
+} from "@mailcal/domain/entities/message";
+import { RecipientKind } from "@mailcal/domain/entities/message";
+import type { ClassificationRule } from "@mailcal/domain/entities/classification-rule";
+import type { MessageEvent } from "@mailcal/domain/entities/message-event";
+import type { SpamMark } from "@mailcal/domain/entities/spam-mark";
+import type { Tag } from "@mailcal/domain/entities/tag";
+import { isUserActive, type User } from "@mailcal/domain/entities/user";
+import type { UserMailPermission } from "@mailcal/domain/entities/user-mail-permission";
 import type { GraphQLContext } from "../context";
 import { holdsCapability, viewerCapabilities } from "./helpers";
 

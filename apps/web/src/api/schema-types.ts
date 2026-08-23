@@ -3,7 +3,7 @@
  *
  * Deliberately not generated: the surface is small, and a codegen step would
  * add a build dependency plus a drift-detection problem of its own. The
- * `schema.graphql.ts` SDL in `@schre/infrastructure` is the source of
+ * `schema.graphql.ts` SDL in `@mailcal/infrastructure` is the source of
  * truth; these are the projections the UI actually reads.
  */
 

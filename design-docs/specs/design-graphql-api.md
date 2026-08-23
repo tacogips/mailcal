@@ -10,7 +10,7 @@ apart from two binary REST routes that GraphQL is a poor fit for
 | Header | Meaning |
 |--------|---------|
 | `Authorization: Bearer ybm_...` | API key (agents, programmatic clients) |
-| `Cookie: schre_session=...` | Browser session |
+| `Cookie: mailcal_session=...` | Browser session |
 
 The hono auth middleware resolves either to a `Viewer` and puts it on the
 GraphQL context. Unauthenticated requests are not rejected at the middleware:

@@ -94,7 +94,7 @@ export function MailboxSidebar(props: {
 
   return (
     <nav class="mailbox-sidebar">
-      <div class="sidebar-brand">schre</div>
+      <div class="sidebar-brand">mailcal</div>
 
       <button
         type="button"

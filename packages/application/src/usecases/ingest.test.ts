@@ -3,34 +3,34 @@ import {
   DomainStatus,
   setMailDomainStatus,
   verifyMailDomain,
-} from "@schre/domain/entities/mail-domain";
+} from "@mailcal/domain/entities/mail-domain";
 import {
   createInboundMessage,
   RecipientKind,
-} from "@schre/domain/entities/message";
+} from "@mailcal/domain/entities/message";
 import {
   createClassificationRule,
   RuleAction,
   RuleField,
   RuleMatcher,
-} from "@schre/domain/entities/classification-rule";
-import { SpamMarkedBy } from "@schre/domain/entities/spam-mark";
+} from "@mailcal/domain/entities/classification-rule";
+import { SpamMarkedBy } from "@mailcal/domain/entities/spam-mark";
 import { ForbiddenError } from "../errors";
 import {
   adminViewer,
   mailboxAgentViewer,
 } from "../test-support/viewer-fixtures";
 import { createApplyClassificationRuleUseCase } from "./rules";
-import { createUserTag } from "@schre/domain/entities/tag";
-import { createDomainName } from "@schre/domain/value-objects/domain-name";
-import { createEmailAddress } from "@schre/domain/value-objects/email-address";
+import { createUserTag } from "@mailcal/domain/entities/tag";
+import { createDomainName } from "@mailcal/domain/value-objects/domain-name";
+import { createEmailAddress } from "@mailcal/domain/value-objects/email-address";
 import {
   createClassificationRuleId,
   createTagId,
   createDomainId,
   createMessageId,
   createThreadId,
-} from "@schre/domain/value-objects/ids";
+} from "@mailcal/domain/value-objects/ids";
 import { beforeEach, describe, expect, test } from "vitest";
 import {
   createFakeDependencies,

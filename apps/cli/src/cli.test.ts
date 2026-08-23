@@ -122,12 +122,14 @@ describe("config", () => {
   });
 
   test("configFilePath honours the explicit override", () => {
-    expect(configFilePath({ SCHRE_CONFIG: "/tmp/y.json" })).toBe("/tmp/y.json");
+    expect(configFilePath({ MAILCAL_CONFIG: "/tmp/y.json" })).toBe(
+      "/tmp/y.json",
+    );
   });
 
   test("configFilePath falls back to XDG_CONFIG_HOME", () => {
     expect(configFilePath({ XDG_CONFIG_HOME: "/xdg" })).toBe(
-      "/xdg/schre/config.json",
+      "/xdg/mailcal/config.json",
     );
   });
 
@@ -136,14 +138,14 @@ describe("config", () => {
   });
 
   test("a malformed config file is not an error", async () => {
-    const dir = await mkdtemp(join(tmpdir(), "schre-cli-"));
+    const dir = await mkdtemp(join(tmpdir(), "mailcal-cli-"));
     const path = join(dir, "config.json");
     await writeFile(path, "not json");
     expect(await readConfigFile(path)).toEqual({});
   });
 
   test("writes the config 0600 and reads it back", async () => {
-    const dir = await mkdtemp(join(tmpdir(), "schre-cli-"));
+    const dir = await mkdtemp(join(tmpdir(), "mailcal-cli-"));
     const path = join(dir, "nested", "config.json");
     await writeConfigFile(path, { endpoint: ENDPOINT, apiKey: "ybm_a_b" });
 
@@ -158,7 +160,7 @@ describe("config", () => {
 
   describe("precedence", () => {
     test("a flag beats the environment and the file", async () => {
-      const dir = await mkdtemp(join(tmpdir(), "schre-cli-"));
+      const dir = await mkdtemp(join(tmpdir(), "mailcal-cli-"));
       const path = join(dir, "config.json");
       await writeConfigFile(path, {
         endpoint: "https://from-file.example.com",
@@ -168,8 +170,8 @@ describe("config", () => {
       const config = await resolveConfig(
         parseArgs(["x", "--endpoint", "https://from-flag.example.com"]),
         {
-          SCHRE_CONFIG: path,
-          SCHRE_ENDPOINT: "https://from-env.example.com",
+          MAILCAL_CONFIG: path,
+          MAILCAL_ENDPOINT: "https://from-env.example.com",
         },
       );
       expect(config.endpoint).toBe("https://from-flag.example.com");
@@ -178,22 +180,22 @@ describe("config", () => {
     });
 
     test("the environment beats the file", async () => {
-      const dir = await mkdtemp(join(tmpdir(), "schre-cli-"));
+      const dir = await mkdtemp(join(tmpdir(), "mailcal-cli-"));
       const path = join(dir, "config.json");
       await writeConfigFile(path, {
         endpoint: "https://from-file.example.com",
       });
 
       const config = await resolveConfig(parseArgs(["x"]), {
-        SCHRE_CONFIG: path,
-        SCHRE_ENDPOINT: "https://from-env.example.com",
+        MAILCAL_CONFIG: path,
+        MAILCAL_ENDPOINT: "https://from-env.example.com",
       });
       expect(config.endpoint).toBe("https://from-env.example.com");
     });
 
     test("nothing configured yields nulls", async () => {
       const config = await resolveConfig(parseArgs(["x"]), {
-        SCHRE_CONFIG: "/definitely/not/here.json",
+        MAILCAL_CONFIG: "/definitely/not/here.json",
       });
       expect(config).toEqual({ endpoint: null, apiKey: null });
     });
@@ -411,8 +413,8 @@ describe("client serve app", () => {
   });
 
   async function createDist(): Promise<string> {
-    const dir = await mkdtemp(join(tmpdir(), "schre-dist-"));
-    await writeFile(join(dir, "index.html"), "<html>schre</html>");
+    const dir = await mkdtemp(join(tmpdir(), "mailcal-dist-"));
+    await writeFile(join(dir, "index.html"), "<html>mailcal</html>");
     await writeFile(join(dir, "app.js"), "console.log(1)");
     return dir;
   }
@@ -429,7 +431,7 @@ describe("client serve app", () => {
     });
 
     const index = await app.request("http://localhost/");
-    expect(await index.text()).toContain("schre");
+    expect(await index.text()).toContain("mailcal");
     expect(index.headers.get("content-type")).toContain("text/html");
 
     const asset = await app.request("http://localhost/app.js");
@@ -437,7 +439,7 @@ describe("client serve app", () => {
 
     const route = await app.request("http://localhost/settings/domains");
     expect(route.status).toBe(200);
-    expect(await route.text()).toContain("schre");
+    expect(await route.text()).toContain("mailcal");
 
     // A missing *asset* is an honest 404, not the SPA shell.
     const missing = await app.request("http://localhost/missing.js");
@@ -466,7 +468,7 @@ describe("client serve app", () => {
       expect(body).not.toContain("root:");
       expect([200, 404]).toContain(response.status);
       if (response.status === 200) {
-        expect(body).toContain("schre");
+        expect(body).toContain("mailcal");
       }
     }
   });
@@ -637,7 +639,7 @@ describe("runCli", () => {
 
   test("a command with no endpoint is a usage error", async () => {
     await expect(
-      runCli(["domain", "list"], { SCHRE_CONFIG: "/nope.json" }),
+      runCli(["domain", "list"], { MAILCAL_CONFIG: "/nope.json" }),
     ).rejects.toMatchObject({ exitCode: ExitCode.UsageError });
   });
 });

@@ -1,29 +1,29 @@
-import { Capability } from "@schre/domain/entities/api-key";
-import { createAttachment } from "@schre/domain/entities/attachment";
+import { Capability } from "@mailcal/domain/entities/api-key";
+import { createAttachment } from "@mailcal/domain/entities/attachment";
 import {
   createMailDomain,
   verifyMailDomain,
-} from "@schre/domain/entities/mail-domain";
-import { createSession } from "@schre/domain/entities/session";
+} from "@mailcal/domain/entities/mail-domain";
+import { createSession } from "@mailcal/domain/entities/session";
 import {
   createUser,
   deactivateUser,
   UserRole,
-} from "@schre/domain/entities/user";
+} from "@mailcal/domain/entities/user";
 import {
   createUserMailPermission,
   UserPermissionEffect,
-} from "@schre/domain/entities/user-mail-permission";
-import { MATCH_ALL_ADDRESSES } from "@schre/domain/value-objects/address-pattern";
-import { createDomainName } from "@schre/domain/value-objects/domain-name";
-import { createEmailAddress } from "@schre/domain/value-objects/email-address";
+} from "@mailcal/domain/entities/user-mail-permission";
+import { MATCH_ALL_ADDRESSES } from "@mailcal/domain/value-objects/address-pattern";
+import { createDomainName } from "@mailcal/domain/value-objects/domain-name";
+import { createEmailAddress } from "@mailcal/domain/value-objects/email-address";
 import {
   createDomainId,
   createSessionId,
   createAttachmentId,
   createUserId,
   createUserMailPermissionId,
-} from "@schre/domain/value-objects/ids";
+} from "@mailcal/domain/value-objects/ids";
 import { beforeEach, describe, expect, test } from "vitest";
 import { createUseCases } from "../usecases";
 import {

@@ -74,17 +74,17 @@ interface Env {
   readonly BLOB: R2BucketLike;
   readonly ASSETS: FetcherLike;
   readonly EMAIL: CloudflareSendEmailBinding;
-  readonly SCHRE_PUBLIC_ORIGIN?: string;
-  readonly SCHRE_MAIL_FROM?: string;
-  readonly SCHRE_SIGNUP?: string;
-  readonly SCHRE_SPAM_THRESHOLD?: string;
-  readonly SCHRE_FILE_LINK_MAX_TTL?: string;
-  readonly SCHRE_BLOB_BACKEND?: string;
-  readonly SCHRE_S3_ENDPOINT?: string;
-  readonly SCHRE_S3_BUCKET?: string;
-  readonly SCHRE_S3_ACCESS_KEY_ID?: string;
-  readonly SCHRE_S3_SECRET_ACCESS_KEY?: string;
-  readonly SCHRE_S3_REGION?: string;
+  readonly MAILCAL_PUBLIC_ORIGIN?: string;
+  readonly MAILCAL_MAIL_FROM?: string;
+  readonly MAILCAL_SIGNUP?: string;
+  readonly MAILCAL_SPAM_THRESHOLD?: string;
+  readonly MAILCAL_FILE_LINK_MAX_TTL?: string;
+  readonly MAILCAL_BLOB_BACKEND?: string;
+  readonly MAILCAL_S3_ENDPOINT?: string;
+  readonly MAILCAL_S3_BUCKET?: string;
+  readonly MAILCAL_S3_ACCESS_KEY_ID?: string;
+  readonly MAILCAL_S3_SECRET_ACCESS_KEY?: string;
+  readonly MAILCAL_S3_REGION?: string;
 }
 
 /** Cloudflare's inbound message, as a local structural type. */

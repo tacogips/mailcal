@@ -1,19 +1,19 @@
-import { Capability } from "@schre/domain/entities/api-key";
-import type { Attachment } from "@schre/domain/entities/attachment";
-import { buildRawMessageBlobKey } from "@schre/domain/entities/attachment";
+import { Capability } from "@mailcal/domain/entities/api-key";
+import type { Attachment } from "@mailcal/domain/entities/attachment";
+import { buildRawMessageBlobKey } from "@mailcal/domain/entities/attachment";
 import {
   createAttachmentFileLink,
   createRawMessageFileLink,
   type FileLink,
   FileLinkTarget,
   revokeFileLink,
-} from "@schre/domain/entities/file-link";
+} from "@mailcal/domain/entities/file-link";
 import {
   type AttachmentId,
   createFileLinkId,
   type FileLinkId,
   type MessageId,
-} from "@schre/domain/value-objects/ids";
+} from "@mailcal/domain/value-objects/ids";
 import type { AppDependencies } from "../dependencies";
 import { BadUserInputError, NotFoundError } from "../errors";
 import { requireAddressCapability } from "../policies/authorization";

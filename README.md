@@ -1,4 +1,4 @@
-# schre
+# mailcal
 
 A self-hosted, multi-domain mail service that runs entirely on Cloudflare
 Workers. It receives mail through Cloudflare Email Routing, stores messages
@@ -45,7 +45,7 @@ endpoint built for AI agents and programmatic clients as first-class callers
   addressed by slug. Inbound mail is scored on explainable signals (SPF/DKIM/
   DMARC results, envelope-vs-header sender mismatch, phrase and blocklists)
   and auto-tagged `SPAM`; spam is hidden from default listings.
-- **Browser mail client.** `schre client serve` serves the SolidJS client
+- **Browser mail client.** `mailcal client serve` serves the SolidJS client
   locally against any deployment. HTML mail is sanitized *and* rendered in a
   sandboxed iframe, with remote images blocked until the reader opts in.
 
@@ -59,7 +59,7 @@ endpoint built for AI agents and programmatic clients as first-class callers
 | `packages/infrastructure` | GraphQL schema/resolvers, hono app, composition root |
 | `apps/api` | Worker (`fetch` + `email`), migrations, local Bun/Node server |
 | `apps/web` | SolidJS mail client |
-| `apps/cli` | The `schre` CLI, including `client serve` |
+| `apps/cli` | The `mailcal` CLI, including `client serve` |
 
 The dependency rule points inward: `domain` depends on nothing, and no inner
 layer imports an outer one.
@@ -80,22 +80,22 @@ development has no SMTP path.
 
 ## Deployed instance
 
-This repository is deployed at **https://schre-api.tacotest.workers.dev**
-(Cloudflare account `me+cloudflare@tacogips.me`), backed by the `schre-db`
-D1 database and the `schre-mail` R2 bucket, with both migrations applied.
+This repository is deployed at **https://mailcal-api.tacotest.workers.dev**
+(Cloudflare account `me+cloudflare@tacogips.me`), backed by the `mailcal-db`
+D1 database and the `mailcal-mail` R2 bucket, with both migrations applied.
 
 It is bootstrapped and idle: no mail domain is configured yet, so nothing is
-being received or sent. Add one with `schre domain add <name>` (or the
+being received or sent. Add one with `mailcal domain add <name>` (or the
 settings UI), publish the DNS records it prints, then enable Email Routing on
 that domain in the Cloudflare dashboard with a catch-all rule targeting the
-`schre-api` Worker.
+`mailcal-api` Worker.
 
 ## Deploying
 
 See `design-docs/specs/design-deployment.md` for the full bring-up order.
 In short: create the D1 database and R2 bucket, `mise run cf-deploy`, enable
 Email Routing on your domain with a catch-all rule targeting the Worker,
-verify the domain for sending, then add the domain in schre itself.
+verify the domain for sending, then add the domain in mailcal itself.
 
 A **Workers Paid plan** is required.
 
@@ -147,5 +147,5 @@ mutation($ids: [ID!]!) { markMessagesFetched(messageIds: $ids) { id fetchStatus 
 Or from the shell:
 
 ```bash
-schre mail fetch --ack --watch --interval 30
+mailcal mail fetch --ack --watch --interval 30
 ```

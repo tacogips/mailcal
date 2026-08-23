@@ -3,7 +3,7 @@
   "configVersion": 1,
   "workspaces": {
     "": {
-      "name": "schre",
+      "name": "mailcal",
       "devDependencies": {
         "@types/bun": "1.3.14",
         "@vitest/ui": "4.1.10",
@@ -12,15 +12,15 @@
       },
     },
     "apps/api": {
-      "name": "schre-api",
+      "name": "mailcal-api",
       "version": "0.1.0",
       "dependencies": {
         "@hono/node-server": "2.1.1",
         "@libsql/client": "0.17.4",
-        "@schre/adapter": "workspace:*",
-        "@schre/application": "workspace:*",
-        "@schre/domain": "workspace:*",
-        "@schre/infrastructure": "workspace:*",
+        "@mailcal/adapter": "workspace:*",
+        "@mailcal/application": "workspace:*",
+        "@mailcal/domain": "workspace:*",
+        "@mailcal/infrastructure": "workspace:*",
         "hono": "4.13.2",
       },
       "devDependencies": {
@@ -30,10 +30,10 @@
       },
     },
     "apps/cli": {
-      "name": "schre-cli",
+      "name": "mailcal-cli",
       "version": "0.1.0",
       "bin": {
-        "schre": "./src/main.ts",
+        "mailcal": "./src/main.ts",
       },
       "dependencies": {
         "@hono/node-server": "2.1.1",
@@ -45,7 +45,7 @@
       },
     },
     "apps/web": {
-      "name": "schre-web",
+      "name": "mailcal-web",
       "version": "0.1.0",
       "dependencies": {
         "@solidjs/router": "1.0.0",
@@ -61,12 +61,12 @@
       },
     },
     "packages/adapter": {
-      "name": "@schre/adapter",
+      "name": "@mailcal/adapter",
       "version": "0.1.0",
       "dependencies": {
         "@libsql/client": "0.17.4",
-        "@schre/application": "workspace:*",
-        "@schre/domain": "workspace:*",
+        "@mailcal/application": "workspace:*",
+        "@mailcal/domain": "workspace:*",
         "aws4fetch": "1.0.20",
         "mimetext": "3.0.28",
         "postal-mime": "2.7.6",
@@ -77,29 +77,29 @@
       },
     },
     "packages/application": {
-      "name": "@schre/application",
+      "name": "@mailcal/application",
       "version": "0.1.0",
       "dependencies": {
-        "@schre/domain": "workspace:*",
+        "@mailcal/domain": "workspace:*",
       },
       "devDependencies": {
         "typescript": "5.7.2",
       },
     },
     "packages/domain": {
-      "name": "@schre/domain",
+      "name": "@mailcal/domain",
       "version": "0.1.0",
       "devDependencies": {
         "typescript": "5.7.2",
       },
     },
     "packages/infrastructure": {
-      "name": "@schre/infrastructure",
+      "name": "@mailcal/infrastructure",
       "version": "0.1.0",
       "dependencies": {
-        "@schre/adapter": "workspace:*",
-        "@schre/application": "workspace:*",
-        "@schre/domain": "workspace:*",
+        "@mailcal/adapter": "workspace:*",
+        "@mailcal/application": "workspace:*",
+        "@mailcal/domain": "workspace:*",
         "graphql": "17.0.2",
         "graphql-yoga": "5.21.3",
         "hono": "4.13.2",
@@ -462,13 +462,13 @@
 
     "@whatwg-node/server": ["@whatwg-node/server@0.11.0", "", { "dependencies": { "@envelop/instrumentation": "^1.0.0", "@whatwg-node/disposablestack": "^0.0.6", "@whatwg-node/fetch": "^0.10.13", "@whatwg-node/promise-helpers": "^1.3.2", "tslib": "^2.6.3" } }, "sha512-VSdkwnJRr8Yv9UgB2aXB3VUPWwd6Oqnn0hycFwhg9pZgWxJXb7JmhsiXe9tmpMwjHFxli12PGcz9aI63YYloGQ=="],
 
-    "@schre/adapter": ["@schre/adapter@workspace:packages/adapter"],
+    "@mailcal/adapter": ["@mailcal/adapter@workspace:packages/adapter"],
 
-    "@schre/application": ["@schre/application@workspace:packages/application"],
+    "@mailcal/application": ["@mailcal/application@workspace:packages/application"],
 
-    "@schre/domain": ["@schre/domain@workspace:packages/domain"],
+    "@mailcal/domain": ["@mailcal/domain@workspace:packages/domain"],
 
-    "@schre/infrastructure": ["@schre/infrastructure@workspace:packages/infrastructure"],
+    "@mailcal/infrastructure": ["@mailcal/infrastructure@workspace:packages/infrastructure"],
 
     "assertion-error": ["assertion-error@2.0.1", "", {}, "sha512-Izi8RQcffqCeNVgFigKli1ssklIbpHnCYc6AknXGYoB6grJqyeby7jv12JUQgmTAnIDnbck1uxksT4dzN3PWBA=="],
 
@@ -728,11 +728,11 @@
 
     "xmlchars": ["xmlchars@2.2.0", "", {}, "sha512-JZnDKK8B0RCDw84FNdDAIpZK+JuJw+s7Lz8nksI7SIuU3UXJJslUthsi+uWBUYOwPFwW7W7PRLRfUKpxjtjFCw=="],
 
-    "schre-api": ["schre-api@workspace:apps/api"],
+    "mailcal-api": ["mailcal-api@workspace:apps/api"],
 
-    "schre-cli": ["schre-cli@workspace:apps/cli"],
+    "mailcal-cli": ["mailcal-cli@workspace:apps/cli"],
 
-    "schre-web": ["schre-web@workspace:apps/web"],
+    "mailcal-web": ["mailcal-web@workspace:apps/web"],
 
     "yallist": ["yallist@3.1.1", "", {}, "sha512-a4UGQaWPH59mOXUYnAG2ewncQS4i4F43Tv3JoAM+s2VDAmS9NsK8GpDMLrCHPksFT7h3K6TOoUNn2pb7RoXx4g=="],
 

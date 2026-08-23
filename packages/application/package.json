@@ -1,5 +1,5 @@
 {
-  "name": "@schre/application",
+  "name": "@mailcal/application",
   "version": "0.1.0",
   "private": true,
   "type": "module",
@@ -18,7 +18,7 @@
     "test": "vitest run"
   },
   "dependencies": {
-    "@schre/domain": "workspace:*"
+    "@mailcal/domain": "workspace:*"
   },
   "devDependencies": {
     "typescript": "5.7.2"

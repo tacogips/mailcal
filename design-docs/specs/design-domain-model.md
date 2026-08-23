@@ -1,6 +1,6 @@
 # Domain Model
 
-Entities, branded value objects and invariants owned by `@schre/domain`.
+Entities, branded value objects and invariants owned by `@mailcal/domain`.
 The domain layer never generates IDs, timestamps or randomness -- those are
 supplied by the caller (application layer) through the `Clock`/`RandomSource`
 ports, keeping every entity factory pure and deterministic under test.
@@ -382,7 +382,7 @@ wins attribution over the scorer; the score is stored either way.
   the first delete tags TRASH, deleting an already-trashed message purges
   it (rows and blobs). One misclick can no longer destroy mail.
 - **Honest domain verification.** `verifyDomain` resolves
-  `_schre.<domain>` TXT over DNS-over-HTTPS (the only DNS mechanism a
+  `_mailcal.<domain>` TXT over DNS-over-HTTPS (the only DNS mechanism a
   Worker has) and refuses without the token: CONFLICT when the record is
   absent or wrong, SERVICE_UNAVAILABLE when the lookup itself failed. MX
   is deliberately unchecked -- wrong MX just means mail never arrives,

@@ -11,13 +11,13 @@ export interface CliConfig {
 export function configFilePath(
   env: Record<string, string | undefined>,
 ): string {
-  const override = env["SCHRE_CONFIG"];
+  const override = env["MAILCAL_CONFIG"];
   if (override !== undefined && override.length > 0) {
     return override;
   }
   const configHome =
     env["XDG_CONFIG_HOME"] ?? join(env["HOME"] ?? homedir(), ".config");
-  return join(configHome, "schre", "config.json");
+  return join(configHome, "mailcal", "config.json");
 }
 
 export async function readConfigFile(
@@ -68,12 +68,12 @@ export async function resolveConfig(
   return {
     endpoint:
       flagString(args, "endpoint") ??
-      env["SCHRE_ENDPOINT"] ??
+      env["MAILCAL_ENDPOINT"] ??
       file.endpoint ??
       null,
     apiKey:
       flagString(args, "api-key") ??
-      env["SCHRE_API_KEY"] ??
+      env["MAILCAL_API_KEY"] ??
       file.apiKey ??
       null,
   };

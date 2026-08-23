@@ -1,20 +1,20 @@
-import type { ApiKeyRepository } from "@schre/application/ports/api-key-repository";
-import type { SqlDatabase } from "@schre/application/ports/sql-database";
+import type { ApiKeyRepository } from "@mailcal/application/ports/api-key-repository";
+import type { SqlDatabase } from "@mailcal/application/ports/sql-database";
 import {
   type ApiKey,
   type ApiKeyScope,
   Capability,
-} from "@schre/domain/entities/api-key";
+} from "@mailcal/domain/entities/api-key";
 import {
   createAddressPattern,
   MATCH_ALL_ADDRESSES,
-} from "@schre/domain/value-objects/address-pattern";
+} from "@mailcal/domain/value-objects/address-pattern";
 import {
   createApiKeyId,
   createApiKeyScopeId,
   createDomainId,
   createUserId,
-} from "@schre/domain/value-objects/ids";
+} from "@mailcal/domain/value-objects/ids";
 import { assertEnumValue, buildInPlaceholders } from "./sql-helpers";
 
 interface ApiKeyRow {

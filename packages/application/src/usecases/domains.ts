@@ -1,13 +1,16 @@
-import { Capability } from "@schre/domain/entities/api-key";
+import { Capability } from "@mailcal/domain/entities/api-key";
 import {
   createMailDomain,
   DomainStatus,
   type MailDomain,
   setMailDomainStatus,
   verifyMailDomain,
-} from "@schre/domain/entities/mail-domain";
-import { createDomainName } from "@schre/domain/value-objects/domain-name";
-import { createDomainId, type DomainId } from "@schre/domain/value-objects/ids";
+} from "@mailcal/domain/entities/mail-domain";
+import { createDomainName } from "@mailcal/domain/value-objects/domain-name";
+import {
+  createDomainId,
+  type DomainId,
+} from "@mailcal/domain/value-objects/ids";
 import type { AppDependencies } from "../dependencies";
 import {
   ConflictError,
@@ -45,8 +48,8 @@ export function buildDomainDnsRecords(
   return [
     {
       type: "TXT",
-      name: `_schre.${domain.name}`,
-      value: `schre-verification=${domain.verificationToken}`,
+      name: `_mailcal.${domain.name}`,
+      value: `mailcal-verification=${domain.verificationToken}`,
       priority: null,
       purpose: "Proves you control this domain",
     },
@@ -179,8 +182,8 @@ export function createVerifyDomainUseCase(
       // touch. MX correctness is deliberately not checked here -- mail
       // for a domain with wrong MX simply never arrives, while a wrong
       // ownership claim is a security problem.
-      const recordName = `_schre.${domain.name}`;
-      const expected = `schre-verification=${domain.verificationToken}`;
+      const recordName = `_mailcal.${domain.name}`;
+      const expected = `mailcal-verification=${domain.verificationToken}`;
       let values: readonly string[];
       try {
         values = await deps.dns.lookupTxt(recordName);

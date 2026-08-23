@@ -1,4 +1,4 @@
-import { Capability } from "@schre/domain/entities/api-key";
+import { Capability } from "@mailcal/domain/entities/api-key";
 import {
   assertTagDeletable,
   createSystemTag,
@@ -7,8 +7,8 @@ import {
   SYSTEM_TAG_DEFAULTS,
   SystemTagSlug,
   type Tag,
-} from "@schre/domain/entities/tag";
-import { createTagId, type TagId } from "@schre/domain/value-objects/ids";
+} from "@mailcal/domain/entities/tag";
+import { createTagId, type TagId } from "@mailcal/domain/value-objects/ids";
 import type { AppDependencies } from "../dependencies";
 import { ConflictError, ForbiddenError, NotFoundError } from "../errors";
 import type { Viewer } from "../policies/viewer";

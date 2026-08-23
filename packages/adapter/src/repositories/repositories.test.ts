@@ -1,51 +1,51 @@
-import type { SqlDatabase } from "@schre/application/ports/sql-database";
+import type { SqlDatabase } from "@mailcal/application/ports/sql-database";
 import {
   Capability,
   createApiKey,
   createApiKeyScope,
   revokeApiKey,
-} from "@schre/domain/entities/api-key";
-import { createAttachment } from "@schre/domain/entities/attachment";
+} from "@mailcal/domain/entities/api-key";
+import { createAttachment } from "@mailcal/domain/entities/attachment";
 import {
   createAttachmentFileLink,
   consumeFileLink,
   createRawMessageFileLink,
   FileLinkTarget,
   revokeFileLink,
-} from "@schre/domain/entities/file-link";
+} from "@mailcal/domain/entities/file-link";
 import {
   createMailDomain,
   DomainStatus,
   setMailDomainStatus,
   verifyMailDomain,
-} from "@schre/domain/entities/mail-domain";
+} from "@mailcal/domain/entities/mail-domain";
 import {
   createInboundMessage,
   createOutboundMessage,
   RecipientKind,
-} from "@schre/domain/entities/message";
-import { createSession } from "@schre/domain/entities/session";
+} from "@mailcal/domain/entities/message";
+import { createSession } from "@mailcal/domain/entities/session";
 import {
   createUserTag,
   renameTag,
   SystemTagSlug,
   TagKind,
-} from "@schre/domain/entities/tag";
+} from "@mailcal/domain/entities/tag";
 import {
   createEmailAuthChallenge,
   consumeEmailAuthChallenge,
-} from "@schre/domain/entities/email-auth-challenge";
+} from "@mailcal/domain/entities/email-auth-challenge";
 import {
   createUser,
   deactivateUser,
   UserRole,
-} from "@schre/domain/entities/user";
+} from "@mailcal/domain/entities/user";
 import {
   createAddressPattern,
   MATCH_ALL_ADDRESSES,
-} from "@schre/domain/value-objects/address-pattern";
-import { createDomainName } from "@schre/domain/value-objects/domain-name";
-import { createEmailAddress } from "@schre/domain/value-objects/email-address";
+} from "@mailcal/domain/value-objects/address-pattern";
+import { createDomainName } from "@mailcal/domain/value-objects/domain-name";
+import { createEmailAddress } from "@mailcal/domain/value-objects/email-address";
 import {
   createApiKeyId,
   createApiKeyScopeId,
@@ -58,7 +58,7 @@ import {
   createTagId,
   createThreadId,
   createUserId,
-} from "@schre/domain/value-objects/ids";
+} from "@mailcal/domain/value-objects/ids";
 import { beforeEach, describe, expect, test } from "vitest";
 import { createApiKeyRepository } from "./api-key-repository";
 import {

@@ -1,9 +1,9 @@
-import type { MessageEvent } from "@schre/domain/entities/message-event";
-import type { AddressPattern } from "@schre/domain/value-objects/address-pattern";
+import type { MessageEvent } from "@mailcal/domain/entities/message-event";
+import type { AddressPattern } from "@mailcal/domain/value-objects/address-pattern";
 import type {
   MessageEventId,
   MessageId,
-} from "@schre/domain/value-objects/ids";
+} from "@mailcal/domain/value-objects/ids";
 import type { MailPermissionFilter } from "../policies/authorization";
 
 export interface MessageEventListFilter {

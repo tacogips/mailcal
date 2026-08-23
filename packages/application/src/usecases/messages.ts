@@ -1,22 +1,22 @@
-import { Capability } from "@schre/domain/entities/api-key";
-import type { AttachmentKind } from "@schre/domain/entities/attachment";
-import type { MailStatus } from "@schre/domain/entities/message";
+import { Capability } from "@mailcal/domain/entities/api-key";
+import type { AttachmentKind } from "@mailcal/domain/entities/attachment";
+import type { MailStatus } from "@mailcal/domain/entities/message";
 import {
   markMessageRead,
   type Message,
   type MessageDirection,
-} from "@schre/domain/entities/message";
-import { SystemTagSlug } from "@schre/domain/entities/tag";
+} from "@mailcal/domain/entities/message";
+import { SystemTagSlug } from "@mailcal/domain/entities/tag";
 import {
   createEmailAddress,
   type EmailAddress,
-} from "@schre/domain/value-objects/email-address";
+} from "@mailcal/domain/value-objects/email-address";
 import type {
   DomainId,
   MessageId,
   TagId,
   ThreadId,
-} from "@schre/domain/value-objects/ids";
+} from "@mailcal/domain/value-objects/ids";
 import type { AppDependencies } from "../dependencies";
 import { BadUserInputError } from "../errors";
 import {

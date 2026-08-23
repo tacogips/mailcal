@@ -1,13 +1,13 @@
 # Mail Pipeline
 
-How mail enters and leaves schre. Both directions are implemented as
+How mail enters and leaves mailcal. Both directions are implemented as
 application-layer use cases over ports, so the same pipeline runs under
 `wrangler dev`, under Bun locally, and in tests with fakes.
 
 ## Inbound
 
 Cloudflare Email Routing is configured with a catch-all rule per managed
-domain that delivers to the schre Worker. The Worker's `email()` handler
+domain that delivers to the mailcal Worker. The Worker's `email()` handler
 hands the message to `receiveMessage`.
 
 ```

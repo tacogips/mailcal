@@ -1,12 +1,12 @@
 import type {
   MailAuthorizationRule,
   MailPermissionFilter,
-} from "@schre/application/policies/authorization";
-import type { MessageListFilter } from "@schre/application/ports/message-repository";
-import type { SqlValue } from "@schre/application/ports/sql-database";
-import { FetchStatus } from "@schre/domain/entities/fetch-state";
-import { RecipientKind } from "@schre/domain/entities/message";
-import { addressPatternToLikeExpression } from "@schre/domain/value-objects/address-pattern";
+} from "@mailcal/application/policies/authorization";
+import type { MessageListFilter } from "@mailcal/application/ports/message-repository";
+import type { SqlValue } from "@mailcal/application/ports/sql-database";
+import { FetchStatus } from "@mailcal/domain/entities/fetch-state";
+import { RecipientKind } from "@mailcal/domain/entities/message";
+import { addressPatternToLikeExpression } from "@mailcal/domain/value-objects/address-pattern";
 import {
   buildInPlaceholders,
   decodeCursor,

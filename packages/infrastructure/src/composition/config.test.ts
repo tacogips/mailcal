@@ -23,15 +23,15 @@ describe("resolvePublicOrigin", () => {
   test("normalizes to scheme and host", () => {
     expect(
       resolvePublicOrigin({
-        SCHRE_PUBLIC_ORIGIN: "https://mail.example.com/some/path/",
+        MAILCAL_PUBLIC_ORIGIN: "https://mail.example.com/some/path/",
       }),
     ).toBe("https://mail.example.com");
   });
 
   test.each([
     ["unset", {}],
-    ["empty", { SCHRE_PUBLIC_ORIGIN: "" }],
-    ["whitespace", { SCHRE_PUBLIC_ORIGIN: "   " }],
+    ["empty", { MAILCAL_PUBLIC_ORIGIN: "" }],
+    ["whitespace", { MAILCAL_PUBLIC_ORIGIN: "   " }],
   ])("is undefined when %s", (_label, env) => {
     expect(resolvePublicOrigin(env)).toBeUndefined();
   });
@@ -40,7 +40,7 @@ describe("resolvePublicOrigin", () => {
     ["not a url", "mail.example.com"],
     ["an unsupported scheme", "ftp://mail.example.com"],
   ])("throws for %s", (_label, value) => {
-    expect(() => resolvePublicOrigin({ SCHRE_PUBLIC_ORIGIN: value })).toThrow(
+    expect(() => resolvePublicOrigin({ MAILCAL_PUBLIC_ORIGIN: value })).toThrow(
       PublicOriginConfigurationError,
     );
   });
@@ -49,7 +49,7 @@ describe("resolvePublicOrigin", () => {
 describe("resolveMailFrom", () => {
   test("accepts a normalized mailbox", () => {
     expect(
-      resolveMailFrom({ SCHRE_MAIL_FROM: " PostMaster@Example.com " }),
+      resolveMailFrom({ MAILCAL_MAIL_FROM: " PostMaster@Example.com " }),
     ).toBe("postmaster@example.com");
   });
 
@@ -60,7 +60,7 @@ describe("resolveMailFrom", () => {
   test.each(["Name <a@example.com>", "nobody", "a@localhost"])(
     "throws for %j",
     (value) => {
-      expect(() => resolveMailFrom({ SCHRE_MAIL_FROM: value })).toThrow(
+      expect(() => resolveMailFrom({ MAILCAL_MAIL_FROM: value })).toThrow(
         MailConfigurationError,
       );
     },
@@ -94,16 +94,16 @@ describe("assertMailOriginConsistency", () => {
 describe("scalar env resolution", () => {
   test("signup defaults closed", () => {
     expect(resolveSignupMode({})).toBe("closed");
-    expect(resolveSignupMode({ SCHRE_SIGNUP: "yes" })).toBe("closed");
-    expect(resolveSignupMode({ SCHRE_SIGNUP: "open" })).toBe("open");
+    expect(resolveSignupMode({ MAILCAL_SIGNUP: "yes" })).toBe("closed");
+    expect(resolveSignupMode({ MAILCAL_SIGNUP: "open" })).toBe("open");
   });
 
   test("spam threshold falls back for anything out of range", () => {
     expect(resolveSpamThreshold({})).toBe(DEFAULT_SPAM_THRESHOLD);
-    expect(resolveSpamThreshold({ SCHRE_SPAM_THRESHOLD: "0.8" })).toBe(0.8);
-    expect(resolveSpamThreshold({ SCHRE_SPAM_THRESHOLD: "0" })).toBe(0);
+    expect(resolveSpamThreshold({ MAILCAL_SPAM_THRESHOLD: "0.8" })).toBe(0.8);
+    expect(resolveSpamThreshold({ MAILCAL_SPAM_THRESHOLD: "0" })).toBe(0);
     for (const bad of ["-1", "2", "nonsense", ""]) {
-      expect(resolveSpamThreshold({ SCHRE_SPAM_THRESHOLD: bad })).toBe(
+      expect(resolveSpamThreshold({ MAILCAL_SPAM_THRESHOLD: bad })).toBe(
         DEFAULT_SPAM_THRESHOLD,
       );
     }
@@ -111,11 +111,11 @@ describe("scalar env resolution", () => {
 
   test("file link ttl falls back for anything below the floor", () => {
     expect(resolveFileLinkMaxTtl({})).toBe(DEFAULT_FILE_LINK_MAX_TTL_SECONDS);
-    expect(resolveFileLinkMaxTtl({ SCHRE_FILE_LINK_MAX_TTL: "3600" })).toBe(
+    expect(resolveFileLinkMaxTtl({ MAILCAL_FILE_LINK_MAX_TTL: "3600" })).toBe(
       3600,
     );
     for (const bad of ["10", "1.5", "nope"]) {
-      expect(resolveFileLinkMaxTtl({ SCHRE_FILE_LINK_MAX_TTL: bad })).toBe(
+      expect(resolveFileLinkMaxTtl({ MAILCAL_FILE_LINK_MAX_TTL: bad })).toBe(
         DEFAULT_FILE_LINK_MAX_TTL_SECONDS,
       );
     }
@@ -123,9 +123,11 @@ describe("scalar env resolution", () => {
 
   test("blob backend defaults to r2", () => {
     expect(resolveBlobBackend({})).toBe("r2");
-    expect(resolveBlobBackend({ SCHRE_BLOB_BACKEND: "s3" })).toBe("s3");
-    expect(resolveBlobBackend({ SCHRE_BLOB_BACKEND: "memory" })).toBe("memory");
-    expect(resolveBlobBackend({ SCHRE_BLOB_BACKEND: "nonsense" })).toBe("r2");
+    expect(resolveBlobBackend({ MAILCAL_BLOB_BACKEND: "s3" })).toBe("s3");
+    expect(resolveBlobBackend({ MAILCAL_BLOB_BACKEND: "memory" })).toBe(
+      "memory",
+    );
+    expect(resolveBlobBackend({ MAILCAL_BLOB_BACKEND: "nonsense" })).toBe("r2");
   });
 });
 
@@ -133,16 +135,16 @@ describe("normalizeSqliteUrl", () => {
   test.each([
     // A bare path is what an operator naturally writes; libsql rejects it
     // with an opaque URL_INVALID, so it is promoted rather than refused.
-    ["/tmp/schre.db", "file:/tmp/schre.db"],
-    ["./data/schre.db", "file:./data/schre.db"],
-    ["schre.db", "file:schre.db"],
+    ["/tmp/mailcal.db", "file:/tmp/mailcal.db"],
+    ["./data/mailcal.db", "file:./data/mailcal.db"],
+    ["mailcal.db", "file:mailcal.db"],
   ])("promotes the bare path %j to %j", (input, expected) => {
     expect(normalizeSqliteUrl(input)).toBe(expected);
   });
 
   test.each([
     ":memory:",
-    "file:./data/schre.db",
+    "file:./data/mailcal.db",
     "libsql://example.turso.io",
     "https://example.turso.io",
   ])("leaves %j untouched", (value) => {
@@ -150,7 +152,7 @@ describe("normalizeSqliteUrl", () => {
   });
 
   test("falls back to the default for a blank value", () => {
-    expect(normalizeSqliteUrl("   ")).toBe("file:./data/schre.db");
+    expect(normalizeSqliteUrl("   ")).toBe("file:./data/mailcal.db");
   });
 });
 
@@ -158,7 +160,7 @@ describe("loadConfigFromEnv", () => {
   test("a bare environment yields a runnable local config", () => {
     const config = loadConfigFromEnv({});
     expect(config.sqlBackend).toBe("sqlite");
-    expect(config.sqliteUrl).toBe("file:./data/schre.db");
+    expect(config.sqliteUrl).toBe("file:./data/mailcal.db");
     // Local defaults to memory blobs so a clean checkout runs with no setup.
     expect(config.blobBackend).toBe("memory");
     expect(config.signupMode).toBe("closed");
@@ -166,26 +168,26 @@ describe("loadConfigFromEnv", () => {
 
   test("normalizes a bare sqlite path from the environment", () => {
     expect(
-      loadConfigFromEnv({ SCHRE_SQLITE_URL: "/tmp/schre.db" }).sqliteUrl,
-    ).toBe("file:/tmp/schre.db");
+      loadConfigFromEnv({ MAILCAL_SQLITE_URL: "/tmp/mailcal.db" }).sqliteUrl,
+    ).toBe("file:/tmp/mailcal.db");
   });
 
   test("honours an explicit s3 backend", () => {
     const config = loadConfigFromEnv({
-      SCHRE_BLOB_BACKEND: "s3",
-      SCHRE_S3_ENDPOINT: "http://localhost:9000",
-      SCHRE_S3_BUCKET: "schre",
-      SCHRE_S3_ACCESS_KEY_ID: "key",
-      SCHRE_S3_SECRET_ACCESS_KEY: "secret",
+      MAILCAL_BLOB_BACKEND: "s3",
+      MAILCAL_S3_ENDPOINT: "http://localhost:9000",
+      MAILCAL_S3_BUCKET: "mailcal",
+      MAILCAL_S3_ACCESS_KEY_ID: "key",
+      MAILCAL_S3_SECRET_ACCESS_KEY: "secret",
     });
     expect(config.blobBackend).toBe("s3");
-    expect(config.s3?.bucket).toBe("schre");
+    expect(config.s3?.bucket).toBe("mailcal");
     expect(config.s3?.forcePathStyle).toBe(true);
   });
 
   test("an s3 backend missing a credential fails fast", () => {
-    expect(() => loadConfigFromEnv({ SCHRE_BLOB_BACKEND: "s3" })).toThrow(
-      /SCHRE_S3_ENDPOINT/,
+    expect(() => loadConfigFromEnv({ MAILCAL_BLOB_BACKEND: "s3" })).toThrow(
+      /MAILCAL_S3_ENDPOINT/,
     );
   });
 });

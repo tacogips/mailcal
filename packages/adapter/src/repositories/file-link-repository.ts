@@ -1,16 +1,16 @@
-import type { FileLinkRepository } from "@schre/application/ports/file-link-repository";
-import type { SqlDatabase } from "@schre/application/ports/sql-database";
+import type { FileLinkRepository } from "@mailcal/application/ports/file-link-repository";
+import type { SqlDatabase } from "@mailcal/application/ports/sql-database";
 import {
   type FileLink,
   FileLinkTarget,
-} from "@schre/domain/entities/file-link";
+} from "@mailcal/domain/entities/file-link";
 import {
   createApiKeyId,
   createAttachmentId,
   createFileLinkId,
   createMessageId,
   createUserId,
-} from "@schre/domain/value-objects/ids";
+} from "@mailcal/domain/value-objects/ids";
 import { assertEnumValue } from "./sql-helpers";
 
 interface FileLinkRow {

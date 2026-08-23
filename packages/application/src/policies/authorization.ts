@@ -4,18 +4,18 @@ import {
   scopesAuthorize,
   scopesAuthorizeGlobal,
   scopesForCapability,
-} from "@schre/domain/entities/api-key";
-import { UserRole } from "@schre/domain/entities/user";
+} from "@mailcal/domain/entities/api-key";
+import { UserRole } from "@mailcal/domain/entities/user";
 import {
   type AddressPattern,
   matchAddressPattern,
-} from "@schre/domain/value-objects/address-pattern";
-import type { EmailAddress } from "@schre/domain/value-objects/email-address";
-import type { DomainId } from "@schre/domain/value-objects/ids";
+} from "@mailcal/domain/value-objects/address-pattern";
+import type { EmailAddress } from "@mailcal/domain/value-objects/email-address";
+import type { DomainId } from "@mailcal/domain/value-objects/ids";
 import { ForbiddenError, UnauthenticatedError } from "../errors";
 import { isAdminViewer, type Viewer } from "./viewer";
 
-/** Every authorization decision in schre goes through this module. Use
+/** Every authorization decision in mailcal goes through this module. Use
  * cases call it rather than inspecting `Viewer` directly, so the rules exist
  * in exactly one place and can be audited as a unit. */
 

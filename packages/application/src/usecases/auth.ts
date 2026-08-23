@@ -1,9 +1,9 @@
 import {
   isApiKeyUsable,
   recordApiKeyUsage,
-} from "@schre/domain/entities/api-key";
-import { isSessionExpired } from "@schre/domain/entities/session";
-import { isUserActive, type User } from "@schre/domain/entities/user";
+} from "@mailcal/domain/entities/api-key";
+import { isSessionExpired } from "@mailcal/domain/entities/session";
+import { isUserActive, type User } from "@mailcal/domain/entities/user";
 import type { AppDependencies } from "../dependencies";
 import type { Viewer } from "../policies/viewer";
 

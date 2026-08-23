@@ -1,23 +1,23 @@
 import type {
   CloudflareSendEmailBinding,
   CloudflareSenderAddress,
-} from "@schre/adapter/mail/cloudflare-email";
-import { parseCloudflareSenderAddress } from "@schre/adapter/mail/cloudflare-email";
-import type { R2BucketLike } from "@schre/adapter/blob/r2";
-import type { S3Config } from "@schre/adapter/blob/s3";
-import type { D1DatabaseLike } from "@schre/adapter/sql/d1";
-import type { SignupMode } from "@schre/application/dependencies";
-import type { DnsResolver } from "@schre/application/ports/dns-resolver";
+} from "@mailcal/adapter/mail/cloudflare-email";
+import { parseCloudflareSenderAddress } from "@mailcal/adapter/mail/cloudflare-email";
+import type { R2BucketLike } from "@mailcal/adapter/blob/r2";
+import type { S3Config } from "@mailcal/adapter/blob/s3";
+import type { D1DatabaseLike } from "@mailcal/adapter/sql/d1";
+import type { SignupMode } from "@mailcal/application/dependencies";
+import type { DnsResolver } from "@mailcal/application/ports/dns-resolver";
 import type {
   Clock,
   RandomSource,
   TokenHasher,
-} from "@schre/application/ports/runtime-ports";
+} from "@mailcal/application/ports/runtime-ports";
 
 export type BlobBackend = "r2" | "s3" | "memory";
 export type SqlBackend = "d1" | "sqlite";
 
-export const DEFAULT_SQLITE_URL = "file:./data/schre.db";
+export const DEFAULT_SQLITE_URL = "file:./data/mailcal.db";
 export const DEFAULT_SPAM_THRESHOLD = 0.6;
 export const DEFAULT_FILE_LINK_MAX_TTL_SECONDS = 604800;
 const DEFAULT_S3_REGION = "us-east-1";
@@ -42,7 +42,7 @@ export interface BuildDependenciesConfig {
   readonly tokenHasher?: TokenHasher;
 }
 
-/** A set-but-invalid `SCHRE_PUBLIC_ORIGIN`. Thrown rather than silently
+/** A set-but-invalid `MAILCAL_PUBLIC_ORIGIN`. Thrown rather than silently
  * ignored: an operator who set the variable clearly intended login and
  * absolute file-link URLs to work, and degrading quietly would leave them
  * debugging a mail that never arrives. */
@@ -68,7 +68,7 @@ type EnvLike = Record<string, string | undefined>;
  * for an unset variable -- which disables login rather than breaking it --
  * and throws for a set-but-unusable one. */
 export function resolvePublicOrigin(env: EnvLike): string | undefined {
-  const raw = env["SCHRE_PUBLIC_ORIGIN"];
+  const raw = env["MAILCAL_PUBLIC_ORIGIN"];
   if (raw === undefined || raw.trim().length === 0) {
     return undefined;
   }
@@ -77,12 +77,12 @@ export function resolvePublicOrigin(env: EnvLike): string | undefined {
     url = new URL(raw.trim());
   } catch {
     throw new PublicOriginConfigurationError(
-      "SCHRE_PUBLIC_ORIGIN is not a valid absolute URL",
+      "MAILCAL_PUBLIC_ORIGIN is not a valid absolute URL",
     );
   }
   if (url.protocol !== "https:" && url.protocol !== "http:") {
     throw new PublicOriginConfigurationError(
-      "SCHRE_PUBLIC_ORIGIN must use http or https",
+      "MAILCAL_PUBLIC_ORIGIN must use http or https",
     );
   }
   return url.origin;
@@ -91,14 +91,14 @@ export function resolvePublicOrigin(env: EnvLike): string | undefined {
 export function resolveMailFrom(
   env: EnvLike,
 ): CloudflareSenderAddress | undefined {
-  const raw = env["SCHRE_MAIL_FROM"];
+  const raw = env["MAILCAL_MAIL_FROM"];
   if (raw === undefined || raw.trim().length === 0) {
     return undefined;
   }
   const parsed = parseCloudflareSenderAddress(raw.trim());
   if (parsed === null) {
     throw new MailConfigurationError(
-      "SCHRE_MAIL_FROM is not a valid single mailbox address",
+      "MAILCAL_MAIL_FROM is not a valid single mailbox address",
     );
   }
   return parsed;
@@ -113,7 +113,7 @@ export function assertMailOriginConsistency(params: {
 }): void {
   if (params.mailFrom !== undefined && params.publicOrigin === undefined) {
     throw new MailConfigurationError(
-      "SCHRE_MAIL_FROM is set but SCHRE_PUBLIC_ORIGIN is not; login links could not be built",
+      "MAILCAL_MAIL_FROM is set but MAILCAL_PUBLIC_ORIGIN is not; login links could not be built",
     );
   }
 }
@@ -121,7 +121,7 @@ export function assertMailOriginConsistency(params: {
 /** Defaults to `"closed"`. This is a mail server, not a SaaS trial: an
  * unset or unrecognized value must not leave registration open. */
 export function resolveSignupMode(env: EnvLike): SignupMode {
-  return env["SCHRE_SIGNUP"] === "open" ? "open" : "closed";
+  return env["MAILCAL_SIGNUP"] === "open" ? "open" : "closed";
 }
 
 function resolveNumber(
@@ -138,16 +138,16 @@ function resolveNumber(
 
 export function resolveSpamThreshold(env: EnvLike): number {
   return resolveNumber(
-    env["SCHRE_SPAM_THRESHOLD"],
+    env["MAILCAL_SPAM_THRESHOLD"],
     DEFAULT_SPAM_THRESHOLD,
     (value) => value >= 0 && value <= 1,
   );
 }
 
-/** `SCHRE_SPAM_PHRASES`: comma-separated phrases that raise the spam
+/** `MAILCAL_SPAM_PHRASES`: comma-separated phrases that raise the spam
  * score when matched. Blank entries are dropped. */
 export function resolveSpamPhrases(env: EnvLike): readonly string[] {
-  const raw = env["SCHRE_SPAM_PHRASES"];
+  const raw = env["MAILCAL_SPAM_PHRASES"];
   if (raw === undefined) {
     return [];
   }
@@ -159,7 +159,7 @@ export function resolveSpamPhrases(env: EnvLike): readonly string[] {
 
 export function resolveFileLinkMaxTtl(env: EnvLike): number {
   return resolveNumber(
-    env["SCHRE_FILE_LINK_MAX_TTL"],
+    env["MAILCAL_FILE_LINK_MAX_TTL"],
     DEFAULT_FILE_LINK_MAX_TTL_SECONDS,
     (value) => Number.isInteger(value) && value >= 60,
   );
@@ -183,32 +183,32 @@ export function normalizeSqliteUrl(value: string): string {
 }
 
 export function resolveBlobBackend(env: EnvLike): BlobBackend {
-  const raw = env["SCHRE_BLOB_BACKEND"];
+  const raw = env["MAILCAL_BLOB_BACKEND"];
   return raw === "s3" || raw === "memory" || raw === "r2" ? raw : "r2";
 }
 
 function requireS3Var(
   env: EnvLike,
   name:
-    | "SCHRE_S3_ENDPOINT"
-    | "SCHRE_S3_BUCKET"
-    | "SCHRE_S3_ACCESS_KEY_ID"
-    | "SCHRE_S3_SECRET_ACCESS_KEY",
+    | "MAILCAL_S3_ENDPOINT"
+    | "MAILCAL_S3_BUCKET"
+    | "MAILCAL_S3_ACCESS_KEY_ID"
+    | "MAILCAL_S3_SECRET_ACCESS_KEY",
 ): string {
   const value = env[name];
   if (value === undefined || value.length === 0) {
-    throw new Error(`SCHRE_BLOB_BACKEND=s3 requires ${name} to be set`);
+    throw new Error(`MAILCAL_BLOB_BACKEND=s3 requires ${name} to be set`);
   }
   return value;
 }
 
 export function resolveS3Config(env: EnvLike): S3Config {
   return {
-    endpoint: requireS3Var(env, "SCHRE_S3_ENDPOINT"),
-    bucket: requireS3Var(env, "SCHRE_S3_BUCKET"),
-    accessKeyId: requireS3Var(env, "SCHRE_S3_ACCESS_KEY_ID"),
-    secretAccessKey: requireS3Var(env, "SCHRE_S3_SECRET_ACCESS_KEY"),
-    region: env["SCHRE_S3_REGION"] ?? DEFAULT_S3_REGION,
+    endpoint: requireS3Var(env, "MAILCAL_S3_ENDPOINT"),
+    bucket: requireS3Var(env, "MAILCAL_S3_BUCKET"),
+    accessKeyId: requireS3Var(env, "MAILCAL_S3_ACCESS_KEY_ID"),
+    secretAccessKey: requireS3Var(env, "MAILCAL_S3_SECRET_ACCESS_KEY"),
+    region: env["MAILCAL_S3_REGION"] ?? DEFAULT_S3_REGION,
     forcePathStyle: true,
   };
 }
@@ -224,12 +224,12 @@ export function loadConfigFromEnv(env: EnvLike): BuildDependenciesConfig {
 
   const blobBackend = resolveBlobBackend(env);
   const localBlobBackend: BlobBackend =
-    env["SCHRE_BLOB_BACKEND"] === undefined ? "memory" : blobBackend;
+    env["MAILCAL_BLOB_BACKEND"] === undefined ? "memory" : blobBackend;
 
   return {
     sqlBackend: "sqlite",
     sqliteUrl: normalizeSqliteUrl(
-      env["SCHRE_SQLITE_URL"] ?? DEFAULT_SQLITE_URL,
+      env["MAILCAL_SQLITE_URL"] ?? DEFAULT_SQLITE_URL,
     ),
     blobBackend: localBlobBackend,
     ...(localBlobBackend === "s3" ? { s3: resolveS3Config(env) } : {}),

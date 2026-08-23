@@ -1,10 +1,10 @@
-import type { ClassificationRule } from "@schre/domain/entities/classification-rule";
-import type { MessageEvent } from "@schre/domain/entities/message-event";
+import type { ClassificationRule } from "@mailcal/domain/entities/classification-rule";
+import type { MessageEvent } from "@mailcal/domain/entities/message-event";
 import {
   type AddressPattern,
   matchAddressPattern,
-} from "@schre/domain/value-objects/address-pattern";
-import type { EmailAddress } from "@schre/domain/value-objects/email-address";
+} from "@mailcal/domain/value-objects/address-pattern";
+import type { EmailAddress } from "@mailcal/domain/value-objects/email-address";
 import {
   type MailPermissionFilter,
   mailPermissionFilterAuthorizesAnyAddress,

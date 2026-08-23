@@ -1,8 +1,8 @@
-import type { ClassificationRule } from "@schre/domain/entities/classification-rule";
+import type { ClassificationRule } from "@mailcal/domain/entities/classification-rule";
 import type {
   ClassificationRuleId,
   DomainId,
-} from "@schre/domain/value-objects/ids";
+} from "@mailcal/domain/value-objects/ids";
 
 export interface ClassificationRuleRepository {
   findById(id: ClassificationRuleId): Promise<ClassificationRule | null>;

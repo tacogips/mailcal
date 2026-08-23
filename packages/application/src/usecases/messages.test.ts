@@ -1,20 +1,20 @@
-import { Capability } from "@schre/domain/entities/api-key";
-import { FetchStatus } from "@schre/domain/entities/fetch-state";
+import { Capability } from "@mailcal/domain/entities/api-key";
+import { FetchStatus } from "@mailcal/domain/entities/fetch-state";
 import {
   createInboundMessage,
   type Message,
   MessageDirection,
   type MessageRecipient,
   RecipientKind,
-} from "@schre/domain/entities/message";
-import { createEmailAddress } from "@schre/domain/value-objects/email-address";
+} from "@mailcal/domain/entities/message";
+import { createEmailAddress } from "@mailcal/domain/value-objects/email-address";
 import {
   createDomainId,
   createMessageId,
   createThreadId,
   createUserId,
-} from "@schre/domain/value-objects/ids";
-import { SystemTagSlug } from "@schre/domain/entities/tag";
+} from "@mailcal/domain/value-objects/ids";
+import { SystemTagSlug } from "@mailcal/domain/entities/tag";
 import { beforeEach, describe, expect, test } from "vitest";
 import { BadUserInputError } from "../errors";
 import {

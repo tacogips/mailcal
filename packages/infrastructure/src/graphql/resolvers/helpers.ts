@@ -1,6 +1,6 @@
-import type { Viewer } from "@schre/application/policies";
-import { Capability } from "@schre/domain/entities/api-key";
-import { UserRole } from "@schre/domain/entities/user";
+import type { Viewer } from "@mailcal/application/policies";
+import { Capability } from "@mailcal/domain/entities/api-key";
+import { UserRole } from "@mailcal/domain/entities/user";
 import type { GraphQLContext } from "../context";
 import { unauthenticatedError } from "../errors";
 

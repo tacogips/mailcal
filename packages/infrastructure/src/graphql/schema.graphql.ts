@@ -1,5 +1,5 @@
 /**
- * The schre GraphQL schema, mirroring
+ * The mailcal GraphQL schema, mirroring
  * `design-docs/specs/design-graphql-api.md#schema`. Kept as a single SDL
  * string rather than split files so the whole contract is readable in one
  * place, and so `schema.graphql.test.ts` can assert it against the design

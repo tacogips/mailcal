@@ -2,20 +2,20 @@ import type {
   InsertMessageInput,
   MessagePage,
   MessageRepository,
-} from "@schre/application/ports/message-repository";
+} from "@mailcal/application/ports/message-repository";
 import type {
   SqlDatabase,
   SqlStatement,
   SqlValue,
-} from "@schre/application/ports/sql-database";
+} from "@mailcal/application/ports/sql-database";
 import {
   type Attachment,
   AttachmentKind,
-} from "@schre/domain/entities/attachment";
+} from "@mailcal/domain/entities/attachment";
 import {
   FetchStatus,
   type MessageFetchState,
-} from "@schre/domain/entities/fetch-state";
+} from "@mailcal/domain/entities/fetch-state";
 import {
   DeliveryStatus,
   MailStatus,
@@ -23,9 +23,9 @@ import {
   MessageDirection,
   type MessageRecipient,
   RecipientKind,
-} from "@schre/domain/entities/message";
-import { SpamMarkedBy } from "@schre/domain/entities/spam-mark";
-import { createEmailAddress } from "@schre/domain/value-objects/email-address";
+} from "@mailcal/domain/entities/message";
+import { SpamMarkedBy } from "@mailcal/domain/entities/spam-mark";
+import { createEmailAddress } from "@mailcal/domain/value-objects/email-address";
 import {
   createApiKeyId,
   createAttachmentId,
@@ -35,7 +35,7 @@ import {
   createThreadId,
   type MessageId,
   type TagId,
-} from "@schre/domain/value-objects/ids";
+} from "@mailcal/domain/value-objects/ids";
 import { buildMessageListQuery } from "./message-repository-queries";
 import {
   assertEnumValue,

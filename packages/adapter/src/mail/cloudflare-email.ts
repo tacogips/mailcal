@@ -1,7 +1,7 @@
 import type {
   MailSender,
   OutboundMail,
-} from "@schre/application/ports/mail-sender";
+} from "@mailcal/application/ports/mail-sender";
 
 const GENERIC_DELIVERY_ERROR = "Email delivery is unavailable";
 const LOCAL_PART_PATTERN = /^[a-z0-9.!#$%&'*+/=?^_`{|}~-]+$/i;

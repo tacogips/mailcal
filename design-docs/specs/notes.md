@@ -54,7 +54,7 @@ Cartesian product of messages and keys.
 
 The reference implementation `cloudflare/agentic-inbox` uses one Durable
 Object per mailbox, each with its own SQLite database. That is a good fit for a
-single-user AI inbox with heavy per-mailbox agent state. schre's requirements
+single-user AI inbox with heavy per-mailbox agent state. mailcal's requirements
 pull the other way: cross-domain and cross-mailbox queries (an agent scoped to
 `*@example.com`, a tag view spanning every mailbox, global API key
 administration) are first-class, and those are awkward to serve when the data

@@ -1,5 +1,5 @@
-import { Capability } from "@schre/domain/entities/api-key";
-import { attachToMessage } from "@schre/domain/entities/attachment";
+import { Capability } from "@mailcal/domain/entities/api-key";
+import { attachToMessage } from "@mailcal/domain/entities/attachment";
 import {
   createDraftMessage,
   MailStatus,
@@ -7,22 +7,22 @@ import {
   RecipientKind,
   submitDraft,
   updateDraftMessage,
-} from "@schre/domain/entities/message";
+} from "@mailcal/domain/entities/message";
 import {
   createEmailAddress,
   type EmailAddress,
   emailDomainName,
-} from "@schre/domain/value-objects/email-address";
+} from "@mailcal/domain/value-objects/email-address";
 import {
   type AttachmentId,
   createMessageId,
   createThreadId,
   type MessageId,
-} from "@schre/domain/value-objects/ids";
-import { buildRawMessageBlobKey } from "@schre/domain/entities/attachment";
+} from "@mailcal/domain/value-objects/ids";
+import { buildRawMessageBlobKey } from "@mailcal/domain/entities/attachment";
 import type { AppDependencies } from "../dependencies";
 import { BadUserInputError, NotFoundError } from "../errors";
-import { assertCanSendMail } from "@schre/domain/entities/mail-domain";
+import { assertCanSendMail } from "@mailcal/domain/entities/mail-domain";
 import { requireAddressCapability } from "../policies/authorization";
 import type { Viewer } from "../policies/viewer";
 import {

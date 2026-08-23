@@ -1,29 +1,29 @@
-import type { SqlDatabase } from "@schre/application/ports/sql-database";
+import type { SqlDatabase } from "@mailcal/application/ports/sql-database";
 import {
   createClassificationRule,
   RuleAction,
   RuleField,
   RuleMatcher,
   setRuleEnabled,
-} from "@schre/domain/entities/classification-rule";
+} from "@mailcal/domain/entities/classification-rule";
 import {
   createInboundMessage,
   RecipientKind,
-} from "@schre/domain/entities/message";
+} from "@mailcal/domain/entities/message";
 import {
   createMessageEvent,
   MessageEventKind,
   setMessageEventCompleted,
-} from "@schre/domain/entities/message-event";
-import { createAddressPattern } from "@schre/domain/value-objects/address-pattern";
-import { createEmailAddress } from "@schre/domain/value-objects/email-address";
+} from "@mailcal/domain/entities/message-event";
+import { createAddressPattern } from "@mailcal/domain/value-objects/address-pattern";
+import { createEmailAddress } from "@mailcal/domain/value-objects/email-address";
 import {
   createClassificationRuleId,
   createDomainId,
   createMessageEventId,
   createMessageId,
   createThreadId,
-} from "@schre/domain/value-objects/ids";
+} from "@mailcal/domain/value-objects/ids";
 import { beforeEach, describe, expect, test } from "vitest";
 import { createClassificationRuleRepository } from "./classification-rule-repository";
 import { createMessageEventRepository } from "./message-event-repository";

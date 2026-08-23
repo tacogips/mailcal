@@ -1,17 +1,17 @@
-import { Capability } from "@schre/domain/entities/api-key";
-import { createAttachment } from "@schre/domain/entities/attachment";
+import { Capability } from "@mailcal/domain/entities/api-key";
+import { createAttachment } from "@mailcal/domain/entities/attachment";
 import {
   createInboundMessage,
   RecipientKind,
-} from "@schre/domain/entities/message";
-import { createEmailAddress } from "@schre/domain/value-objects/email-address";
+} from "@mailcal/domain/entities/message";
+import { createEmailAddress } from "@mailcal/domain/value-objects/email-address";
 import {
   createAttachmentId,
   createDomainId,
   createFileLinkId,
   createMessageId,
   createThreadId,
-} from "@schre/domain/value-objects/ids";
+} from "@mailcal/domain/value-objects/ids";
 import { beforeEach, describe, expect, test } from "vitest";
 import { BadUserInputError, NotFoundError } from "../errors";
 import {

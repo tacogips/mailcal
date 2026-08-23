@@ -1,4 +1,4 @@
-import type { BuildMimeInput } from "@schre/application/ports/mime";
+import type { BuildMimeInput } from "@mailcal/application/ports/mime";
 import { describe, expect, test } from "vitest";
 import { createMimeTextBuilder, HeaderInjectionError } from "./mime-builder";
 
