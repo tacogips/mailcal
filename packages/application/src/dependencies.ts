@@ -9,6 +9,7 @@ import type { FileLinkRepository } from "./ports/file-link-repository";
 import type { MailDomainRepository } from "./ports/mail-domain-repository";
 import type { MailSender } from "./ports/mail-sender";
 import type { ClassificationRuleRepository } from "./ports/classification-rule-repository";
+import type { DnsResolver } from "./ports/dns-resolver";
 import type { MessageEventRepository } from "./ports/message-event-repository";
 import type { MessageRepository } from "./ports/message-repository";
 import type { MimeBuilder, MimeParser } from "./ports/mime";
@@ -66,6 +67,7 @@ export interface AppDependencies {
   readonly messageRepository: MessageRepository;
   readonly messageEventRepository: MessageEventRepository;
   readonly classificationRuleRepository: ClassificationRuleRepository;
+  readonly dns: DnsResolver;
   readonly tagRepository: TagRepository;
   readonly apiKeyRepository: ApiKeyRepository;
   readonly fileLinkRepository: FileLinkRepository;

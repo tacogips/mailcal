@@ -7,6 +7,7 @@
     "./sql/d1": "./src/sql/d1.ts",
     "./sql/libsql": "./src/sql/libsql.ts",
     "./blob/r2": "./src/blob/r2.ts",
+    "./dns/doh-resolver": "./src/dns/doh-resolver.ts",
     "./blob/s3": "./src/blob/s3.ts",
     "./blob/memory": "./src/blob/memory.ts",
     "./migrations/runner": "./src/migrations/runner.ts",

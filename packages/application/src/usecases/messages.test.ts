@@ -13,6 +13,7 @@ import {
   createMessageId,
   createThreadId,
 } from "@yabumi/domain/value-objects/ids";
+import { SystemTagSlug } from "@yabumi/domain/entities/tag";
 import { beforeEach, describe, expect, test } from "vitest";
 import { BadUserInputError } from "../errors";
 import {
@@ -367,7 +368,7 @@ describe("markRead", () => {
 });
 
 describe("deleteMessages", () => {
-  test("removes rows and then blob bodies", async () => {
+  test("first delete trashes; second delete purges rows and blobs", async () => {
     const fake = createFakeDependencies({ now: NOW });
     seedMessage(fake, {
       id: "msg-1",
@@ -377,11 +378,42 @@ describe("deleteMessages", () => {
     await fake.deps.blobs.put("raw/msg-1.eml", new Uint8Array([1]));
 
     const remove = createDeleteMessagesUseCase(fake.deps);
-    const count = await remove(adminViewer(), [createMessageId("msg-1")]);
+    const first = await remove(adminViewer(), [createMessageId("msg-1")]);
+    expect(first).toBe(1);
+    // Still stored, now tagged TRASH -- a misclick is recoverable.
+    expect(fake.messageStores.messages.has("msg-1")).toBe(true);
+    const trashTag = await fake.deps.tagRepository.findBySystemSlug(
+      SystemTagSlug.Trash,
+    );
+    expect(
+      fake.messageStores.messageTags.get("msg-1")?.has(trashTag?.id ?? ""),
+    ).toBe(true);
 
-    expect(count).toBe(1);
+    const second = await remove(adminViewer(), [createMessageId("msg-1")]);
+    expect(second).toBe(1);
     expect(fake.messageStores.messages.has("msg-1")).toBe(false);
     expect(fake.blobs.keys()).not.toContain("raw/msg-1.eml");
+  });
+
+  test("trashed mail disappears from default listings but shows in Trash", async () => {
+    const fake = createFakeDependencies({ now: NOW });
+    seedMessage(fake, {
+      id: "msg-1",
+      to: "support@example.com",
+      occurredAt: NOW,
+    });
+    const remove = createDeleteMessagesUseCase(fake.deps);
+    await remove(adminViewer(), [createMessageId("msg-1")]);
+
+    const list = createListMessagesUseCase(fake.deps);
+    expect((await list(adminViewer(), {})).totalCount).toBe(0);
+    expect(
+      (
+        await list(adminViewer(), {
+          filter: { systemSlugs: [SystemTagSlug.Trash] },
+        })
+      ).totalCount,
+    ).toBe(1);
   });
 
   test("does not delete messages outside the viewer's scope", async () => {

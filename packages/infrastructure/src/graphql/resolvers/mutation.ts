@@ -332,6 +332,7 @@ const tagMutations = {
     args: {
       readonly input: {
         readonly draftId?: string | null;
+        readonly inReplyToMessageId?: string | null;
         readonly from: string;
         readonly to?: readonly string[] | null;
         readonly cc?: readonly string[] | null;
@@ -350,6 +351,9 @@ const tagMutations = {
       ...(input.draftId == null
         ? {}
         : { draftId: createMessageId(input.draftId) }),
+      ...(input.inReplyToMessageId == null
+        ? {}
+        : { inReplyToMessageId: createMessageId(input.inReplyToMessageId) }),
       ...(input.to == null ? {} : { to: input.to }),
       ...(input.cc == null ? {} : { cc: input.cc }),
       ...(input.bcc == null ? {} : { bcc: input.bcc }),
@@ -476,6 +480,17 @@ const tagMutations = {
       requireViewerOrThrow(ctx),
       createClassificationRuleId(args.id),
       args.enabled,
+    );
+  },
+
+  async applyClassificationRule(
+    _parent: unknown,
+    args: { readonly id: string },
+    ctx: GraphQLContext,
+  ) {
+    return ctx.usecases.applyClassificationRule(
+      requireViewerOrThrow(ctx),
+      createClassificationRuleId(args.id),
     );
   },
 

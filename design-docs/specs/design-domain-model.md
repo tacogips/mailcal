@@ -374,3 +374,26 @@ compile-checked at creation, match inputs are truncated to 1024 chars, and
 a rule that fails at match time matches nothing -- ingest must never lose
 mail to a bad pattern. A rule-applied spam mark is attributed `RULE` and
 wins attribution over the scorer; the score is stored either way.
+
+## Fixes and additions (2026-08-23, second pass)
+
+- **Trash lifecycle.** Trashed mail is hidden from every listing except
+  the Trash view (or `includeTrashed`). `deleteMessages` is two-stage:
+  the first delete tags TRASH, deleting an already-trashed message purges
+  it (rows and blobs). One misclick can no longer destroy mail.
+- **Honest domain verification.** `verifyDomain` resolves
+  `_yabumi.<domain>` TXT over DNS-over-HTTPS (the only DNS mechanism a
+  Worker has) and refuses without the token: CONFLICT when the record is
+  absent or wrong, SERVICE_UNAVAILABLE when the lookup itself failed. MX
+  is deliberately unchecked -- wrong MX just means mail never arrives,
+  while a false ownership claim is a security problem.
+- **Draft threading.** `SaveDraftInput.inReplyToMessageId` resolves the
+  thread context at save time (threadId, In-Reply-To, References), and
+  `sendDraft` sends the stored context -- a reply drafted today and sent
+  next week still threads.
+- **Retroactive rules.** `applyClassificationRule(id)` runs one rule over
+  stored inbound mail (newest first, 5000 messages per run, same matcher
+  code as ingest) so "this sender is spam" can clean up the past.
+- **Agenda.** `MessageEvent.message` field plus the scoped
+  `messageEvents` query back the web client's "Upcoming" sidebar section
+  (open events due in 30 days, click-through to the mail).

@@ -5,6 +5,7 @@ import {
   createCryptoRandomSource,
   createSha256TokenHasher,
 } from "@yabumi/adapter/crypto";
+import { createDohResolver } from "@yabumi/adapter/dns/doh-resolver";
 import {
   createCloudflareMailSender,
   createUnavailableMailSender,
@@ -112,6 +113,7 @@ export function buildDependencies(
     messageRepository: createMessageRepository(db),
     messageEventRepository: createMessageEventRepository(db),
     classificationRuleRepository: createClassificationRuleRepository(db),
+    dns: config.dns ?? createDohResolver(),
     tagRepository: createTagRepository(db),
     apiKeyRepository: createApiKeyRepository(db),
     fileLinkRepository: createFileLinkRepository(db),

@@ -7,6 +7,7 @@ import type { R2BucketLike } from "@yabumi/adapter/blob/r2";
 import type { S3Config } from "@yabumi/adapter/blob/s3";
 import type { D1DatabaseLike } from "@yabumi/adapter/sql/d1";
 import type { SignupMode } from "@yabumi/application/dependencies";
+import type { DnsResolver } from "@yabumi/application/ports/dns-resolver";
 import type {
   Clock,
   RandomSource,
@@ -36,6 +37,7 @@ export interface BuildDependenciesConfig {
   readonly spamPhrases?: readonly string[];
   readonly fileLinkMaxTtlSeconds?: number;
   readonly clock?: Clock;
+  readonly dns?: DnsResolver;
   readonly random?: RandomSource;
   readonly tokenHasher?: TokenHasher;
 }

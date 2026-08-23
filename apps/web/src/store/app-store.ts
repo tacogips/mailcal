@@ -12,6 +12,7 @@ import {
   LOGOUT_MUTATION,
   SAVE_DRAFT_MUTATION,
   SEND_DRAFT_MUTATION,
+  UPCOMING_EVENTS_QUERY,
   UPDATE_MESSAGE_EVENT_MUTATION,
   MARK_NOT_SPAM_MUTATION,
   MARK_READ_MUTATION,
@@ -49,6 +50,8 @@ export interface AppStore {
   readonly loading: () => boolean;
   readonly selectedIds: () => ReadonlySet<string>;
   readonly view: () => MailboxView;
+  readonly upcomingEvents: () => readonly MessageEventView[];
+  reloadUpcomingEvents(): Promise<void>;
 
   rehydrateSession(): Promise<void>;
   loadReferenceData(): Promise<void>;
@@ -81,6 +84,7 @@ export interface AppStore {
 
 export interface SaveDraftVariables {
   readonly draftId?: string;
+  readonly inReplyToMessageId?: string;
   readonly from: string;
   readonly to?: readonly string[];
   readonly cc?: readonly string[];
@@ -131,6 +135,9 @@ export function createAppStore(): AppStore {
   const [domains, setDomains] = createSignal<readonly MailDomainView[]>([]);
   const [tags, setTags] = createSignal<readonly TagView[]>([]);
   const [messages, setMessages] = createSignal<readonly MessageView[]>([]);
+  const [upcomingEvents, setUpcomingEvents] = createSignal<
+    readonly MessageEventView[]
+  >([]);
   const [cursor, setCursor] = createSignal<string | null>(null);
   const [totalCount, setTotalCount] = createSignal(0);
   const [loading, setLoading] = createSignal(false);
@@ -196,6 +203,20 @@ export function createAppStore(): AppStore {
     await fetchPage(null);
   }
 
+  /** Everything due in the next 30 days, open items only. */
+  async function reloadUpcomingEvents(): Promise<void> {
+    const dueBefore = new Date(
+      Date.now() + 30 * 24 * 60 * 60 * 1000,
+    ).toISOString();
+    const result = await graphqlRequest<
+      { readonly messageEvents: readonly MessageEventView[] },
+      Record<string, unknown>
+    >(UPCOMING_EVENTS_QUERY, { dueBefore });
+    if (result.ok) {
+      setUpcomingEvents(result.data.messageEvents);
+    }
+  }
+
   return {
     viewer,
     domains,
@@ -233,7 +254,11 @@ export function createAppStore(): AppStore {
       if (tagResult.ok) {
         setTags(tagResult.data.tags);
       }
+      // Best-effort: the agenda failing must not block the mailbox.
+      await reloadUpcomingEvents().catch(() => undefined);
     },
+
+    reloadUpcomingEvents,
 
     async setView(next) {
       setViewSignal(() => next);
@@ -353,6 +378,8 @@ export function createAppStore(): AppStore {
       );
       return true;
     },
+
+    upcomingEvents,
 
     async saveDraft(input) {
       const result = await graphqlRequest<

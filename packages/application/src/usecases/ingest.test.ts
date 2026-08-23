@@ -15,6 +15,12 @@ import {
   RuleMatcher,
 } from "@yabumi/domain/entities/classification-rule";
 import { SpamMarkedBy } from "@yabumi/domain/entities/spam-mark";
+import { ForbiddenError } from "../errors";
+import {
+  adminViewer,
+  mailboxAgentViewer,
+} from "../test-support/viewer-fixtures";
+import { createApplyClassificationRuleUseCase } from "./rules";
 import { createUserTag } from "@yabumi/domain/entities/tag";
 import { createDomainName } from "@yabumi/domain/value-objects/domain-name";
 import { createEmailAddress } from "@yabumi/domain/value-objects/email-address";
@@ -625,5 +631,82 @@ describe("mailing-list detection and classification rules", () => {
     const result = await receive(baseInput());
     assertStored(result);
     expect(fake.messageStores.spamMarks.has(result.message.id)).toBe(false);
+  });
+});
+
+describe("applyClassificationRule (retroactive)", () => {
+  test("marks matching stored mail and leaves the rest alone", async () => {
+    const fake = createFakeDependencies({ now: NOW });
+    await fake.deps.mailDomainRepository.save(activeDomain());
+    fake.mimeParser.setResult({
+      from: { address: "noreply@shop.example", name: null },
+      to: [{ address: "support@example.com", name: null }],
+      subject: "Sale",
+      messageId: "old1@shop.example",
+      text: "buy",
+    });
+    const receive = createReceiveMessageUseCase(fake.deps);
+    const stored = await receive(
+      baseInput({ envelopeFrom: "noreply@shop.example" }),
+    );
+    assertStored(stored);
+    fake.mimeParser.setResult({
+      from: { address: "friend@other.com", name: null },
+      to: [{ address: "support@example.com", name: null }],
+      subject: "Hi",
+      messageId: "old2@other.com",
+      text: "hello",
+    });
+    const kept = await receive(baseInput());
+    assertStored(kept);
+
+    // The rule arrives AFTER both messages did.
+    const ruleId = createClassificationRuleId("rule-late");
+    fake.ruleStores.rules.set(
+      ruleId,
+      createClassificationRule({
+        id: ruleId,
+        domainId: null,
+        field: RuleField.SenderDomain,
+        matcher: RuleMatcher.Exact,
+        pattern: "shop.example",
+        action: RuleAction.Spam,
+        tagId: null,
+        description: null,
+        createdAt: NOW,
+      }),
+    );
+
+    const apply = createApplyClassificationRuleUseCase(fake.deps);
+    const outcome = await apply(adminViewer(), ruleId);
+    expect(outcome.examined).toBe(2);
+    expect(outcome.matched).toBe(1);
+    expect(fake.messageStores.spamMarks.get(stored.message.id)?.markedBy).toBe(
+      SpamMarkedBy.Rule,
+    );
+    expect(fake.messageStores.spamMarks.has(kept.message.id)).toBe(false);
+  });
+
+  test("requires DOMAIN_ADMIN", async () => {
+    const fake = createFakeDependencies({ now: NOW });
+    const ruleId = createClassificationRuleId("rule-x");
+    fake.ruleStores.rules.set(
+      ruleId,
+      createClassificationRule({
+        id: ruleId,
+        domainId: null,
+        field: RuleField.Subject,
+        matcher: RuleMatcher.Contains,
+        pattern: "x",
+        action: RuleAction.Spam,
+        tagId: null,
+        description: null,
+        createdAt: NOW,
+      }),
+    );
+    const apply = createApplyClassificationRuleUseCase(fake.deps);
+    await expect(
+      apply(mailboxAgentViewer(domainId, "support@example.com"), ruleId),
+    ).rejects.toBeInstanceOf(ForbiddenError);
   });
 });

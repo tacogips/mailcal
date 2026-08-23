@@ -17,6 +17,7 @@ import {
   ConflictError,
   ForbiddenError,
   NotFoundError,
+  ServiceUnavailableError,
 } from "../errors";
 import {
   createFakeDependencies,
@@ -104,13 +105,41 @@ describe("domains", () => {
     ).rejects.toBeInstanceOf(BadUserInputError);
   });
 
-  test("verification activates the domain", async () => {
+  test("verification checks the ownership TXT record and activates", async () => {
     const create = createCreateDomainUseCase(fake.deps);
     const domain = await create(adminViewer(), "example.com", true);
+    fake.dns.setTxt(`_yabumi.example.com`, [
+      `yabumi-verification=${domain.verificationToken}`,
+    ]);
     const verify = createVerifyDomainUseCase(fake.deps);
     const verified = await verify(adminViewer(), domain.id);
     expect(verified.status).toBe(DomainStatus.Active);
     expect(verified.verifiedAt).toBe(NOW);
+  });
+
+  test("verification fails while the TXT record is absent or wrong", async () => {
+    const create = createCreateDomainUseCase(fake.deps);
+    const domain = await create(adminViewer(), "example.com", true);
+    const verify = createVerifyDomainUseCase(fake.deps);
+    // No record staged at all.
+    await expect(verify(adminViewer(), domain.id)).rejects.toBeInstanceOf(
+      ConflictError,
+    );
+    // A record with the wrong token proves nothing.
+    fake.dns.setTxt("_yabumi.example.com", ["yabumi-verification=stolen"]);
+    await expect(verify(adminViewer(), domain.id)).rejects.toBeInstanceOf(
+      ConflictError,
+    );
+  });
+
+  test("a broken DNS lookup is SERVICE_UNAVAILABLE, not a denial", async () => {
+    const create = createCreateDomainUseCase(fake.deps);
+    const domain = await create(adminViewer(), "example.com", true);
+    fake.dns.failNextLookup(new Error("resolver down"));
+    const verify = createVerifyDomainUseCase(fake.deps);
+    await expect(verify(adminViewer(), domain.id)).rejects.toBeInstanceOf(
+      ServiceUnavailableError,
+    );
   });
 
   test("activating an unverified domain is a conflict", async () => {

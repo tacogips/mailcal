@@ -229,6 +229,19 @@ export const fileLinkResolvers = {
   },
 };
 
+export const messageEventResolvers = {
+  /** Loads the annotated mail. The event was only reachable through a
+   * scope-filtered path (Message.events or the scoped agenda query), so
+   * this lookup does not widen visibility. */
+  async message(
+    event: MessageEvent,
+    _args: unknown,
+    ctx: GraphQLContext,
+  ): Promise<Message | null> {
+    return ctx.deps.messageRepository.findById(event.messageId);
+  },
+};
+
 export const classificationRuleResolvers = {
   async domain(rule: ClassificationRule, _args: unknown, ctx: GraphQLContext) {
     return rule.domainId === null

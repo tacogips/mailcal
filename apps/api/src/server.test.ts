@@ -1,3 +1,4 @@
+import { verifyMailDomain } from "@yabumi/domain/entities/mail-domain";
 import { afterEach, beforeEach, describe, expect, test } from "vitest";
 import { createLocalApp, detectRuntime } from "./server";
 
@@ -76,7 +77,12 @@ describe("createLocalApp", () => {
       role: user.role,
     };
     const domain = await usecases.createDomain(viewer, "example.com", true);
-    await usecases.verifyDomain(viewer, domain.id);
+    // Activate directly at the repository: verifyDomain now performs a
+    // real DNS-over-HTTPS lookup, and a unit test must not touch the
+    // network (nor own the example.com zone).
+    await deps.mailDomainRepository.save(
+      verifyMailDomain(domain, new Date().toISOString()),
+    );
 
     const response = await app.request(
       new Request(

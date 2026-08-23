@@ -50,3 +50,21 @@
   color: var(--text-muted);
   margin: 0 0 4px 8px;
 }
+
+.sidebar-event {
+  display: flex;
+  gap: 0.45rem;
+  align-items: baseline;
+  min-width: 0;
+}
+.sidebar-event-due {
+  font-size: 0.72rem;
+  font-variant-numeric: tabular-nums;
+  color: var(--accent, #b45309);
+  white-space: nowrap;
+}
+.sidebar-event-title {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}

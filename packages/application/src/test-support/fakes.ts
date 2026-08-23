@@ -31,6 +31,8 @@ import {
   memoryBlobStore,
   plainTokenHasher,
   type RecordingMailSender,
+  fakeDnsResolver,
+  type FakeDnsResolver,
   recordingMailSender,
   sequenceRandom,
   type StubMimeParser,
@@ -63,6 +65,7 @@ export interface FakeDependencies {
   readonly blobs: MemoryBlobStore;
   readonly mailSender: RecordingMailSender;
   readonly mimeParser: StubMimeParser;
+  readonly dns: FakeDnsResolver;
 }
 
 export interface CreateFakeDependenciesOptions {
@@ -86,6 +89,7 @@ export function createFakeDependencies(
   const clock = fixedClock(now);
   const blobs = memoryBlobStore();
   const mailSender = recordingMailSender();
+  const dns = fakeDnsResolver();
   const mimeParser = stubMimeParser();
 
   if (options.seedSystemTags !== false) {
@@ -109,6 +113,7 @@ export function createFakeDependencies(
     ),
     classificationRuleRepository:
       createClassificationRuleRepositoryFake(ruleStores),
+    dns,
     tagRepository: fakeTagRepository(stores),
     apiKeyRepository: fakeApiKeyRepository(stores),
     fileLinkRepository: fakeFileLinkRepository(stores),
@@ -131,5 +136,6 @@ export function createFakeDependencies(
     blobs,
     mailSender,
     mimeParser,
+    dns,
   };
 }

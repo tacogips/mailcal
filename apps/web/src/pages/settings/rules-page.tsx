@@ -1,5 +1,6 @@
 import { createSignal, For, type JSX, onMount, Show } from "solid-js";
 import {
+  APPLY_CLASSIFICATION_RULE_MUTATION,
   CLASSIFICATION_RULES_QUERY,
   CREATE_CLASSIFICATION_RULE_MUTATION,
   DELETE_CLASSIFICATION_RULE_MUTATION,
@@ -106,6 +107,27 @@ export default function RulesPage(): JSX.Element {
       return;
     }
     await reload();
+  }
+
+  async function applyNow(rule: ClassificationRuleView): Promise<void> {
+    const result = await graphqlRequest<
+      {
+        readonly applyClassificationRule: {
+          readonly examined: number;
+          readonly matched: number;
+        };
+      },
+      Record<string, unknown>
+    >(APPLY_CLASSIFICATION_RULE_MUTATION, { id: rule.id });
+    if (!result.ok) {
+      pushToast("error", describeErrors(result.errors));
+      return;
+    }
+    const outcome = result.data.applyClassificationRule;
+    pushToast(
+      "success",
+      `Rule ran over ${outcome.examined} message(s); ${outcome.matched} matched`,
+    );
   }
 
   async function remove(rule: ClassificationRuleView): Promise<void> {
@@ -261,6 +283,13 @@ export default function RulesPage(): JSX.Element {
                       />
                     </td>
                     <td>
+                      <button
+                        type="button"
+                        title="Run this rule over mail that already arrived"
+                        onClick={() => void applyNow(rule)}
+                      >
+                        Run now
+                      </button>
                       <button
                         type="button"
                         class="danger"

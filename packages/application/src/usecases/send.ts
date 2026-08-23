@@ -211,7 +211,7 @@ interface ThreadContext {
   readonly references: readonly string[];
 }
 
-async function resolveThreadContext(
+export async function resolveThreadContext(
   deps: AppDependencies,
   inReplyToMessageId: MessageId | undefined,
 ): Promise<ThreadContext> {

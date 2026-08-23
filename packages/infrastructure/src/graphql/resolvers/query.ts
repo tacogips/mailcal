@@ -32,6 +32,7 @@ interface MessageFilterArg {
   readonly hasAttachment?: boolean | null;
   readonly attachmentKinds?: readonly AttachmentKind[] | null;
   readonly spamOnly?: boolean | null;
+  readonly includeTrashed?: boolean | null;
   readonly statuses?: readonly MailStatus[] | null;
   readonly mailingList?: boolean | null;
   readonly listId?: string | null;
@@ -77,6 +78,9 @@ export function toMessageFilterInput(
       ? {}
       : { attachmentKinds: filter.attachmentKinds }),
     ...(filter.spamOnly == null ? {} : { spamOnly: filter.spamOnly }),
+    ...(filter.includeTrashed == null
+      ? {}
+      : { includeTrashed: filter.includeTrashed }),
     ...(filter.statuses == null ? {} : { statuses: filter.statuses }),
     ...(filter.mailingList == null ? {} : { mailingList: filter.mailingList }),
     ...(filter.listId == null ? {} : { listId: filter.listId }),

@@ -6,7 +6,7 @@ import {
   type Message,
   type MessageDirection,
 } from "@yabumi/domain/entities/message";
-import type { SystemTagSlug } from "@yabumi/domain/entities/tag";
+import { SystemTagSlug } from "@yabumi/domain/entities/tag";
 import {
   createEmailAddress,
   type EmailAddress,
@@ -51,6 +51,9 @@ export interface MessageFilterInput {
   readonly systemSlugs?: readonly SystemTagSlug[];
   /** Spam is excluded unless the caller opts in or filters on it. */
   readonly includeSpam?: boolean;
+  /** Trashed mail is hidden everywhere except the Trash view unless this
+   * is set. */
+  readonly includeTrashed?: boolean;
   /** Restrict to spam only -- the Spam folder view. Wins over includeSpam. */
   readonly spamOnly?: boolean;
   readonly statuses?: readonly MailStatus[];
@@ -210,6 +213,22 @@ export async function buildMessageListFilter(
         ? undefined
         : false;
 
+  // Trashed mail is likewise hidden from every view except the Trash
+  // folder itself (or an explicit includeTrashed) -- otherwise "delete"
+  // would leave the message sitting in the Inbox.
+  const excludeTagIds: TagId[] = [];
+  const trashRequested =
+    filter.includeTrashed === true ||
+    (filter.systemSlugs ?? []).includes(SystemTagSlug.Trash);
+  if (!trashRequested) {
+    const trashTag = await deps.tagRepository.findBySystemSlug(
+      SystemTagSlug.Trash,
+    );
+    if (trashTag !== null) {
+      excludeTagIds.push(trashTag.id);
+    }
+  }
+
   const apiKeyId = viewer.kind === "API_KEY" ? viewer.apiKeyId : null;
 
   return {
@@ -250,6 +269,7 @@ export async function buildMessageListFilter(
     })(),
     ...(explicitTagIds.length === 0 ? {} : { tagIds: explicitTagIds }),
     ...(spam === undefined ? {} : { spam }),
+    ...(excludeTagIds.length === 0 ? {} : { excludeTagIds }),
     ...(filter.statuses === undefined || filter.statuses.length === 0
       ? {}
       : { statuses: filter.statuses }),
@@ -352,6 +372,10 @@ export function createMarkReadUseCase(
 /** Deletes rows first, then blob bodies. A blob failure after the rows are
  * gone leaves orphaned bytes -- cheap and reclaimable -- whereas the reverse
  * order would leave rows pointing at objects that no longer exist. */
+/** Two-stage deletion, like every mail client: the first delete moves a
+ * message to Trash (tags it), and only deleting an already-trashed
+ * message removes it permanently. One misclick can no longer destroy
+ * mail. Returns the number of messages affected in either stage. */
 export function createDeleteMessagesUseCase(
   deps: AppDependencies,
 ): (viewer: Viewer, ids: readonly MessageId[]) => Promise<number> {
@@ -365,6 +389,47 @@ export function createDeleteMessagesUseCase(
     if (messages.length === 0) {
       return 0;
     }
+    const trashTag = await deps.tagRepository.findBySystemSlug(
+      SystemTagSlug.Trash,
+    );
+    const allIds = messages.map((message) => message.id);
+    if (trashTag !== null) {
+      const tagged = await deps.messageRepository.listTagIds(allIds);
+      const toTrash = allIds.filter(
+        (id) => !(tagged.get(id) ?? []).includes(trashTag.id),
+      );
+      const toPurge = allIds.filter((id) => !toTrash.includes(id));
+      if (toTrash.length > 0) {
+        await deps.messageRepository.addTags(
+          toTrash,
+          [trashTag.id],
+          deps.clock.now().toISOString(),
+        );
+      }
+      if (toPurge.length === 0) {
+        return toTrash.length;
+      }
+      // Fall through to permanently delete only the already-trashed set.
+      return (
+        toTrash.length +
+        (await hardDeleteMessages(
+          deps,
+          messages.filter((message) => toPurge.includes(message.id)),
+        ))
+      );
+    }
+    return hardDeleteMessages(deps, messages);
+  };
+}
+
+async function hardDeleteMessages(
+  deps: AppDependencies,
+  messages: readonly Message[],
+): Promise<number> {
+  if (messages.length === 0) {
+    return 0;
+  }
+  {
     const messageIds = messages.map((message) => message.id);
     const attachmentsByMessage =
       await deps.messageRepository.listAttachments(messageIds);
@@ -389,5 +454,5 @@ export function createDeleteMessagesUseCase(
       ),
     );
     return removed;
-  };
+  }
 }

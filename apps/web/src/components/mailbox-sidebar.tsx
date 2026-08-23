@@ -1,5 +1,9 @@
 import { For, type JSX, Show } from "solid-js";
-import type { MailDomainView, TagView } from "../api/schema-types";
+import type {
+  MailDomainView,
+  MessageEventView,
+  TagView,
+} from "../api/schema-types";
 import type { MailboxView } from "../lib/filter-params";
 import "./mailbox-sidebar.css";
 
@@ -29,12 +33,24 @@ function sameView(a: MailboxView, b: MailboxView): boolean {
   return true;
 }
 
+function dueLabel(value: string | null): string {
+  if (value === null) {
+    return "";
+  }
+  const date = new Date(value);
+  return Number.isNaN(date.getTime())
+    ? value
+    : date.toLocaleDateString(undefined, { month: "short", day: "numeric" });
+}
+
 export function MailboxSidebar(props: {
   readonly current: MailboxView;
   readonly domains: readonly MailDomainView[];
   readonly tags: readonly TagView[];
+  readonly upcomingEvents: readonly MessageEventView[];
   readonly onSelect: (view: MailboxView) => void;
   readonly onCompose: () => void;
+  readonly onOpenEvent: (messageId: string) => void;
 }): JSX.Element {
   // System tags already have dedicated views above, so listing them again
   // under "Tags" would be a confusing duplicate.
@@ -68,6 +84,27 @@ export function MailboxSidebar(props: {
           )}
         </For>
       </ul>
+
+      <Show when={props.upcomingEvents.length > 0}>
+        <h2 class="sidebar-heading">Upcoming</h2>
+        <ul class="sidebar-group">
+          <For each={props.upcomingEvents}>
+            {(event) => (
+              <li>
+                <button
+                  type="button"
+                  class="sidebar-item sidebar-event"
+                  title={event.message?.subject ?? event.title}
+                  onClick={() => props.onOpenEvent(event.messageId)}
+                >
+                  <span class="sidebar-event-due">{dueLabel(event.dueAt)}</span>
+                  <span class="sidebar-event-title">{event.title}</span>
+                </button>
+              </li>
+            )}
+          </For>
+        </ul>
+      </Show>
 
       <Show when={props.domains.length > 0}>
         <h2 class="sidebar-heading">Domains</h2>

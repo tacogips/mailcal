@@ -77,6 +77,8 @@ export interface MessageEventView {
   readonly title: string;
   readonly note: string | null;
   readonly completedAt: string | null;
+  /** Present on agenda queries that select it. */
+  readonly message?: { readonly id: string; readonly subject: string } | null;
 }
 
 export interface MessageView {

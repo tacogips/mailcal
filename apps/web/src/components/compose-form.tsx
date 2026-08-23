@@ -19,6 +19,7 @@ export interface ComposeDraft {
 
 export interface ComposeContent {
   readonly draftId?: string;
+  readonly inReplyToMessageId?: string;
   readonly from: string;
   readonly to: readonly string[];
   readonly cc: readonly string[];
@@ -71,6 +72,9 @@ export function ComposeForm(props: {
     const id = draftId();
     return {
       ...(id === null ? {} : { draftId: id }),
+      ...(props.draft.inReplyToMessageId === undefined
+        ? {}
+        : { inReplyToMessageId: props.draft.inReplyToMessageId }),
       from: from(),
       to: splitAddresses(to()),
       cc: splitAddresses(cc()),

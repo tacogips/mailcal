@@ -30,6 +30,7 @@ import {
   deliver,
   loadOutboundAttachments,
   readAttachmentBytes,
+  resolveThreadContext,
   type ValidatedRecipients,
 } from "./send";
 import { withAsyncDomainErrorTranslation } from "./translate-domain-error";
@@ -37,6 +38,9 @@ import { withAsyncDomainErrorTranslation } from "./translate-domain-error";
 export interface SaveDraftInput {
   /** Updates this draft when present, creates a new one otherwise. */
   readonly draftId?: MessageId;
+  /** Threads the draft as a reply to this message; resolved at save time
+   * so the eventual send carries the right In-Reply-To and References. */
+  readonly inReplyToMessageId?: MessageId;
   readonly from: string;
   readonly to?: readonly string[];
   readonly cc?: readonly string[];
@@ -143,13 +147,17 @@ export function createSaveDraftUseCase(
         );
       }
       const messageId = createMessageId(deps.random.uuid());
+      const thread = await resolveThreadContext(deps, input.inReplyToMessageId);
       const draft = createDraftMessage({
         id: messageId,
         domainId: domain.id,
-        threadId: createThreadId(messageId),
+        threadId:
+          thread.threadId === null
+            ? createThreadId(messageId)
+            : createThreadId(thread.threadId),
         rfcMessageId: null,
-        inReplyTo: null,
-        references: [],
+        inReplyTo: thread.inReplyTo,
+        references: thread.references,
         subject: input.subject ?? "",
         fromAddress: from,
         fromName: null,
@@ -221,7 +229,10 @@ export function createSendDraftUseCase(
         ...(draft.textBody === null ? {} : { text: draft.textBody }),
         ...(draft.htmlBody === null ? {} : { html: draft.htmlBody }),
         messageId: rfcMessageId,
-        references: [],
+        // The thread context resolved at save time, so a reply draft
+        // still threads correctly however long it sat unsent.
+        ...(draft.inReplyTo === null ? {} : { inReplyTo: draft.inReplyTo }),
+        references: draft.references,
         date: now,
         headers: new Map(),
         attachments: await readAttachmentBytes(deps, attachments),

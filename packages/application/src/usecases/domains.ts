@@ -12,7 +12,11 @@ import {
   type DomainId,
 } from "@yabumi/domain/value-objects/ids";
 import type { AppDependencies } from "../dependencies";
-import { ConflictError, NotFoundError } from "../errors";
+import {
+  ConflictError,
+  NotFoundError,
+  ServiceUnavailableError,
+} from "../errors";
 import {
   requireGlobalCapability,
   scopedDomainIds,
@@ -169,6 +173,32 @@ export function createVerifyDomainUseCase(
       if (domain === null) {
         throw new NotFoundError("Domain", id);
       }
+      if (domain.verifiedAt !== null) {
+        return domain;
+      }
+
+      // Ownership is proven by the TXT record and nothing less: a verify
+      // that rubber-stamps would let anyone claim a domain they cannot
+      // touch. MX correctness is deliberately not checked here -- mail
+      // for a domain with wrong MX simply never arrives, while a wrong
+      // ownership claim is a security problem.
+      const recordName = `_yabumi.${domain.name}`;
+      const expected = `yabumi-verification=${domain.verificationToken}`;
+      let values: readonly string[];
+      try {
+        values = await deps.dns.lookupTxt(recordName);
+      } catch {
+        throw new ServiceUnavailableError(
+          "DNS lookup failed; try again shortly",
+        );
+      }
+      if (!values.includes(expected)) {
+        throw new ConflictError(
+          `TXT record ${recordName} with value "${expected}" was not found. ` +
+            "Add it at your DNS provider and retry once it has propagated",
+        );
+      }
+
       const verified = verifyMailDomain(domain, deps.clock.now().toISOString());
       await deps.mailDomainRepository.save(verified);
       return verified;

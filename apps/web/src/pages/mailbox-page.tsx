@@ -67,10 +67,14 @@ export default function MailboxPage(): JSX.Element {
   }
 
   async function openMessage(message: MessageView): Promise<void> {
+    return openMessageById(message.id);
+  }
+
+  async function openMessageById(messageId: string): Promise<void> {
     const result = await graphqlRequest<
       { readonly message: MessageDetailView | null },
       Record<string, unknown>
-    >(MESSAGE_QUERY, { id: message.id });
+    >(MESSAGE_QUERY, { id: messageId });
     if (!result.ok) {
       pushToast("error", describeErrors(result.errors));
       return;
@@ -104,7 +108,7 @@ export default function MailboxPage(): JSX.Element {
       // Opening a message marks it read, matching every mail client; the
       // list is refreshed by the store so the unread styling clears.
       store.clearSelection();
-      store.toggleSelection(message.id);
+      store.toggleSelection(messageId);
       await store.markSelectedRead(true);
       store.clearSelection();
     }
@@ -158,6 +162,9 @@ export default function MailboxPage(): JSX.Element {
       subject: content.subject,
       text: content.text,
       ...(content.draftId === undefined ? {} : { draftId: content.draftId }),
+      ...(content.inReplyToMessageId === undefined
+        ? {}
+        : { inReplyToMessageId: content.inReplyToMessageId }),
       ...(content.attachmentIds.length > 0
         ? { attachmentIds: content.attachmentIds }
         : {}),
@@ -234,7 +241,9 @@ export default function MailboxPage(): JSX.Element {
           current={store.view()}
           domains={store.domains()}
           tags={store.tags()}
+          upcomingEvents={store.upcomingEvents()}
           onSelect={selectView}
+          onOpenEvent={(messageId) => void openMessageById(messageId)}
           onCompose={startCompose}
         />
       }

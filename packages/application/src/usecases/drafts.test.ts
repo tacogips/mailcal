@@ -2,9 +2,18 @@ import {
   createMailDomain,
   verifyMailDomain,
 } from "@yabumi/domain/entities/mail-domain";
-import { DeliveryStatus, MailStatus } from "@yabumi/domain/entities/message";
+import {
+  createInboundMessage,
+  DeliveryStatus,
+  MailStatus,
+} from "@yabumi/domain/entities/message";
+import { createEmailAddress } from "@yabumi/domain/value-objects/email-address";
 import { createDomainName } from "@yabumi/domain/value-objects/domain-name";
-import { createDomainId } from "@yabumi/domain/value-objects/ids";
+import {
+  createDomainId,
+  createMessageId,
+  createThreadId,
+} from "@yabumi/domain/value-objects/ids";
 import { beforeEach, describe, expect, test } from "vitest";
 import { BadUserInputError, NotFoundError } from "../errors";
 import {
@@ -160,5 +169,69 @@ describe("drafts", () => {
       filter: { statuses: [MailStatus.Sent] },
     });
     expect(sentOnly.totalCount).toBe(0);
+  });
+});
+
+describe("draft reply threading", () => {
+  let fake: FakeDependencies;
+
+  beforeEach(async () => {
+    fake = createFakeDependencies({ now: NOW });
+    await fake.deps.mailDomainRepository.save(
+      verifyMailDomain(
+        createMailDomain({
+          id: domainId,
+          name: createDomainName("example.com"),
+          catchAll: true,
+          verificationToken: "tok",
+          createdAt: NOW,
+        }),
+        NOW,
+      ),
+    );
+  });
+
+  test("a reply saved as draft keeps its thread when finally sent", async () => {
+    // The message being replied to.
+    const parent = createInboundMessage({
+      id: createMessageId("msg-parent"),
+      domainId,
+      threadId: createThreadId("thr-parent"),
+      rfcMessageId: "parent@other.com",
+      inReplyTo: null,
+      references: ["root@other.com"],
+      subject: "Question",
+      fromAddress: createEmailAddress("customer@other.com"),
+      fromName: null,
+      textBody: "?",
+      htmlBody: null,
+      rawKey: null,
+      rawSize: 0,
+      occurredAt: NOW,
+      createdAt: NOW,
+      spamScore: null,
+    });
+    fake.messageStores.messages.set(parent.id, parent);
+    fake.messageStores.recipients.set(parent.id, []);
+    fake.messageStores.messageTags.set(parent.id, new Set());
+
+    const save = createSaveDraftUseCase(fake.deps);
+    const send = createSendDraftUseCase(fake.deps);
+    const draft = await save(adminViewer(), {
+      from: "support@example.com",
+      to: ["customer@other.com"],
+      subject: "Re: Question",
+      text: "Answer",
+      inReplyToMessageId: parent.id,
+    });
+    // Same thread as the parent, references extended with its Message-ID.
+    expect(draft.threadId).toBe("thr-parent");
+    expect(draft.inReplyTo).toBe("parent@other.com");
+    expect(draft.references).toEqual(["root@other.com", "parent@other.com"]);
+
+    await send(adminViewer(), draft.id);
+    // The built MIME carries the threading headers.
+    const raw = fake.mailSender.sent[0]?.raw ?? "";
+    expect(raw).toContain("In-Reply-To: <parent@other.com>");
   });
 });

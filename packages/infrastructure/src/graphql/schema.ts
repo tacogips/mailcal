@@ -16,6 +16,7 @@ import {
   messageResolvers,
   tagResolvers,
   classificationRuleResolvers,
+  messageEventResolvers,
   threadResolvers,
   viewerResolvers,
 } from "./resolvers/types";
@@ -45,6 +46,7 @@ export function buildGraphQLSchema(): GraphQLSchema {
       FileLink: fileLinkResolvers,
       Thread: threadResolvers,
       ClassificationRule: classificationRuleResolvers,
+      MessageEvent: messageEventResolvers,
       Viewer: viewerResolvers,
     },
   });

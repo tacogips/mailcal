@@ -235,3 +235,34 @@ export function unusedSqlDatabase(): SqlDatabase {
     },
   };
 }
+
+import type { DnsResolver } from "../ports/dns-resolver";
+
+export interface FakeDnsResolver extends DnsResolver {
+  /** Sets the TXT values returned for a name. */
+  setTxt(name: string, values: readonly string[]): void;
+  failNextLookup(error: Error): void;
+}
+
+/** By default answers every `_yabumi.<domain>` lookup with whatever the
+ * caller staged; unknown names resolve to no records. */
+export function fakeDnsResolver(): FakeDnsResolver {
+  const records = new Map<string, readonly string[]>();
+  let pendingFailure: Error | null = null;
+  return {
+    setTxt(name, values) {
+      records.set(name.toLowerCase(), values);
+    },
+    failNextLookup(error) {
+      pendingFailure = error;
+    },
+    async lookupTxt(name) {
+      if (pendingFailure !== null) {
+        const error = pendingFailure;
+        pendingFailure = null;
+        throw error;
+      }
+      return records.get(name.toLowerCase()) ?? [];
+    },
+  };
+}

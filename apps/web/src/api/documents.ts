@@ -359,3 +359,24 @@ export const DELETE_CLASSIFICATION_RULE_MUTATION = `
     deleteClassificationRule(id: $id)
   }
 `;
+
+export const APPLY_CLASSIFICATION_RULE_MUTATION = `
+  mutation ApplyClassificationRule($id: ID!) {
+    applyClassificationRule(id: $id) { examined matched }
+  }
+`;
+
+export const UPCOMING_EVENTS_QUERY = `
+  query UpcomingEvents($dueBefore: DateTime) {
+    messageEvents(dueBefore: $dueBefore, limit: 20) {
+      id
+      messageId
+      kind
+      dueAt
+      title
+      note
+      completedAt
+      message { id subject }
+    }
+  }
+`;

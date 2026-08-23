@@ -219,6 +219,8 @@ export const typeDefs = /* GraphQL */ `
   type MessageEvent {
     id: ID!
     messageId: ID!
+    "The mail this event annotates, for agenda views."
+    message: Message
     kind: MessageEventKind!
     "Null for undated notes. A DEADLINE always has one."
     dueAt: DateTime
@@ -227,6 +229,14 @@ export const typeDefs = /* GraphQL */ `
     completedAt: DateTime
     createdAt: DateTime!
     updatedAt: DateTime!
+  }
+
+  "Outcome of running a rule over already-stored mail."
+  type RuleApplication {
+    "Messages inspected (bounded per run)."
+    examined: Int!
+    "Messages the rule matched and acted on."
+    matched: Int!
   }
 
   """
@@ -438,6 +448,8 @@ export const typeDefs = /* GraphQL */ `
     attachmentKinds: [AttachmentKind!]
     "Restrict to spam only -- the Spam folder view. Wins over includeSpam."
     spamOnly: Boolean
+    "Trashed mail is hidden from every view except Trash unless set."
+    includeTrashed: Boolean
     statuses: [MailStatus!]
     "True keeps only mailing-list messages, false only the rest."
     mailingList: Boolean
@@ -472,6 +484,8 @@ export const typeDefs = /* GraphQL */ `
   input SaveDraftInput {
     "Updates this draft when present, creates a new one otherwise."
     draftId: ID
+    "Threads the draft as a reply to this message."
+    inReplyToMessageId: ID
     from: String!
     to: [String!]
     cc: [String!]
@@ -583,6 +597,10 @@ export const typeDefs = /* GraphQL */ `
     markSpam(messageIds: [ID!]!): [Message!]!
     markNotSpam(messageIds: [ID!]!): [Message!]!
     markRead(messageIds: [ID!]!, read: Boolean! = true): [Message!]!
+    """
+    Two-stage: first delete moves a message to Trash; deleting an
+    already-trashed message removes it permanently.
+    """
     deleteMessages(messageIds: [ID!]!): Int!
 
     createMessageEvent(input: CreateMessageEventInput!): MessageEvent!
@@ -594,6 +612,11 @@ export const typeDefs = /* GraphQL */ `
     ): ClassificationRule!
     setClassificationRuleEnabled(id: ID!, enabled: Boolean!): ClassificationRule!
     deleteClassificationRule(id: ID!): Boolean!
+    """
+    Runs the rule over mail that already arrived (inbound, newest first,
+    bounded per run). Re-run to continue on very large mailboxes.
+    """
+    applyClassificationRule(id: ID!): RuleApplication!
 
     createAttachmentLink(
       attachmentId: ID!

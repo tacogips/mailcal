@@ -123,11 +123,13 @@ import {
   type UpdateMessageEventInput,
 } from "./usecases/events";
 import {
+  createApplyClassificationRuleUseCase,
   createCreateClassificationRuleUseCase,
   createDeleteClassificationRuleUseCase,
   createListClassificationRulesUseCase,
   createSetClassificationRuleEnabledUseCase,
   type CreateRuleInput,
+  type RuleApplication,
 } from "./usecases/rules";
 
 /** One flat object of pre-bound use cases, constructed once per isolate at
@@ -272,6 +274,10 @@ export interface UseCases {
   readonly listClassificationRules: (
     viewer: Viewer,
   ) => Promise<readonly ClassificationRule[]>;
+  readonly applyClassificationRule: (
+    viewer: Viewer,
+    id: ClassificationRuleId,
+  ) => Promise<RuleApplication>;
 
   readonly markSpam: (
     viewer: Viewer,
@@ -391,6 +397,7 @@ export function createUseCases(deps: AppDependencies): UseCases {
       createSetClassificationRuleEnabledUseCase(deps),
     deleteClassificationRule: createDeleteClassificationRuleUseCase(deps),
     listClassificationRules: createListClassificationRulesUseCase(deps),
+    applyClassificationRule: createApplyClassificationRuleUseCase(deps),
     markSpam: createMarkSpamUseCase(deps),
     markNotSpam: createMarkNotSpamUseCase(deps),
 
