@@ -6,7 +6,7 @@ compatibility_flags = ["nodejs_compat"]
 [[d1_databases]]
 binding = "DB"
 database_name = "mailcal-db"
-database_id = "af5d4b55-4646-4961-8f74-768289351c6e"
+database_id = "a2eb3297-4f2d-4a3a-9dc7-70ccb142f2df"
 
 [[r2_buckets]]
 binding = "BLOB"
