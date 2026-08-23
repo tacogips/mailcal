@@ -1,0 +1,625 @@
+/**
+ * The yabumi GraphQL schema, mirroring
+ * `design-docs/specs/design-graphql-api.md#schema`. Kept as a single SDL
+ * string rather than split files so the whole contract is readable in one
+ * place, and so `schema.graphql.test.ts` can assert it against the design
+ * doc's field list without stitching.
+ */
+export const typeDefs = /* GraphQL */ `
+  """
+  An ISO 8601 timestamp in UTC, e.g. "2026-08-23T00:00:00.000Z".
+  """
+  scalar DateTime
+
+  enum MessageDirection {
+    INBOUND
+    OUTBOUND
+  }
+
+  enum DeliveryStatus {
+    RECEIVED
+    QUEUED
+    SENT
+    FAILED
+  }
+
+  """
+  ENVELOPE is the SMTP RCPT TO -- the address that actually caused delivery,
+  and the one API key scopes are matched against.
+  """
+  enum RecipientKind {
+    TO
+    CC
+    BCC
+    ENVELOPE
+  }
+
+  """
+  Retrieval state for the *calling* API key. A user session always reads
+  FETCHED, since fetch state is per-consumer.
+  """
+  enum FetchStatus {
+    NOT_FETCHED
+    FETCHED
+  }
+
+  enum TagKind {
+    USER
+    SYSTEM
+  }
+
+  """
+  SPAM is deliberately absent: spam is a verdict with metadata, held in its
+  own table and exposed via Message.isSpam / Message.spam.
+  """
+  enum SystemTagSlug {
+    TRASH
+    ARCHIVED
+    STARRED
+  }
+
+  enum DomainStatus {
+    PENDING
+    ACTIVE
+    DISABLED
+  }
+
+  enum Capability {
+    MAIL_READ
+    MAIL_SEND
+    MAIL_MANAGE
+    FILE_LINK
+    DOMAIN_ADMIN
+    KEY_ADMIN
+  }
+
+  """
+  Coarse file-type grouping, classified once at receive time and stored, so
+  filtering is stable even if classification rules later change.
+  """
+  enum AttachmentKind {
+    IMAGE
+    VIDEO
+    AUDIO
+    PDF
+    DOCUMENT
+    SPREADSHEET
+    PRESENTATION
+    ARCHIVE
+    TEXT
+    CALENDAR
+    OTHER
+  }
+
+  """
+  Coarse mail lifecycle. DRAFT exists only for outbound mail that has not
+  been dispatched. Transport detail stays in DeliveryStatus, which is only
+  meaningful once a message leaves DRAFT.
+  """
+  enum MailStatus {
+    DRAFT
+    SENT
+    RECEIVED
+  }
+
+  enum MessageEventKind {
+    DEADLINE
+    REMINDER
+    FOLLOW_UP
+    OTHER
+  }
+
+  enum SpamMarkedBy {
+    SYSTEM
+    USER
+    RULE
+  }
+
+  enum RuleField {
+    SENDER_ADDRESS
+    SENDER_DOMAIN
+    SUBJECT
+    LIST_ID
+  }
+
+  enum RuleMatcher {
+    EXACT
+    CONTAINS
+    REGEX
+  }
+
+  enum RuleAction {
+    SPAM
+    MAILING_LIST
+    TAG
+  }
+
+  enum FileLinkTarget {
+    ATTACHMENT
+    RAW_MESSAGE
+  }
+
+  enum UserRole {
+    ADMIN
+    MEMBER
+  }
+
+  enum DnsRecordType {
+    TXT
+    MX
+    CNAME
+  }
+
+  type DnsRecord {
+    type: DnsRecordType!
+    name: String!
+    value: String!
+    priority: Int
+    purpose: String!
+  }
+
+  type MailDomain {
+    id: ID!
+    name: String!
+    status: DomainStatus!
+    catchAll: Boolean!
+    """
+    Null unless the viewer holds DOMAIN_ADMIN.
+    """
+    verificationToken: String
+    verifiedAt: DateTime
+    dnsRecords: [DnsRecord!]!
+    messageCount: Int!
+    createdAt: DateTime!
+    updatedAt: DateTime!
+  }
+
+  type MailboxAddress {
+    address: String!
+    name: String
+    kind: RecipientKind!
+  }
+
+  type Attachment {
+    id: ID!
+    """
+    Null for a staged upload that has not yet been sent as part of a message.
+    """
+    messageId: ID
+    fileName: String!
+    contentType: String!
+    size: Int!
+    inline: Boolean!
+    kind: AttachmentKind!
+    contentId: String
+    """
+    Authenticated download path; use createAttachmentLink for a shareable,
+    credential-free URL instead.
+    """
+    url: String!
+    createdAt: DateTime!
+  }
+
+  """
+  The spam verdict on a message. Presence is the verdict; absence means
+  the message is not spam.
+  """
+  type SpamMark {
+    "Score at marking time. Null for hand marks: no scorer ran."
+    score: Float
+    markedBy: SpamMarkedBy!
+    markedAt: DateTime!
+  }
+
+  """
+  An obligation or note attached to a message: mail that needs an answer
+  by 10/1 carries a DEADLINE event with dueAt 10/1 and title "reply". A
+  message can carry any number of events.
+  """
+  type MessageEvent {
+    id: ID!
+    messageId: ID!
+    kind: MessageEventKind!
+    "Null for undated notes. A DEADLINE always has one."
+    dueAt: DateTime
+    title: String!
+    note: String
+    completedAt: DateTime
+    createdAt: DateTime!
+    updatedAt: DateTime!
+  }
+
+  """
+  An operator-defined ingest rule: when field matches pattern, perform
+  action on the incoming message. Evaluated for every inbound message on
+  the rule's domain (all domains when domain is null).
+  """
+  type ClassificationRule {
+    id: ID!
+    domain: MailDomain
+    field: RuleField!
+    matcher: RuleMatcher!
+    pattern: String!
+    action: RuleAction!
+    tag: Tag
+    enabled: Boolean!
+    description: String
+    createdAt: DateTime!
+    updatedAt: DateTime!
+  }
+
+  type Tag {
+    id: ID!
+    name: String!
+    color: String
+    kind: TagKind!
+    systemSlug: SystemTagSlug
+    messageCount: Int!
+    createdAt: DateTime!
+    updatedAt: DateTime!
+  }
+
+  type Message {
+    id: ID!
+    domain: MailDomain!
+    direction: MessageDirection!
+    threadId: ID!
+    rfcMessageId: String
+    inReplyTo: String
+    references: [String!]!
+    subject: String!
+    from: MailboxAddress!
+    recipients(kind: RecipientKind): [MailboxAddress!]!
+    snippet: String!
+    textBody: String
+    htmlBody: String
+    bodyTruncated: Boolean!
+    attachments: [Attachment!]!
+    tags: [Tag!]!
+    spamScore: Float
+    isSpam: Boolean!
+    "The verdict's metadata; null when the message is not spam."
+    spam: SpamMark
+    status: MailStatus!
+    deliveryStatus: DeliveryStatus!
+    "RFC 2919 List-Id, when the message came through a declaring list."
+    listId: String
+    isMailingList: Boolean!
+    events: [MessageEvent!]!
+    deliveryError: String
+    readAt: DateTime
+    fetchStatus: FetchStatus!
+    fetchedAt: DateTime
+    rawSize: Int!
+    occurredAt: DateTime!
+    createdAt: DateTime!
+    updatedAt: DateTime!
+  }
+
+  type Thread {
+    id: ID!
+    subject: String!
+    messages: [Message!]!
+    messageCount: Int!
+    lastMessageAt: DateTime!
+    participants: [MailboxAddress!]!
+  }
+
+  type MessagePage {
+    nodes: [Message!]!
+    """
+    Null once the result set is exhausted.
+    """
+    nextCursor: String
+    totalCount: Int!
+  }
+
+  type ApiKeyScope {
+    id: ID!
+    capability: Capability!
+    """
+    Null means every managed domain.
+    """
+    domain: MailDomain
+    addressPattern: String!
+  }
+
+  type ApiKey {
+    id: ID!
+    name: String!
+    keyPrefix: String!
+    scopes: [ApiKeyScope!]!
+    createdAt: DateTime!
+    lastUsedAt: DateTime
+    expiresAt: DateTime
+    revokedAt: DateTime
+  }
+
+  """
+  The plaintext secret is returned exactly once, here, and never again.
+  """
+  type ApiKeyWithSecret {
+    apiKey: ApiKey!
+    secret: String!
+  }
+
+  type FileLink {
+    id: ID!
+    url: String!
+    target: FileLinkTarget!
+    attachment: Attachment
+    message: Message
+    expiresAt: DateTime!
+    maxDownloads: Int
+    downloadCount: Int!
+    createdAt: DateTime!
+    revokedAt: DateTime
+  }
+
+  """
+  Returned once from createAttachmentLink / createRawMessageLink. The token
+  is the credential embedded in the url, and is never retrievable afterwards.
+  """
+  type CreatedFileLink {
+    link: FileLink!
+    token: String!
+    url: String!
+  }
+
+  type User {
+    id: ID!
+    email: String!
+    name: String!
+    role: UserRole!
+    createdAt: DateTime!
+  }
+
+  """
+  The calling credential. user is null for an API key; apiKey is null for a
+  session.
+  """
+  type Viewer {
+    user: User
+    apiKey: ApiKey
+    capabilities: [Capability!]!
+    sendableAddresses: [String!]!
+  }
+
+  type BootstrapPayload {
+    user: User!
+    apiKey: ApiKey!
+    """
+    Shown exactly once, here.
+    """
+    secret: String!
+  }
+
+  type AuthPayload {
+    viewer: Viewer!
+    expiresAt: DateTime!
+  }
+
+  input MessageFilter {
+    domainId: ID
+    direction: MessageDirection
+    """
+    Matches the sender or any recipient.
+    """
+    address: String
+    """
+    Recipient without cc: matches an ENVELOPE or TO recipient only.
+    """
+    toAddress: String
+    """
+    Recipient with cc: matches a recipient of any kind, CC and BCC included.
+    """
+    recipientAddress: String
+    fromAddress: String
+    threadId: ID
+    tagIds: [ID!]
+    systemSlugs: [SystemTagSlug!]
+    includeSpam: Boolean = false
+    """
+    Relative to the calling API key; rejected for a user session.
+    """
+    fetchStatus: FetchStatus
+    unreadOnly: Boolean
+    """
+    Case-insensitive full-text match over subject, snippet and text body.
+    """
+    search: String
+    """
+    True keeps only messages with attachments; false only those without.
+    """
+    hasAttachment: Boolean
+    """
+    Keeps messages carrying at least one attachment of any listed kind.
+    """
+    attachmentKinds: [AttachmentKind!]
+    "Restrict to spam only -- the Spam folder view. Wins over includeSpam."
+    spamOnly: Boolean
+    statuses: [MailStatus!]
+    "True keeps only mailing-list messages, false only the rest."
+    mailingList: Boolean
+    "Exact match on the stored List-Id."
+    listId: String
+    since: DateTime
+    until: DateTime
+  }
+
+  input HeaderInput {
+    """
+    Must match X-Name; values may not contain CR or LF.
+    """
+    name: String!
+    value: String!
+  }
+
+  input SendMessageInput {
+    from: String!
+    to: [String!]!
+    cc: [String!]
+    bcc: [String!]
+    subject: String!
+    text: String
+    html: String
+    inReplyToMessageId: ID
+    attachmentIds: [ID!]
+    headers: [HeaderInput!]
+    tagIds: [ID!]
+  }
+
+  input SaveDraftInput {
+    "Updates this draft when present, creates a new one otherwise."
+    draftId: ID
+    from: String!
+    to: [String!]
+    cc: [String!]
+    bcc: [String!]
+    subject: String
+    text: String
+    html: String
+    attachmentIds: [ID!]
+  }
+
+  input CreateMessageEventInput {
+    messageId: ID!
+    kind: MessageEventKind!
+    "Required for DEADLINE, optional otherwise."
+    dueAt: DateTime
+    title: String!
+    note: String
+  }
+
+  input UpdateMessageEventInput {
+    kind: MessageEventKind
+    dueAt: DateTime
+    title: String
+    note: String
+    completed: Boolean
+  }
+
+  input CreateClassificationRuleInput {
+    "Restrict to one receiving domain; null applies everywhere."
+    domainId: ID
+    field: RuleField!
+    matcher: RuleMatcher!
+    pattern: String!
+    action: RuleAction!
+    "Required exactly when action is TAG."
+    tagId: ID
+    description: String
+  }
+
+  input ApiKeyScopeInput {
+    capability: Capability!
+    """
+    Null means every managed domain.
+    """
+    domainId: ID
+    addressPattern: String = "*"
+  }
+
+  input CreateApiKeyInput {
+    name: String!
+    scopes: [ApiKeyScopeInput!]!
+    expiresAt: DateTime
+  }
+
+  type Query {
+    viewer: Viewer
+
+    domains: [MailDomain!]!
+    domain(id: ID!): MailDomain
+
+    messages(filter: MessageFilter, first: Int = 50, after: String): MessagePage!
+    message(id: ID!): Message
+    thread(id: ID!): Thread
+
+    tags: [Tag!]!
+    apiKeys: [ApiKey!]!
+    fileLinks(messageId: ID!): [FileLink!]!
+
+    """
+    Agenda across messages: soonest due first, undated last. Scoped to the
+    caller's readable mail.
+    """
+    messageEvents(
+      dueBefore: DateTime
+      dueAfter: DateTime
+      includeCompleted: Boolean = false
+      limit: Int = 100
+    ): [MessageEvent!]!
+
+    "Requires DOMAIN_ADMIN."
+    classificationRules: [ClassificationRule!]!
+  }
+
+  type Mutation {
+    createDomain(name: String!, catchAll: Boolean = true): MailDomain!
+    verifyDomain(id: ID!): MailDomain!
+    setDomainStatus(id: ID!, status: DomainStatus!): MailDomain!
+    deleteDomain(id: ID!): Boolean!
+
+    createApiKey(input: CreateApiKeyInput!): ApiKeyWithSecret!
+    revokeApiKey(id: ID!): ApiKey!
+    addApiKeyScope(apiKeyId: ID!, scope: ApiKeyScopeInput!): ApiKey!
+    removeApiKeyScope(scopeId: ID!): Boolean!
+
+    sendMessage(input: SendMessageInput!): Message!
+    retrySend(messageId: ID!): Message!
+    saveDraft(input: SaveDraftInput!): Message!
+    "Dispatches a draft. The draft row becomes the sent message."
+    sendDraft(id: ID!): Message!
+
+    markMessagesFetched(messageIds: [ID!]!): [Message!]!
+    markMessagesNotFetched(messageIds: [ID!]!): [Message!]!
+
+    createTag(name: String!, color: String): Tag!
+    renameTag(id: ID!, name: String!, color: String): Tag!
+    deleteTag(id: ID!): Boolean!
+    tagMessages(messageIds: [ID!]!, tagIds: [ID!]!): [Message!]!
+    untagMessages(messageIds: [ID!]!, tagIds: [ID!]!): [Message!]!
+    markSpam(messageIds: [ID!]!): [Message!]!
+    markNotSpam(messageIds: [ID!]!): [Message!]!
+    markRead(messageIds: [ID!]!, read: Boolean! = true): [Message!]!
+    deleteMessages(messageIds: [ID!]!): Int!
+
+    createMessageEvent(input: CreateMessageEventInput!): MessageEvent!
+    updateMessageEvent(id: ID!, input: UpdateMessageEventInput!): MessageEvent!
+    deleteMessageEvent(id: ID!): Boolean!
+
+    createClassificationRule(
+      input: CreateClassificationRuleInput!
+    ): ClassificationRule!
+    setClassificationRuleEnabled(id: ID!, enabled: Boolean!): ClassificationRule!
+    deleteClassificationRule(id: ID!): Boolean!
+
+    createAttachmentLink(
+      attachmentId: ID!
+      ttlSeconds: Int = 3600
+      maxDownloads: Int
+    ): CreatedFileLink!
+    createRawMessageLink(
+      messageId: ID!
+      ttlSeconds: Int = 3600
+      maxDownloads: Int
+    ): CreatedFileLink!
+    revokeFileLink(id: ID!): Boolean!
+
+    """
+    Creates the first ADMIN user together with a full-capability API key.
+    Succeeds only while the instance has no users at all, so this is a
+    one-shot door on a fresh deployment and is permanently closed afterwards.
+
+    The key is returned because a deployed Worker has no shell, and
+    passwordless login needs a verified sending domain that only an
+    authenticated admin can add. Store the secret: it is shown once.
+    """
+    bootstrapAdmin(email: String!, name: String!): BootstrapPayload!
+
+    requestEmailAuth(email: String!): Boolean!
+    verifyEmailAuthToken(token: String!): AuthPayload!
+    logout: Boolean!
+  }
+`;

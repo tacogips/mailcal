@@ -1,0 +1,52 @@
+.mailbox-sidebar {
+  width: var(--sidebar-width);
+  flex-shrink: 0;
+  border-right: 1px solid var(--border);
+  padding: 12px;
+  overflow-y: auto;
+  background: var(--bg-subtle);
+}
+
+.sidebar-compose {
+  width: 100%;
+  margin-bottom: 12px;
+}
+
+.sidebar-group {
+  list-style: none;
+  margin: 0 0 12px;
+  padding: 0;
+}
+
+.sidebar-item {
+  display: block;
+  width: 100%;
+  text-align: left;
+  background: none;
+  border: none;
+  border-radius: var(--radius-sm);
+  padding: 6px 8px;
+}
+
+.sidebar-item:hover {
+  background: var(--bg-raised);
+}
+
+.sidebar-item-active {
+  background: var(--bg-raised);
+  font-weight: 600;
+}
+
+.sidebar-static {
+  display: block;
+  padding: 6px 8px;
+  font-size: 13px;
+}
+
+.sidebar-heading {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--text-muted);
+  margin: 0 0 4px 8px;
+}

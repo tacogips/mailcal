@@ -1,0 +1,72 @@
+.message-view {
+  flex: 1;
+  min-width: 0;
+  padding: 16px;
+  overflow-y: auto;
+}
+
+.message-view-subject {
+  font-size: 18px;
+  margin: 0 0 12px;
+}
+
+.message-view-fields {
+  display: grid;
+  grid-template-columns: 60px 1fr;
+  gap: 2px 12px;
+  margin: 0 0 12px;
+  font-size: 13px;
+}
+
+.message-view-fields dt {
+  color: var(--text-muted);
+}
+
+.message-view-fields dd {
+  margin: 0;
+  word-break: break-word;
+}
+
+.message-view-tags {
+  display: flex;
+  gap: 4px;
+  flex-wrap: wrap;
+  margin-bottom: 12px;
+}
+
+.message-view-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 12px;
+}
+
+.message-view-rawlink {
+  display: block;
+  word-break: break-all;
+  margin-bottom: 12px;
+}
+
+.message-view-truncated {
+  font-size: 12px;
+}
+
+.message-view-text {
+  white-space: pre-wrap;
+  word-break: break-word;
+  font: inherit;
+  margin: 0;
+}
+
+.message-view-attachments {
+  margin-top: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.message-view-attachments h2 {
+  font-size: 13px;
+  color: var(--text-muted);
+  margin: 0;
+}

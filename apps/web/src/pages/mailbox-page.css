@@ -1,0 +1,3 @@
+.app-shell-main > .message-list + * {
+  min-width: 0;
+}
