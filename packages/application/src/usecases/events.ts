@@ -13,7 +13,10 @@ import {
 } from "@yabumi/domain/value-objects/ids";
 import type { AppDependencies } from "../dependencies";
 import { NotFoundError } from "../errors";
-import { readableAddressPatterns } from "../policies/authorization";
+import {
+  mailPermissionListFilter,
+  readableAddressPatterns,
+} from "../policies/authorization";
 import type { Viewer } from "../policies/viewer";
 import { loadReadableMessages } from "./messages";
 import { withAsyncDomainErrorTranslation } from "./translate-domain-error";
@@ -153,6 +156,10 @@ export function createListMessageEventsUseCase(
       viewer,
       Capability.MailRead,
     );
+    const mailPermissionFilter = mailPermissionListFilter(
+      viewer,
+      Capability.MailRead,
+    );
     return deps.messageEventRepository.list(
       {
         ...(input.dueBefore === undefined
@@ -163,6 +170,7 @@ export function createListMessageEventsUseCase(
           ? {}
           : { includeCompleted: input.includeCompleted }),
         allowedPatterns,
+        mailPermissionFilter,
       },
       limit,
     );

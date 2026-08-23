@@ -15,14 +15,18 @@ import {
   createThreadId,
 } from "@yabumi/domain/value-objects/ids";
 import { beforeEach, describe, expect, test } from "vitest";
-import { BadUserInputError, NotFoundError } from "../errors";
+import { createUserId } from "@yabumi/domain/value-objects/ids";
+import { BadUserInputError, ForbiddenError, NotFoundError } from "../errors";
 import {
   createFakeDependencies,
   type FakeDependencies,
 } from "../test-support/fakes";
 import {
   adminViewer,
+  buildMailPermissions,
   mailboxAgentViewer,
+  memberViewer,
+  viewerViewer,
 } from "../test-support/viewer-fixtures";
 import { createSaveDraftUseCase, createSendDraftUseCase } from "./drafts";
 import { createListMessagesUseCase } from "./messages";
@@ -159,6 +163,30 @@ describe("drafts", () => {
     await expect(
       save(adminViewer(), { from: "someone@unmanaged.example" }),
     ).rejects.toBeInstanceOf(BadUserInputError);
+  });
+
+  test("a MEMBER user with no matching ALLOW rule cannot stage a draft", async () => {
+    const save = createSaveDraftUseCase(fake.deps);
+    await expect(
+      save(memberViewer(), {
+        from: "support@example.com",
+        text: "body",
+      }),
+    ).rejects.toBeInstanceOf(ForbiddenError);
+  });
+
+  test("a VIEWER user can never stage a draft, even with a matching ALLOW rule", async () => {
+    const userId = createUserId("usr-viewer-1");
+    const permissions = buildMailPermissions(userId, [
+      { effect: "ALLOW", domainId, addressPattern: "support@example.com" },
+    ]);
+    const save = createSaveDraftUseCase(fake.deps);
+    await expect(
+      save(viewerViewer("usr-viewer-1", permissions), {
+        from: "support@example.com",
+        text: "body",
+      }),
+    ).rejects.toBeInstanceOf(ForbiddenError);
   });
 
   test("drafts never appear in a plain listing of sent mail", async () => {

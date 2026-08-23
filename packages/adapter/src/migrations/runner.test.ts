@@ -85,6 +85,7 @@ describe("createMigrationRunner", () => {
       "0002_system_tags.sql",
       "0003_attachment_kind.sql",
       "0004_spam_status_events.sql",
+      "0005_user_mail_permissions.sql",
     ]);
 
     const names = await tableNames(db);
@@ -102,6 +103,7 @@ describe("createMigrationRunner", () => {
       "api_key_scopes",
       "message_fetch_states",
       "file_links",
+      "user_mail_permissions",
     ]) {
       expect(names).toContain(expected);
     }
@@ -118,6 +120,85 @@ describe("createMigrationRunner", () => {
     ]);
   });
 
+  test("upgrades populated users to VIEWER without losing dependent rows", async () => {
+    const db = createInMemoryDatabase();
+    const runner = createMigrationRunner(db);
+    const migrations = loadMigrationFiles();
+    await runner.apply(
+      migrations.filter(
+        (migration) => migration.name !== "0005_user_mail_permissions.sql",
+      ),
+    );
+
+    await db.execute(
+      `INSERT INTO users
+         (id, email, name, role, created_at, updated_at)
+       VALUES ('usr-admin', 'admin@example.com', 'Admin', 'ADMIN',
+               '2026-08-23T00:00:00.000Z', '2026-08-23T00:00:00.000Z')`,
+    );
+    await db.execute(
+      `INSERT INTO sessions (id, token_hash, user_id, expires_at, created_at)
+       VALUES ('ses-1', 'session-hash', 'usr-admin',
+               '2026-08-24T00:00:00.000Z', '2026-08-23T00:00:00.000Z')`,
+    );
+    await db.execute(
+      `INSERT INTO api_keys
+         (id, name, key_hash, key_prefix, created_by_user_id, created_at)
+       VALUES ('key-1', 'Agent', 'key-hash', 'yb_key', 'usr-admin',
+               '2026-08-23T00:00:00.000Z')`,
+    );
+    await db.execute(
+      `INSERT INTO api_key_scopes
+         (id, api_key_id, capability, domain_id, address_pattern)
+       VALUES ('scope-1', 'key-1', 'MAIL_READ', NULL, '*')`,
+    );
+
+    await runner.apply(
+      migrations.filter(
+        (migration) => migration.name === "0005_user_mail_permissions.sql",
+      ),
+    );
+
+    await db.execute(
+      `INSERT INTO users
+         (id, email, name, role, created_at, updated_at)
+       VALUES ('usr-viewer', 'viewer@example.com', 'Viewer', 'VIEWER',
+               '2026-08-23T01:00:00.000Z', '2026-08-23T01:00:00.000Z')`,
+    );
+    await db.execute(
+      `INSERT INTO user_mail_permissions
+         (id, user_id, effect, domain_id, address_pattern,
+          created_by_user_id, created_at)
+       VALUES ('ump-1', 'usr-viewer', 'ALLOW', NULL, 'support@example.com',
+               'usr-admin', '2026-08-23T01:00:00.000Z')`,
+    );
+
+    expect(await db.query<{ id: string }>("SELECT id FROM sessions")).toEqual([
+      { id: "ses-1" },
+    ]);
+    expect(await db.query<{ id: string }>("SELECT id FROM api_keys")).toEqual([
+      { id: "key-1" },
+    ]);
+    expect(
+      await db.query<{ id: string }>("SELECT id FROM api_key_scopes"),
+    ).toEqual([{ id: "scope-1" }]);
+    expect(
+      await db.query<{ role: string }>(
+        "SELECT role FROM users WHERE id = 'usr-viewer'",
+      ),
+    ).toEqual([{ role: "VIEWER" }]);
+    expect(await db.query("PRAGMA foreign_key_check")).toEqual([]);
+    await expect(
+      db.execute(
+        `INSERT INTO user_mail_permissions
+           (id, user_id, effect, domain_id, address_pattern,
+            created_by_user_id, created_at)
+         VALUES ('ump-bad', 'usr-viewer', 'UNKNOWN', NULL, '*',
+                 'usr-admin', '2026-08-23T01:00:00.000Z')`,
+      ),
+    ).rejects.toThrow();
+  });
+
   test("the real migrations create their indexes", async () => {
     const db = createInMemoryDatabase();
     await createMigrationRunner(db).apply(loadMigrationFiles());
@@ -131,6 +212,9 @@ describe("createMigrationRunner", () => {
       "idx_fetch_states_key",
       "idx_file_links_token",
       "idx_api_keys_key_hash",
+      "idx_user_mail_permissions_user",
+      "idx_user_mail_permissions_domain",
+      "idx_user_mail_permissions_rule",
     ]) {
       expect(names).toContain(expected);
     }

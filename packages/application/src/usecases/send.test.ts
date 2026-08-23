@@ -9,6 +9,7 @@ import {
   createAttachmentId,
   createDomainId,
   createMessageId,
+  createUserId,
 } from "@yabumi/domain/value-objects/ids";
 import { beforeEach, describe, expect, test } from "vitest";
 import {
@@ -24,7 +25,10 @@ import {
 import {
   adminViewer,
   apiKeyViewer,
+  buildMailPermissions,
   mailboxAgentViewer,
+  memberViewer,
+  viewerViewer,
 } from "../test-support/viewer-fixtures";
 import {
   createListSendableAddressesUseCase,
@@ -169,6 +173,36 @@ describe("sendMessage", () => {
     const viewer = apiKeyViewer([
       { capability: Capability.MailRead, domainId, addressPattern: "*" },
     ]);
+    const send = createSendMessageUseCase(fake.deps);
+    await expect(send(viewer, baseSend())).rejects.toBeInstanceOf(
+      ForbiddenError,
+    );
+  });
+
+  test("rejects a MEMBER user with no matching ALLOW rule", async () => {
+    const send = createSendMessageUseCase(fake.deps);
+    await expect(send(memberViewer(), baseSend())).rejects.toBeInstanceOf(
+      ForbiddenError,
+    );
+  });
+
+  test("allows a MEMBER user with a matching ALLOW rule", async () => {
+    const userId = createUserId("usr-member-1");
+    const permissions = buildMailPermissions(userId, [
+      { effect: "ALLOW", domainId, addressPattern: "support@example.com" },
+    ]);
+    const viewer = memberViewer("usr-member-1", permissions);
+    const send = createSendMessageUseCase(fake.deps);
+    const message = await send(viewer, baseSend());
+    expect(message.deliveryStatus).toBe(DeliveryStatus.Sent);
+  });
+
+  test("rejects a VIEWER user, which can never hold MAIL_SEND even with a matching ALLOW rule", async () => {
+    const userId = createUserId("usr-viewer-1");
+    const permissions = buildMailPermissions(userId, [
+      { effect: "ALLOW", domainId, addressPattern: "support@example.com" },
+    ]);
+    const viewer = viewerViewer("usr-viewer-1", permissions);
     const send = createSendMessageUseCase(fake.deps);
     await expect(send(viewer, baseSend())).rejects.toBeInstanceOf(
       ForbiddenError,

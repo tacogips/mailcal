@@ -24,6 +24,7 @@ import { createMessageEventRepository } from "@yabumi/adapter/repositories/messa
 import { createMailDomainRepository } from "@yabumi/adapter/repositories/mail-domain-repository";
 import { createMessageRepository } from "@yabumi/adapter/repositories/message-repository";
 import { createTagRepository } from "@yabumi/adapter/repositories/tag-repository";
+import { createUserMailPermissionRepository } from "@yabumi/adapter/repositories/user-mail-permission-repository";
 import { createD1Database } from "@yabumi/adapter/sql/d1";
 import { createLibsqlDatabase } from "@yabumi/adapter/sql/libsql";
 import type { AppDependencies } from "@yabumi/application/dependencies";
@@ -118,6 +119,7 @@ export function buildDependencies(
     apiKeyRepository: createApiKeyRepository(db),
     fileLinkRepository: createFileLinkRepository(db),
     userRepository: createUserRepository(db),
+    userMailPermissionRepository: createUserMailPermissionRepository(db),
     sessionRepository: createSessionRepository(db),
     emailAuthChallengeRepository: createEmailAuthChallengeRepository(db),
 

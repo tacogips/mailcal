@@ -171,6 +171,9 @@ export function createApplyClassificationRuleUseCase(
           direction: MessageDirection.Inbound,
           ...(rule.domainId === null ? {} : { domainIds: [rule.domainId] }),
           allowedPatterns: null,
+          // System-level sweep already gated by `requireRuleAdmin` above,
+          // not a per-viewer mailbox read -- no mailbox-rule restriction.
+          mailPermissionFilter: null,
         },
         APPLY_PAGE_SIZE,
         cursor,

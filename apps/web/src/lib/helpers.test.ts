@@ -10,6 +10,7 @@ import {
   formatRecipients,
   shortMailbox,
 } from "./address-format";
+import { avatarClass, avatarInitial } from "./avatar";
 import {
   searchParamsToView,
   viewTitle,
@@ -17,10 +18,16 @@ import {
   viewToSearchParams,
 } from "./filter-params";
 import { describeErrors, hasCode } from "./mutation-error";
-import { forwardSubject, quoteBody, replySubject } from "./quote-reply";
+import {
+  forwardBody,
+  forwardSubject,
+  quoteBody,
+  replySubject,
+} from "./quote-reply";
 import {
   formatAbsoluteTime,
   formatBytes,
+  formatListTime,
   formatRelativeTime,
 } from "./relative-time";
 import {
@@ -141,6 +148,38 @@ describe("subjects and quoting", () => {
     } as MessageDetailView;
     expect(quoteBody(message)).toContain("> plain preview");
   });
+
+  test("forwardBody includes the original headers and body", () => {
+    const message = {
+      occurredAt: "2026-08-23T00:00:00.000Z",
+      from: mailbox("a@x.com", "Alice"),
+      subject: "Quarterly numbers",
+      recipients: [
+        mailbox("me@example.com", null, "TO"),
+        mailbox("cc@example.com", null, "CC"),
+      ],
+      textBody: "the full body",
+      snippet: "preview",
+    } as unknown as MessageDetailView;
+    const forwarded = forwardBody(message);
+    expect(forwarded).toContain("---------- Forwarded message ----------");
+    expect(forwarded).toContain("From: Alice <a@x.com>");
+    expect(forwarded).toContain("Subject: Quarterly numbers");
+    expect(forwarded).toContain("To: me@example.com, cc@example.com");
+    expect(forwarded).toContain("the full body");
+  });
+
+  test("forwardBody falls back to the snippet when there is no text body", () => {
+    const message = {
+      occurredAt: "2026-08-23T00:00:00.000Z",
+      from: mailbox("a@x.com"),
+      subject: "Hi",
+      recipients: [],
+      textBody: null,
+      snippet: "plain preview",
+    } as unknown as MessageDetailView;
+    expect(forwardBody(message)).toContain("plain preview");
+  });
 });
 
 describe("time and size formatting", () => {
@@ -172,6 +211,69 @@ describe("time and size formatting", () => {
     [-1, ""],
   ])("formatBytes(%i) is %j", (bytes, expected) => {
     expect(formatBytes(bytes)).toBe(expected);
+  });
+
+  test("formatListTime renders a bare time for the same calendar day", () => {
+    const then = new Date("2026-08-23T09:00:00.000Z");
+    expect(formatListTime(then.toISOString(), now)).toBe(
+      then.toLocaleTimeString(undefined, {
+        hour: "numeric",
+        minute: "2-digit",
+      }),
+    );
+  });
+
+  test("formatListTime says Yesterday for the previous calendar day", () => {
+    const then = new Date("2026-08-22T12:00:00.000Z");
+    expect(formatListTime(then.toISOString(), now)).toBe("Yesterday");
+  });
+
+  test("formatListTime omits the year within the current year", () => {
+    const then = new Date("2026-01-01T12:00:00.000Z");
+    expect(formatListTime(then.toISOString(), now)).toBe(
+      then.toLocaleDateString(undefined, { month: "short", day: "numeric" }),
+    );
+  });
+
+  test("formatListTime includes the year across a year boundary", () => {
+    const then = new Date("2020-01-01T12:00:00.000Z");
+    expect(formatListTime(then.toISOString(), now)).toBe(
+      then.toLocaleDateString(undefined, {
+        year: "numeric",
+        month: "short",
+        day: "numeric",
+      }),
+    );
+  });
+
+  test("formatListTime yields an empty label for an unparseable timestamp", () => {
+    expect(formatListTime("nonsense", now)).toBe("");
+  });
+});
+
+describe("avatar helpers", () => {
+  test("avatarInitial uppercases the first code point", () => {
+    expect(avatarInitial("alice")).toBe("A");
+    expect(avatarInitial("  bob")).toBe("B");
+  });
+
+  test("avatarInitial keeps a non-ASCII character whole", () => {
+    expect(avatarInitial("たろう")).toBe("た");
+  });
+
+  test("avatarInitial falls back to a placeholder for an empty label", () => {
+    expect(avatarInitial("")).toBe("?");
+    expect(avatarInitial("   ")).toBe("?");
+  });
+
+  test("avatarClass is deterministic for the same seed", () => {
+    expect(avatarClass("alice@example.com")).toBe(
+      avatarClass("alice@example.com"),
+    );
+  });
+
+  test("avatarClass handles a non-ASCII seed", () => {
+    expect(avatarClass("たろう@example.com")).toMatch(/^avatar-c[0-7]$/);
   });
 });
 

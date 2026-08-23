@@ -1,5 +1,6 @@
 import type { MessageDetailView } from "../api/schema-types";
 import { formatMailbox } from "./address-format";
+import { formatAbsoluteTime } from "./relative-time";
 
 const REPLY_PREFIX = /^re:\s*/i;
 const FORWARD_PREFIX = /^fwd?:\s*/i;
@@ -31,4 +32,28 @@ export function quoteBody(message: MessageDetailView): string {
     .map((line) => `> ${line}`)
     .join("\n");
   return `\n\n${attribution}\n${quoted}\n`;
+}
+
+/** Builds the forwarded-message body block, mirroring how mail clients
+ * quote a full original message rather than line-prefixing it like a
+ * reply. */
+export function forwardBody(message: MessageDetailView): string {
+  const source =
+    message.textBody !== null && message.textBody.length > 0
+      ? message.textBody
+      : message.snippet;
+  const to = message.recipients
+    .map((recipient) => recipient.address)
+    .join(", ");
+  return [
+    "",
+    "",
+    "---------- Forwarded message ----------",
+    `From: ${formatMailbox(message.from)}`,
+    `Date: ${formatAbsoluteTime(message.occurredAt)}`,
+    `Subject: ${message.subject}`,
+    `To: ${to}`,
+    "",
+    source,
+  ].join("\n");
 }

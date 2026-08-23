@@ -11,7 +11,10 @@ import {
   createMessageEventId,
   createMessageId,
 } from "@yabumi/domain/value-objects/ids";
-import { buildAllowedPatternsCondition } from "./message-repository-queries";
+import {
+  buildAllowedPatternsCondition,
+  buildMailPermissionFilterCondition,
+} from "./message-repository-queries";
 import { assertEnumValue } from "./sql-helpers";
 
 interface EventRow {
@@ -134,6 +137,22 @@ export function createMessageEventRepository(
              WHERE messages.id = message_events.message_id AND ${scope.sql})`,
         );
         params.push(...scope.params);
+      }
+
+      // Same treatment for a USER viewer's mailbox rules, independently of
+      // the allowlist above -- see `MessageListFilter.mailPermissionFilter`.
+      const mailPermission = buildMailPermissionFilterCondition(
+        filter.mailPermissionFilter,
+      );
+      if (mailPermission === "NONE") {
+        return [];
+      }
+      if (mailPermission !== null) {
+        conditions.push(
+          `EXISTS (SELECT 1 FROM messages
+             WHERE messages.id = message_events.message_id AND ${mailPermission.sql})`,
+        );
+        params.push(...mailPermission.params);
       }
 
       const where =

@@ -52,6 +52,10 @@ describe("createUser", () => {
       }),
     ).toThrow(ValidationError);
   });
+
+  test("supports a read-only viewer role", () => {
+    expect(user(UserRole.Viewer).role).toBe(UserRole.Viewer);
+  });
 });
 
 describe("user lifecycle", () => {

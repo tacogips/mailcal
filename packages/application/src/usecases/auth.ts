@@ -33,7 +33,15 @@ export function createResolveViewerFromTokenUseCase(
       if (user === null || !isUserActive(user)) {
         return null;
       }
-      return { kind: "USER", userId: user.id, role: user.role };
+      const permissions = await deps.userMailPermissionRepository.listByUserId(
+        user.id,
+      );
+      return {
+        kind: "USER",
+        userId: user.id,
+        role: user.role,
+        permissions,
+      };
     }
 
     const apiKey = await deps.apiKeyRepository.findByKeyHash(tokenHash);

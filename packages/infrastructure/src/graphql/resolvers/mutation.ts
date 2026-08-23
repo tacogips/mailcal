@@ -1,7 +1,12 @@
 import type { ApiKeyScopeInput } from "@yabumi/application/usecases/api-keys";
 import type { SendMessageInput } from "@yabumi/application/usecases/send";
+import type {
+  CreateUserInput,
+  UserMailPermissionInput,
+} from "@yabumi/application/usecases/users";
 import type { Capability } from "@yabumi/domain/entities/api-key";
 import type { DomainStatus } from "@yabumi/domain/entities/mail-domain";
+import type { UserRole } from "@yabumi/domain/entities/user";
 import {
   createClassificationRuleId,
   createMessageEventId,
@@ -12,6 +17,8 @@ import {
   createFileLinkId,
   createMessageId,
   createTagId,
+  createUserId,
+  createUserMailPermissionId,
 } from "@yabumi/domain/value-objects/ids";
 import type { GraphQLContext } from "../context";
 import type {
@@ -20,6 +27,7 @@ import type {
   RuleMatcher,
 } from "@yabumi/domain/entities/classification-rule";
 import type { MessageEventKind } from "@yabumi/domain/entities/message-event";
+import type { UserPermissionEffect } from "@yabumi/domain/entities/user-mail-permission";
 import { requireViewerOrThrow } from "./helpers";
 import type { ViewerSource } from "./types";
 
@@ -183,6 +191,88 @@ const apiKeyMutations = {
     return ctx.usecases.removeApiKeyScope(
       requireViewerOrThrow(ctx),
       createApiKeyScopeId(args.scopeId),
+    );
+  },
+};
+
+interface UserMailPermissionInputArg {
+  readonly effect: UserPermissionEffect;
+  readonly domainId?: string | null;
+  readonly addressPattern?: string | null;
+}
+
+function toUserMailPermissionInput(
+  input: UserMailPermissionInputArg,
+): UserMailPermissionInput {
+  return {
+    effect: input.effect,
+    domainId: input.domainId == null ? null : createDomainId(input.domainId),
+    addressPattern: input.addressPattern ?? "*",
+  };
+}
+
+const userMutations = {
+  async createUser(
+    _parent: unknown,
+    args: { readonly input: CreateUserInput },
+    ctx: GraphQLContext,
+  ) {
+    const result = await ctx.usecases.createUser(
+      requireViewerOrThrow(ctx),
+      args.input,
+    );
+    return result.user;
+  },
+
+  async setUserRole(
+    _parent: unknown,
+    args: { readonly id: string; readonly role: UserRole },
+    ctx: GraphQLContext,
+  ) {
+    const result = await ctx.usecases.setUserRole(
+      requireViewerOrThrow(ctx),
+      createUserId(args.id),
+      args.role,
+    );
+    return result.user;
+  },
+
+  async setUserActive(
+    _parent: unknown,
+    args: { readonly id: string; readonly active: boolean },
+    ctx: GraphQLContext,
+  ) {
+    const result = await ctx.usecases.setUserActive(
+      requireViewerOrThrow(ctx),
+      createUserId(args.id),
+      args.active,
+    );
+    return result.user;
+  },
+
+  async addUserMailPermission(
+    _parent: unknown,
+    args: {
+      readonly userId: string;
+      readonly input: UserMailPermissionInputArg;
+    },
+    ctx: GraphQLContext,
+  ) {
+    return ctx.usecases.addUserMailPermission(
+      requireViewerOrThrow(ctx),
+      createUserId(args.userId),
+      toUserMailPermissionInput(args.input),
+    );
+  },
+
+  async removeUserMailPermission(
+    _parent: unknown,
+    args: { readonly id: string },
+    ctx: GraphQLContext,
+  ) {
+    return ctx.usecases.removeUserMailPermission(
+      requireViewerOrThrow(ctx),
+      createUserMailPermissionId(args.id),
     );
   },
 };
@@ -612,12 +702,15 @@ const authMutations = {
       result.token,
       new Date(result.session.expiresAt),
     );
+    const permissions =
+      await ctx.deps.userMailPermissionRepository.listByUserId(result.user.id);
     return {
       viewer: {
         viewer: {
           kind: "USER",
           userId: result.user.id,
           role: result.user.role,
+          permissions,
         },
       },
       expiresAt: result.session.expiresAt,
@@ -637,4 +730,5 @@ export const mutationResolvers = {
   ...tagMutations,
   ...fileLinkMutations,
   ...authMutations,
+  ...userMutations,
 };

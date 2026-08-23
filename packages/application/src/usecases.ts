@@ -9,7 +9,8 @@ import type { ClassificationRule } from "@yabumi/domain/entities/classification-
 import type { Message } from "@yabumi/domain/entities/message";
 import type { MessageEvent } from "@yabumi/domain/entities/message-event";
 import type { Tag } from "@yabumi/domain/entities/tag";
-import type { User } from "@yabumi/domain/entities/user";
+import type { User, UserRole } from "@yabumi/domain/entities/user";
+import type { UserMailPermission } from "@yabumi/domain/entities/user-mail-permission";
 import type {
   ClassificationRuleId,
   MessageEventId,
@@ -21,6 +22,8 @@ import type {
   MessageId,
   TagId,
   ThreadId,
+  UserId,
+  UserMailPermissionId,
 } from "@yabumi/domain/value-objects/ids";
 import type { AppDependencies } from "./dependencies";
 import type { Viewer } from "./policies/viewer";
@@ -131,6 +134,18 @@ import {
   type CreateRuleInput,
   type RuleApplication,
 } from "./usecases/rules";
+import {
+  createAddUserMailPermissionUseCase,
+  createCreateUserUseCase,
+  createGetUserUseCase,
+  createListUsersUseCase,
+  createRemoveUserMailPermissionUseCase,
+  createSetUserActiveUseCase,
+  createSetUserRoleUseCase,
+  type CreateUserInput,
+  type UserMailPermissionInput,
+  type UserWithPermissions,
+} from "./usecases/users";
 
 /** One flat object of pre-bound use cases, constructed once per isolate at
  * the composition root. Every transport (GraphQL, the REST routes, the
@@ -350,6 +365,38 @@ export interface UseCases {
   /** Unauthenticated by design: the token is the credential. */
   readonly resolveFileLink: (token: string) => Promise<FileLinkDownload | null>;
   readonly sweepExpiredFileLinks: () => Promise<number>;
+
+  // --- users (admin-only) ---
+  readonly listUsers: (
+    viewer: Viewer,
+  ) => Promise<readonly UserWithPermissions[]>;
+  readonly getUser: (
+    viewer: Viewer,
+    id: UserId,
+  ) => Promise<UserWithPermissions | null>;
+  readonly createUser: (
+    viewer: Viewer,
+    input: CreateUserInput,
+  ) => Promise<UserWithPermissions>;
+  readonly setUserRole: (
+    viewer: Viewer,
+    id: UserId,
+    role: UserRole,
+  ) => Promise<UserWithPermissions>;
+  readonly setUserActive: (
+    viewer: Viewer,
+    id: UserId,
+    active: boolean,
+  ) => Promise<UserWithPermissions>;
+  readonly addUserMailPermission: (
+    viewer: Viewer,
+    userId: UserId,
+    input: UserMailPermissionInput,
+  ) => Promise<UserMailPermission>;
+  readonly removeUserMailPermission: (
+    viewer: Viewer,
+    id: UserMailPermissionId,
+  ) => Promise<boolean>;
 }
 
 export function createUseCases(deps: AppDependencies): UseCases {
@@ -422,6 +469,14 @@ export function createUseCases(deps: AppDependencies): UseCases {
     listFileLinks: createListFileLinksUseCase(deps),
     resolveFileLink: createResolveFileLinkUseCase(deps),
     sweepExpiredFileLinks: createSweepExpiredFileLinksUseCase(deps),
+
+    listUsers: createListUsersUseCase(deps),
+    getUser: createGetUserUseCase(deps),
+    createUser: createCreateUserUseCase(deps),
+    setUserRole: createSetUserRoleUseCase(deps),
+    setUserActive: createSetUserActiveUseCase(deps),
+    addUserMailPermission: createAddUserMailPermissionUseCase(deps),
+    removeUserMailPermission: createRemoveUserMailPermissionUseCase(deps),
   };
 }
 
@@ -431,6 +486,7 @@ export type {
   ApiKeyWithSecret,
   CreateApiKeyUseCaseInput,
   CreatedFileLink,
+  CreateUserInput,
   DnsRecord,
   EmailAuthSession,
   FileLinkDownload,
@@ -439,4 +495,6 @@ export type {
   ReceiveMessageResult,
   SendMessageInput,
   ThreadView,
+  UserMailPermissionInput,
+  UserWithPermissions,
 };

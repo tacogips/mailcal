@@ -38,6 +38,7 @@ keep each under the 1000-line limit.
 | `/search` | auth | Filter-driven search results |
 | `/settings/domains` | admin | Domain list, add, DNS records, verify |
 | `/settings/api-keys` | admin | Key list, issue with a scope builder, revoke |
+| `/settings/users` | admin | User list, roles, activation, address/domain permissions |
 | `/settings/tags` | auth | User tag management |
 
 ## Key components
@@ -54,6 +55,7 @@ keep each under the 1000-line limit.
 | `attachment-tile` | Download, or "copy temp link" via `createAttachmentLink` |
 | `domain-form` / `dns-record-table` | Add a domain and show the records to publish |
 | `api-key-form` / `scope-builder` | Capability + domain + address-pattern rows; shows the secret once, with a copy button and an explicit "you will not see this again" warning |
+| `user-permission-editor` | Role selector plus allow/deny domain and exact-address assignments |
 | `spam-banner` | "Marked as spam (score 0.82)" with a one-click **Not spam** |
 
 ## Search syntax

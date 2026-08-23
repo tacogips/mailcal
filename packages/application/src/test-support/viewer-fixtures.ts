@@ -5,6 +5,11 @@ import {
 } from "@yabumi/domain/entities/api-key";
 import { UserRole } from "@yabumi/domain/entities/user";
 import {
+  createUserMailPermission,
+  type UserMailPermission,
+  UserPermissionEffect,
+} from "@yabumi/domain/entities/user-mail-permission";
+import {
   type AddressPattern,
   createAddressPattern,
   MATCH_ALL_ADDRESSES,
@@ -14,24 +19,77 @@ import {
   createApiKeyId,
   createApiKeyScopeId,
   createUserId,
+  createUserMailPermissionId,
   type DomainId,
+  type UserId,
 } from "@yabumi/domain/value-objects/ids";
 import type { Viewer } from "../policies/viewer";
 
-export function adminViewer(userId = "usr-admin"): Viewer {
+const DEFAULT_PERMISSION_CREATED_AT = "2026-08-23T00:00:00.000Z";
+
+export function adminViewer(
+  userId = "usr-admin",
+  permissions: readonly UserMailPermission[] = [],
+): Viewer {
   return {
     kind: "USER",
     userId: createUserId(userId),
     role: UserRole.Admin,
+    permissions,
   };
 }
 
-export function memberViewer(userId = "usr-member"): Viewer {
+export function memberViewer(
+  userId = "usr-member",
+  permissions: readonly UserMailPermission[] = [],
+): Viewer {
   return {
     kind: "USER",
     userId: createUserId(userId),
     role: UserRole.Member,
+    permissions,
   };
+}
+
+export function viewerViewer(
+  userId = "usr-viewer",
+  permissions: readonly UserMailPermission[] = [],
+): Viewer {
+  return {
+    kind: "USER",
+    userId: createUserId(userId),
+    role: UserRole.Viewer,
+    permissions,
+  };
+}
+
+export interface MailPermissionSpec {
+  readonly effect: "ALLOW" | "DENY";
+  readonly domainId?: DomainId | null;
+  readonly addressPattern?: string;
+  readonly createdByUserId?: UserId;
+}
+
+/** Builds a `UserMailPermission[]` list with generated ids, so tests declare
+ * only the `(effect, domainId, addressPattern)` triple they care about. */
+export function buildMailPermissions(
+  userId: UserId,
+  specs: readonly MailPermissionSpec[],
+): readonly UserMailPermission[] {
+  return specs.map((spec, index) =>
+    createUserMailPermission({
+      id: createUserMailPermissionId(`ump-${index + 1}`),
+      userId,
+      effect:
+        spec.effect === "ALLOW"
+          ? UserPermissionEffect.Allow
+          : UserPermissionEffect.Deny,
+      domainId: spec.domainId ?? null,
+      addressPattern: toPattern(spec.addressPattern),
+      createdByUserId: spec.createdByUserId ?? userId,
+      createdAt: DEFAULT_PERMISSION_CREATED_AT,
+    }),
+  );
 }
 
 export interface ScopeSpec {

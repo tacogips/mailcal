@@ -17,7 +17,8 @@ export type MailStatus = "DRAFT" | "SENT" | "RECEIVED";
 export type MessageEventKind = "DEADLINE" | "REMINDER" | "FOLLOW_UP" | "OTHER";
 export type SpamMarkedBy = "SYSTEM" | "USER" | "RULE";
 export type DomainStatus = "PENDING" | "ACTIVE" | "DISABLED";
-export type UserRole = "ADMIN" | "MEMBER";
+export type UserRole = "ADMIN" | "MEMBER" | "VIEWER";
+export type UserPermissionEffect = "ALLOW" | "DENY";
 export type AttachmentKind =
   | "IMAGE"
   | "VIDEO"
@@ -164,6 +165,26 @@ export interface ApiKeyView {
   readonly lastUsedAt: string | null;
   readonly expiresAt: string | null;
   readonly revokedAt: string | null;
+}
+
+export interface UserMailPermissionView {
+  readonly id: string;
+  readonly effect: UserPermissionEffect;
+  readonly domain: { readonly id: string; readonly name: string } | null;
+  readonly addressPattern: string;
+  readonly createdByUserId: string;
+  readonly createdAt: string;
+}
+
+export interface UserView {
+  readonly id: string;
+  readonly email: string;
+  readonly name: string;
+  readonly role: UserRole;
+  readonly active: boolean;
+  readonly permissions: readonly UserMailPermissionView[];
+  readonly createdAt: string;
+  readonly updatedAt: string;
 }
 
 export interface ViewerView {

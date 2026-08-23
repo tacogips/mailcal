@@ -1,5 +1,3 @@
-import type { AppDependencies } from "@yabumi/application/dependencies";
-import type { Viewer } from "@yabumi/application/policies";
 import {
   createFakeDependencies,
   type FakeDependencies,
@@ -9,7 +7,6 @@ import {
   mailboxAgentViewer,
   memberViewer,
 } from "@yabumi/application/test-support/viewer-fixtures";
-import { createUseCases, type UseCases } from "@yabumi/application/usecases";
 import { createAttachment } from "@yabumi/domain/entities/attachment";
 import {
   createMailDomain,
@@ -28,74 +25,18 @@ import {
   createThreadId,
 } from "@yabumi/domain/value-objects/ids";
 import { beforeEach, describe, expect, test } from "vitest";
-import { buildGraphQLContext } from "./context";
-import { buildGraphQLSchema, createGraphQLYoga } from "./schema";
+import {
+  createGraphQLHarness,
+  errorCodes,
+  type GraphQLHarness as Harness,
+} from "./graphql-test-support";
+import { buildGraphQLSchema } from "./schema";
 
 const NOW = "2026-08-23T00:00:00.000Z";
 const domainId = createDomainId("dom-1");
 
-// Executed through yoga's `fetch` rather than graphql-js's `graphql()`:
-// `createSchema` builds the schema with the copy of `graphql` that
-// `@graphql-tools` resolves, which is not necessarily the one a direct
-// import here would get -- and graphql-js rejects a schema from "another
-// module or realm". Going through yoga also exercises the real request
-// path, including error masking and the depth/selection limit plugins.
-const yoga = createGraphQLYoga(buildGraphQLSchema(), { graphiql: false });
-
-interface ExecutionResult {
-  readonly data?: Record<string, unknown> | null;
-  readonly errors?: readonly {
-    readonly message: string;
-    readonly extensions?: Record<string, unknown>;
-  }[];
-}
-
-interface Harness {
-  readonly fake: FakeDependencies;
-  readonly deps: AppDependencies;
-  readonly usecases: UseCases;
-  readonly run: (
-    source: string,
-    viewer: Viewer | null,
-    variables?: Record<string, unknown>,
-  ) => Promise<ExecutionResult>;
-}
-
-function errorCodes(result: ExecutionResult): readonly unknown[] {
-  return (result.errors ?? []).map((error) => error.extensions?.["code"]);
-}
-
-async function execute(
-  deps: AppDependencies,
-  usecases: UseCases,
-  source: string,
-  viewer: Viewer | null,
-  variables?: Record<string, unknown>,
-): Promise<ExecutionResult> {
-  const context = buildGraphQLContext({
-    viewer,
-    token: null,
-    deps,
-    usecases,
-  });
-  const response = await yoga.fetch(
-    new Request("https://mail.example.com/graphql", {
-      method: "POST",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify(
-        variables === undefined
-          ? { query: source }
-          : { query: source, variables },
-      ),
-    }),
-    context as unknown as Record<string, unknown>,
-  );
-  return (await response.json()) as ExecutionResult;
-}
-
 async function createHarness(): Promise<Harness> {
   const fake = createFakeDependencies({ now: NOW });
-  const usecases = createUseCases(fake.deps);
 
   await fake.deps.mailDomainRepository.save(
     verifyMailDomain(
@@ -110,13 +51,7 @@ async function createHarness(): Promise<Harness> {
     ),
   );
 
-  return {
-    fake,
-    deps: fake.deps,
-    usecases,
-    run: (source, viewer, variables) =>
-      execute(fake.deps, usecases, source, viewer, variables),
-  };
+  return createGraphQLHarness(fake);
 }
 
 function seedMessage(

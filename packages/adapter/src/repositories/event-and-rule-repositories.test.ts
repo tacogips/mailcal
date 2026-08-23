@@ -125,24 +125,90 @@ describe("messageEventRepository", () => {
     );
     await repo.save(finished);
 
-    const open = await repo.list({ allowedPatterns: null }, 10);
+    const open = await repo.list(
+      { allowedPatterns: null, mailPermissionFilter: null },
+      10,
+    );
     expect(open.map((entry) => entry.id)).toEqual(["soon", "late"]);
 
     const withDone = await repo.list(
-      { allowedPatterns: null, includeCompleted: true },
+      {
+        allowedPatterns: null,
+        mailPermissionFilter: null,
+        includeCompleted: true,
+      },
       10,
     );
     expect(withDone.map((entry) => entry.id)).toEqual(["done", "soon", "late"]);
 
     // A key scoped to billing@ sees only msg-2's events.
     const scoped = await repo.list(
-      { allowedPatterns: [createAddressPattern("billing@example.com")] },
+      {
+        allowedPatterns: [createAddressPattern("billing@example.com")],
+        mailPermissionFilter: null,
+      },
       10,
     );
     expect(scoped.map((entry) => entry.id)).toEqual(["soon"]);
 
     // An empty allowlist sees nothing rather than everything.
-    expect(await repo.list({ allowedPatterns: [] }, 10)).toEqual([]);
+    expect(
+      await repo.list({ allowedPatterns: [], mailPermissionFilter: null }, 10),
+    ).toEqual([]);
+  });
+
+  test("agenda list: mailPermissionFilter scopes through the owning message", async () => {
+    await repo.save(event("late", "msg-1", "2026-12-01T00:00:00.000Z"));
+    await repo.save(event("soon", "msg-2", "2026-09-01T00:00:00.000Z"));
+
+    // ADMIN baseline with a DENY on msg-1's address excludes only its event.
+    const adminMinusDenied = await repo.list(
+      {
+        allowedPatterns: null,
+        mailPermissionFilter: {
+          baseline: true,
+          rules: [
+            {
+              effect: "DENY",
+              domainId,
+              addressPattern: createAddressPattern("support@example.com"),
+            },
+          ],
+        },
+      },
+      10,
+    );
+    expect(adminMinusDenied.map((entry) => entry.id)).toEqual(["soon"]);
+
+    // MEMBER with an ALLOW on msg-2's address sees only its event.
+    const memberAllowed = await repo.list(
+      {
+        allowedPatterns: null,
+        mailPermissionFilter: {
+          baseline: false,
+          rules: [
+            {
+              effect: "ALLOW",
+              domainId,
+              addressPattern: createAddressPattern("billing@example.com"),
+            },
+          ],
+        },
+      },
+      10,
+    );
+    expect(memberAllowed.map((entry) => entry.id)).toEqual(["soon"]);
+
+    // A non-baseline filter with zero ALLOW rules sees nothing.
+    expect(
+      await repo.list(
+        {
+          allowedPatterns: null,
+          mailPermissionFilter: { baseline: false, rules: [] },
+        },
+        10,
+      ),
+    ).toEqual([]);
   });
 
   test("deleting the message cascades to its events", async () => {

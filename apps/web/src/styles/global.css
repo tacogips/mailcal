@@ -46,8 +46,90 @@ button.primary {
   border-color: var(--accent);
 }
 
+button.primary:hover:not(:disabled) {
+  background: var(--accent-hover);
+  border-color: var(--accent-hover);
+}
+
 button.danger {
   color: var(--danger);
+}
+
+button.pill {
+  border-radius: var(--radius-pill);
+}
+
+.icon-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  background: transparent;
+  border: none;
+  border-radius: var(--radius-sm);
+  color: var(--text-muted);
+  cursor: pointer;
+}
+
+.icon-button:hover:not(:disabled) {
+  background: var(--bg-subtle);
+  color: var(--text);
+  border-color: transparent;
+}
+
+.icon-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.icon-button.active {
+  color: var(--accent);
+  background: var(--accent-soft);
+}
+
+.icon-button.danger {
+  color: var(--danger);
+}
+
+.avatar {
+  border-radius: 50%;
+  width: 36px;
+  height: 36px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  font-weight: 600;
+  font-size: 14px;
+  text-transform: uppercase;
+  color: #ffffff;
+}
+
+.avatar-c0 {
+  background: #6d4aff;
+}
+.avatar-c1 {
+  background: #0f766e;
+}
+.avatar-c2 {
+  background: #b45309;
+}
+.avatar-c3 {
+  background: #be185d;
+}
+.avatar-c4 {
+  background: #1d4ed8;
+}
+.avatar-c5 {
+  background: #15803d;
+}
+.avatar-c6 {
+  background: #7c3aed;
+}
+.avatar-c7 {
+  background: #b91c1c;
 }
 
 input,

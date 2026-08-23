@@ -1,3 +1,7 @@
+import type {
+  MailAuthorizationRule,
+  MailPermissionFilter,
+} from "@yabumi/application/policies/authorization";
 import type { MessageListFilter } from "@yabumi/application/ports/message-repository";
 import type { SqlValue } from "@yabumi/application/ports/sql-database";
 import { FetchStatus } from "@yabumi/domain/entities/fetch-state";
@@ -26,6 +30,36 @@ function anyAddressCondition(address: string): SqlCondition {
   };
 }
 
+/** A single address pattern, rendered as the condition it matches against
+ * `messages.from_address` and every recipient. `"*"` always matches, so its
+ * caller decides separately what an unrestricted pattern means for the
+ * *whole* filter -- this function never collapses anything on its own. */
+function singlePatternCondition(pattern: string): SqlCondition {
+  const like = addressPatternToLikeExpression(
+    pattern as Parameters<typeof addressPatternToLikeExpression>[0],
+  );
+  if (like === null) {
+    // Only "*" renders to null.
+    return { sql: "1 = 1", params: [] };
+  }
+  if (like.includes("%")) {
+    return {
+      sql: `(messages.from_address LIKE ? ESCAPE '\\' OR EXISTS (
+              SELECT 1 FROM message_recipients r
+              WHERE r.message_id = messages.id AND r.address LIKE ? ESCAPE '\\'
+            ))`,
+      params: [like, like],
+    };
+  }
+  return {
+    sql: `(messages.from_address = ? OR EXISTS (
+            SELECT 1 FROM message_recipients r
+            WHERE r.message_id = messages.id AND r.address = ?
+          ))`,
+    params: [like, like],
+  };
+}
+
 /** Renders the viewer's scope-derived address allowlist.
  *
  * An **empty** allowlist means the viewer holds no matching scope and must
@@ -46,31 +80,85 @@ function allowedPatternsCondition(
       // A single match-all pattern makes the whole allowlist a no-op.
       return null;
     }
-    const like = addressPatternToLikeExpression(
-      pattern as Parameters<typeof addressPatternToLikeExpression>[0],
-    );
-    if (like === null) {
-      return null;
-    }
-    if (like.includes("%")) {
-      clauses.push(
-        `(messages.from_address LIKE ? ESCAPE '\\' OR EXISTS (
-           SELECT 1 FROM message_recipients r
-           WHERE r.message_id = messages.id AND r.address LIKE ? ESCAPE '\\'
-         ))`,
-      );
-      params.push(like, like);
-    } else {
-      clauses.push(
-        `(messages.from_address = ? OR EXISTS (
-           SELECT 1 FROM message_recipients r
-           WHERE r.message_id = messages.id AND r.address = ?
-         ))`,
-      );
-      params.push(like, like);
-    }
+    const clause = singlePatternCondition(pattern);
+    clauses.push(clause.sql);
+    params.push(...clause.params);
   }
   return { sql: `(${clauses.join(" OR ")})`, params };
+}
+
+/** One mailbox rule's own `(domainId, addressPattern)` pairing, rendered as
+ * a self-contained condition. Never combine a rule's domain with another
+ * rule's pattern -- that is exactly the cross-product this shape (and this
+ * function taking the whole rule at once) is meant to make impossible. */
+function mailRuleCondition(rule: MailAuthorizationRule): SqlCondition {
+  const addressClause = singlePatternCondition(rule.addressPattern);
+  if (rule.domainId === null) {
+    return addressClause;
+  }
+  return {
+    sql: `(messages.domain_id = ? AND ${addressClause.sql})`,
+    params: [rule.domainId, ...addressClause.params],
+  };
+}
+
+/** ORs together every rule's own condition, each still carrying its own
+ * domain/pattern pairing. */
+function combineRuleConditions(
+  rules: readonly MailAuthorizationRule[],
+): SqlCondition {
+  const clauses = rules.map(mailRuleCondition);
+  return {
+    sql: `(${clauses.map((clause) => clause.sql).join(" OR ")})`,
+    params: clauses.flatMap((clause) => [...clause.params]),
+  };
+}
+
+/** Renders a USER viewer's mailbox-rule scoping (`ADMIN`/`MEMBER`/`VIEWER`)
+ * as a reusable condition over the `messages` table. Returns `null` when
+ * unrestricted (a `baseline` viewer with no `DENY` rules, an API-key
+ * viewer, or a global capability), `"NONE"` when a non-baseline viewer
+ * holds no `ALLOW` rule at all (must see nothing), otherwise the SQL
+ * fragment. Exposed so other repositories (message events) can apply the
+ * same scoping through the owning message. */
+export function buildMailPermissionFilterCondition(
+  filter: MailPermissionFilter | null,
+): SqlCondition | "NONE" | null {
+  if (filter === null) {
+    return null;
+  }
+  const denyRules = filter.rules.filter((rule) => rule.effect === "DENY");
+  const allowRules = filter.rules.filter((rule) => rule.effect === "ALLOW");
+
+  if (!filter.baseline && allowRules.length === 0) {
+    return "NONE";
+  }
+
+  const visibility =
+    filter.baseline || allowRules.length === 0
+      ? null // Baseline access covers everything; no ALLOW clause needed.
+      : combineRuleConditions(allowRules);
+  const deny = denyRules.length === 0 ? null : combineRuleConditions(denyRules);
+
+  if (visibility === null && deny === null) {
+    // Baseline with no denies at all: fully unrestricted.
+    return null;
+  }
+  const parts: SqlCondition[] = [];
+  if (visibility !== null) {
+    parts.push(visibility);
+  }
+  if (deny !== null) {
+    parts.push({ sql: `NOT (${deny.sql})`, params: deny.params });
+  }
+  const [first] = parts;
+  if (parts.length === 1 && first !== undefined) {
+    return first;
+  }
+  return {
+    sql: `(${parts.map((part) => part.sql).join(" AND ")})`,
+    params: parts.flatMap((part) => [...part.params]),
+  };
 }
 
 function tagCondition(
@@ -262,6 +350,14 @@ function collectFilterConditions(
     if (allowed !== null) {
       conditions.push(allowed);
     }
+  }
+  const mailPermission = buildMailPermissionFilterCondition(
+    filter.mailPermissionFilter,
+  );
+  if (mailPermission === "NONE") {
+    conditions.push({ sql: "0 = 1", params: [] });
+  } else if (mailPermission !== null) {
+    conditions.push(mailPermission);
   }
   if (filter.fetchStatus !== undefined) {
     conditions.push(

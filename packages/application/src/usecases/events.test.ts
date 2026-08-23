@@ -8,6 +8,7 @@ import {
   createDomainId,
   createMessageId,
   createThreadId,
+  createUserId,
 } from "@yabumi/domain/value-objects/ids";
 import { beforeEach, describe, expect, test } from "vitest";
 import { NotFoundError } from "../errors";
@@ -17,7 +18,10 @@ import {
 } from "../test-support/fakes";
 import {
   adminViewer,
+  buildMailPermissions,
   mailboxAgentViewer,
+  memberViewer,
+  viewerViewer,
 } from "../test-support/viewer-fixtures";
 import {
   createCreateMessageEventUseCase,
@@ -170,5 +174,52 @@ describe("message events", () => {
     expect(
       await listEvents(mailboxAgentViewer(domainId, "support@example.com"), {}),
     ).toHaveLength(1);
+  });
+
+  test("a MEMBER user with no matching ALLOW rule can neither write nor list the event", async () => {
+    const create = createCreateMessageEventUseCase(fake.deps);
+    await expect(
+      create(memberViewer(), {
+        messageId,
+        kind: MessageEventKind.FollowUp,
+        title: "sneaky",
+      }),
+    ).rejects.toBeInstanceOf(NotFoundError);
+
+    await create(adminViewer(), {
+      messageId,
+      kind: MessageEventKind.FollowUp,
+      title: "internal",
+    });
+    const listEvents = createListMessageEventsUseCase(fake.deps);
+    expect(await listEvents(memberViewer(), {})).toEqual([]);
+  });
+
+  test("a VIEWER user can never write an event, even with a matching ALLOW rule", async () => {
+    const userId = createUserId("usr-viewer-1");
+    const permissions = buildMailPermissions(userId, [
+      {
+        effect: "ALLOW",
+        domainId,
+        addressPattern: "support@example.com",
+      },
+    ]);
+    const viewer = viewerViewer("usr-viewer-1", permissions);
+    const create = createCreateMessageEventUseCase(fake.deps);
+    await expect(
+      create(viewer, {
+        messageId,
+        kind: MessageEventKind.FollowUp,
+        title: "sneaky",
+      }),
+    ).rejects.toBeInstanceOf(NotFoundError);
+    // A VIEWER can still read and list the mail's existing events, though.
+    await create(adminViewer(), {
+      messageId,
+      kind: MessageEventKind.FollowUp,
+      title: "internal",
+    });
+    const listEvents = createListMessageEventsUseCase(fake.deps);
+    expect(await listEvents(viewer, {})).toHaveLength(1);
   });
 });

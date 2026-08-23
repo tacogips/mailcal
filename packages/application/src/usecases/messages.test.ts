@@ -12,6 +12,7 @@ import {
   createDomainId,
   createMessageId,
   createThreadId,
+  createUserId,
 } from "@yabumi/domain/value-objects/ids";
 import { SystemTagSlug } from "@yabumi/domain/entities/tag";
 import { beforeEach, describe, expect, test } from "vitest";
@@ -23,7 +24,10 @@ import {
 import {
   adminViewer,
   apiKeyViewer,
+  buildMailPermissions,
   mailboxAgentViewer,
+  memberViewer,
+  viewerViewer,
 } from "../test-support/viewer-fixtures";
 import {
   createMarkMessagesFetchedUseCase,
@@ -41,6 +45,8 @@ import { createMarkSpamUseCase } from "./tagging";
 
 const NOW = "2026-08-23T00:00:00.000Z";
 const domainId = createDomainId("dom-1");
+const MEMBER_ID = createUserId("usr-member");
+const VIEWER_ID = createUserId("usr-viewer");
 
 interface SeedOptions {
   readonly id: string;
@@ -264,6 +270,78 @@ describe("listMessages", () => {
   });
 });
 
+describe("mailbox permission rules (MEMBER/VIEWER)", () => {
+  test("listMessages only returns messages a MEMBER/VIEWER has an ALLOW rule for", async () => {
+    const fake = createFakeDependencies({ now: NOW });
+    seedMessage(fake, {
+      id: "msg-1",
+      to: "support@example.com",
+      occurredAt: "2026-08-23T01:00:00.000Z",
+    });
+    seedMessage(fake, {
+      id: "msg-2",
+      to: "billing@example.com",
+      occurredAt: "2026-08-23T02:00:00.000Z",
+    });
+    const list = createListMessagesUseCase(fake.deps);
+
+    const permissions = buildMailPermissions(MEMBER_ID, [
+      { effect: "ALLOW", domainId, addressPattern: "support@example.com" },
+    ]);
+    const member = memberViewer(MEMBER_ID, permissions);
+    const memberPage = await list(member, {});
+    expect(memberPage.nodes.map((message) => message.id)).toEqual(["msg-1"]);
+
+    const viewer = viewerViewer(MEMBER_ID, permissions);
+    const viewerPage = await list(viewer, {});
+    expect(viewerPage.nodes.map((message) => message.id)).toEqual(["msg-1"]);
+
+    const unassignedMember = memberViewer("usr-unassigned");
+    expect((await list(unassignedMember, {})).nodes).toEqual([]);
+  });
+
+  test("a VIEWER is rejected by markRead/deleteMessages even on an address it may read", async () => {
+    const fake = createFakeDependencies({ now: NOW });
+    seedMessage(fake, {
+      id: "msg-1",
+      to: "support@example.com",
+      occurredAt: NOW,
+    });
+    const permissions = buildMailPermissions(VIEWER_ID, [
+      { effect: "ALLOW", domainId, addressPattern: "support@example.com" },
+    ]);
+    const viewer = viewerViewer(VIEWER_ID, permissions);
+
+    const markRead = createMarkReadUseCase(fake.deps);
+    const readResult = await markRead(viewer, [createMessageId("msg-1")], true);
+    expect(readResult).toEqual([]);
+    expect(fake.messageStores.messages.get("msg-1")?.readAt).toBeNull();
+
+    const remove = createDeleteMessagesUseCase(fake.deps);
+    expect(await remove(viewer, [createMessageId("msg-1")])).toBe(0);
+    expect(fake.messageStores.messages.has("msg-1")).toBe(true);
+
+    // getMessage (MAIL_READ) still works for the same viewer/address.
+    const get = createGetMessageUseCase(fake.deps);
+    await expect(get(viewer, createMessageId("msg-1"))).resolves.not.toBeNull();
+  });
+
+  test("getMessage returns null (never throws) for an id outside a MEMBER's rules", async () => {
+    const fake = createFakeDependencies({ now: NOW });
+    seedMessage(fake, {
+      id: "msg-1",
+      to: "support@example.com",
+      occurredAt: NOW,
+    });
+    const permissions = buildMailPermissions(MEMBER_ID, [
+      { effect: "ALLOW", domainId, addressPattern: "billing@example.com" },
+    ]);
+    const member = memberViewer(MEMBER_ID, permissions);
+    const get = createGetMessageUseCase(fake.deps);
+    await expect(get(member, createMessageId("msg-1"))).resolves.toBeNull();
+  });
+});
+
 describe("getMessage", () => {
   let fake: FakeDependencies;
 
@@ -295,6 +373,34 @@ describe("getMessage", () => {
     // for the existence of other mailboxes.
     await expect(get(viewer, createMessageId("msg-2"))).resolves.toBeNull();
     await expect(get(viewer, createMessageId("nope"))).resolves.toBeNull();
+  });
+
+  test("a DENY rule hides a message an ADMIN baseline would otherwise see", async () => {
+    const userId = createUserId("usr-admin-1");
+    // A message is visible if *any* of its addresses is authorized, so the
+    // DENY must cover every address on msg-1 (its "support@example.com"
+    // recipient and its "sender@other.com" sender) to hide it entirely --
+    // a domain-wide "*" deny does that without touching msg-2's addresses.
+    const permissions = buildMailPermissions(userId, [
+      { effect: "DENY", domainId, addressPattern: "*" },
+    ]);
+    const get = createGetMessageUseCase(fake.deps);
+    const viewer = adminViewer("usr-admin-1", permissions);
+    await expect(get(viewer, createMessageId("msg-1"))).resolves.toBeNull();
+    await expect(get(viewer, createMessageId("msg-2"))).resolves.toBeNull();
+  });
+
+  test("a DENY on one address does not hide a message that another address on it still authorizes", async () => {
+    const userId = createUserId("usr-admin-2");
+    // msg-1's addresses are "sender@other.com" (from) and
+    // "support@example.com" (recipient); denying only the recipient leaves
+    // the sender address independently authorizing the same message.
+    const permissions = buildMailPermissions(userId, [
+      { effect: "DENY", domainId, addressPattern: "support@example.com" },
+    ]);
+    const get = createGetMessageUseCase(fake.deps);
+    const viewer = adminViewer("usr-admin-2", permissions);
+    await expect(get(viewer, createMessageId("msg-1"))).resolves.not.toBeNull();
   });
 });
 

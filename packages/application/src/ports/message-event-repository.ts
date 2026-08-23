@@ -4,6 +4,7 @@ import type {
   MessageEventId,
   MessageId,
 } from "@yabumi/domain/value-objects/ids";
+import type { MailPermissionFilter } from "../policies/authorization";
 
 export interface MessageEventListFilter {
   /** Due on or before this instant. Events with no dueAt never match a
@@ -14,6 +15,9 @@ export interface MessageEventListFilter {
   /** Scope allowlist over the owning message's addresses, with the same
    * semantics as `MessageListFilter.allowedPatterns`. */
   readonly allowedPatterns: readonly AddressPattern[] | null;
+  /** Interactive-user mailbox-rule scoping over the owning message, with
+   * the same semantics as `MessageListFilter.mailPermissionFilter`. */
+  readonly mailPermissionFilter: MailPermissionFilter | null;
 }
 
 export interface MessageEventRepository {

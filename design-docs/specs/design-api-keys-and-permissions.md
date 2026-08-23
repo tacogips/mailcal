@@ -111,17 +111,22 @@ takes as its first argument:
 
 ```typescript
 type Viewer =
-  | { readonly kind: "USER"; readonly userId: UserId; readonly role: UserRole }
+  | { readonly kind: "USER"; readonly userId: UserId; readonly role: UserRole;
+      readonly permissions: readonly UserMailPermission[] }
   | { readonly kind: "API_KEY"; readonly apiKeyId: ApiKeyId;
       readonly scopes: readonly ApiKeyScope[] };
 ```
 
-A `USER` viewer with `role: ADMIN` passes every capability check. A
-`role: MEMBER` user passes `MAIL_READ`/`MAIL_SEND`/`MAIL_MANAGE`/`FILE_LINK`
-for every active domain but never `DOMAIN_ADMIN`/`KEY_ADMIN`. An `API_KEY`
-viewer is authorized purely by its scope list -- there is no implicit
-inheritance from the user that created it, so revoking a user does not
-silently widen or narrow an existing key's reach.
+A `USER` viewer is evaluated by role and current mail-permission rules as
+defined in `design-user-mail-permissions.md`. An `API_KEY` viewer is authorized
+purely by its scope list -- there is no implicit inheritance from the user that
+created it, so changing a user's role or mail permissions does not silently
+widen or narrow an existing key's reach.
 
 The single policy module `packages/application/src/policies/authorization.ts`
 owns every check; use cases call it rather than inspecting `Viewer` directly.
+
+API-key scopes already support both requested granularities: a specific
+`domainId` with `addressPattern: "*"` grants a whole domain, while an exact
+address pattern grants one mailbox. These allow-only key scopes are separate
+from user `ALLOW`/`DENY` rules.

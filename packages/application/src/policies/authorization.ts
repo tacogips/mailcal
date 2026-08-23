@@ -1,11 +1,15 @@
 import {
-  type Capability,
+  Capability,
   isGlobalCapability,
   scopesAuthorize,
   scopesAuthorizeGlobal,
   scopesForCapability,
 } from "@yabumi/domain/entities/api-key";
-import type { AddressPattern } from "@yabumi/domain/value-objects/address-pattern";
+import { UserRole } from "@yabumi/domain/entities/user";
+import {
+  type AddressPattern,
+  matchAddressPattern,
+} from "@yabumi/domain/value-objects/address-pattern";
 import type { EmailAddress } from "@yabumi/domain/value-objects/email-address";
 import type { DomainId } from "@yabumi/domain/value-objects/ids";
 import { ForbiddenError, UnauthenticatedError } from "../errors";
@@ -52,6 +56,136 @@ export function requireGlobalCapability(
   }
 }
 
+/** One `UserMailPermission` row, reduced to exactly what an authorization
+ * decision or a listing filter needs. The `(effect, domainId,
+ * addressPattern)` triple must always travel together: splitting a rule's
+ * domain and pattern into independent lists would let an unrelated pairing
+ * from a *different* rule match, which is the cross-product bug this shape
+ * exists to prevent. */
+export interface MailAuthorizationRule {
+  readonly effect: "ALLOW" | "DENY";
+  readonly domainId: DomainId | null;
+  readonly addressPattern: AddressPattern;
+}
+
+/** Everything a listing query needs to enforce a USER viewer's mailbox
+ * rules. `baseline: true` (ADMIN) means every domain/address is visible
+ * unless a DENY rule matches; `baseline: false` (MEMBER/VIEWER) means only
+ * a matching ALLOW with no matching DENY makes a candidate visible. */
+export interface MailPermissionFilter {
+  readonly baseline: boolean;
+  readonly rules: readonly MailAuthorizationRule[];
+}
+
+/** Whether a role may exercise `capability` **at all**, before any per-rule
+ * ALLOW/DENY is considered. `ADMIN` and `MEMBER` may exercise every
+ * non-global capability (subject to `MEMBER` still needing a matching
+ * ALLOW rule); `VIEWER` may only ever read mail and mint file links, no
+ * matter what its rules say. Callers must already have excluded global
+ * capabilities before calling this. */
+function roleGrantsCapability(role: UserRole, capability: Capability): boolean {
+  switch (role) {
+    case UserRole.Admin:
+    case UserRole.Member:
+      return true;
+    case UserRole.Viewer:
+      return (
+        capability === Capability.MailRead || capability === Capability.FileLink
+      );
+    default: {
+      const exhaustive: never = role;
+      throw new Error(`Unhandled user role: ${String(exhaustive)}`);
+    }
+  }
+}
+
+/** The viewer's mailbox rules that are even in play for `capability` --
+ * empty for an API-key viewer, a global capability, or a role that a
+ * `VIEWER` can never hold (`MAIL_SEND`/`MAIL_MANAGE`). Every rule keeps its
+ * own `(effect, domainId, addressPattern)` triple, so a caller can never
+ * accidentally recombine one rule's domain with another rule's pattern. */
+export function mailAuthorizationRules(
+  viewer: Viewer,
+  capability: Capability,
+): readonly MailAuthorizationRule[] {
+  if (viewer.kind !== "USER" || isGlobalCapability(capability)) {
+    return [];
+  }
+  if (!roleGrantsCapability(viewer.role, capability)) {
+    return [];
+  }
+  return viewer.permissions.map((permission) => ({
+    effect: permission.effect,
+    domainId: permission.domainId,
+    addressPattern: permission.addressPattern,
+  }));
+}
+
+/** The listing-query filter a USER viewer's mailbox rules impose, or `null`
+ * when this mechanism does not apply (an API-key viewer, or a global
+ * capability -- both keep using `readableAddressPatterns`/`scopedDomainIds`
+ * instead, entirely independently of this one). */
+export function mailPermissionListFilter(
+  viewer: Viewer,
+  capability: Capability,
+): MailPermissionFilter | null {
+  if (viewer.kind !== "USER" || isGlobalCapability(capability)) {
+    return null;
+  }
+  return {
+    baseline: viewer.role === UserRole.Admin,
+    rules: mailAuthorizationRules(viewer, capability),
+  };
+}
+
+/** True when `rule`'s own domain/pattern pairing covers `domainId` and
+ * `address`. Never call this with a domain or pattern taken from a
+ * *different* rule -- that is exactly the cross-product this type's shape
+ * is meant to make impossible. */
+function mailRuleMatches(
+  rule: Pick<MailAuthorizationRule, "domainId" | "addressPattern">,
+  domainId: DomainId,
+  address: EmailAddress,
+): boolean {
+  if (rule.domainId !== null && rule.domainId !== domainId) {
+    return false;
+  }
+  return matchAddressPattern(rule.addressPattern, address);
+}
+
+/** Whether `filter`'s rules authorize at least one of `addresses` in
+ * `domainId`. Each candidate address is evaluated independently in the
+ * order the design doc specifies: a matching DENY always rejects that one
+ * address; otherwise `filter.baseline` (an ADMIN) covers it, and a
+ * non-baseline viewer (MEMBER/VIEWER) needs a matching ALLOW. A DENY on one
+ * address never hides a message that is independently authorized through
+ * another address. Takes an already-resolved `MailPermissionFilter` rather
+ * than a `Viewer`, so in-memory test doubles for listing repositories can
+ * honor a USER viewer's mailbox rules without re-implementing the rule
+ * semantics themselves. */
+export function mailPermissionFilterAuthorizesAnyAddress(
+  filter: MailPermissionFilter,
+  domainId: DomainId,
+  addresses: readonly EmailAddress[],
+): boolean {
+  return addresses.some((address) => {
+    const denied = filter.rules.some(
+      (rule) =>
+        rule.effect === "DENY" && mailRuleMatches(rule, domainId, address),
+    );
+    if (denied) {
+      return false;
+    }
+    if (filter.baseline) {
+      return true;
+    }
+    return filter.rules.some(
+      (rule) =>
+        rule.effect === "ALLOW" && mailRuleMatches(rule, domainId, address),
+    );
+  });
+}
+
 /** Non-throwing per-address check. Passes when **any** of `addresses` is
  * authorized: a message with several envelope recipients is readable when
  * the key covers even one of them. */
@@ -62,10 +196,17 @@ export function authorizesAnyAddress(
   addresses: readonly EmailAddress[],
 ): boolean {
   if (viewer.kind === "USER") {
-    // Both ADMIN and MEMBER users may read, send and manage mail across
-    // every managed domain; only instance administration distinguishes
-    // them (see `authorizesGlobal`).
-    return !isGlobalCapability(capability);
+    if (isGlobalCapability(capability)) {
+      return false;
+    }
+    return mailPermissionFilterAuthorizesAnyAddress(
+      {
+        baseline: viewer.role === UserRole.Admin,
+        rules: mailAuthorizationRules(viewer, capability),
+      },
+      domainId,
+      addresses,
+    );
   }
   return addresses.some((address) =>
     scopesAuthorize(viewer.scopes, { capability, domainId, address }),

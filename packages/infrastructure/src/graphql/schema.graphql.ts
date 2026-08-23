@@ -139,9 +139,26 @@ export const typeDefs = /* GraphQL */ `
     RAW_MESSAGE
   }
 
+  """
+  ADMIN administers the instance and, by default, every managed mailbox.
+  MEMBER may read/send/manage assigned mail. VIEWER may only read and open
+  attachments on assigned mail. See UserMailPermission for how "assigned"
+  is granted.
+  """
   enum UserRole {
     ADMIN
     MEMBER
+    VIEWER
+  }
+
+  """
+  ALLOW grants a role's mail capabilities on the matching mailbox; DENY
+  always wins over any overlapping ALLOW, including an ADMIN's default
+  access to every mailbox.
+  """
+  enum UserPermissionEffect {
+    ALLOW
+    DENY
   }
 
   enum DnsRecordType {
@@ -376,12 +393,39 @@ export const typeDefs = /* GraphQL */ `
     url: String!
   }
 
+  """
+  A mailbox rule an admin grants (or denies) a user, scoped by domain and
+  address pattern. Only meaningful for a MEMBER or VIEWER role's mail
+  access, and for an ADMIN's self-imposed denies -- see User.role.
+  """
+  type UserMailPermission {
+    id: ID!
+    effect: UserPermissionEffect!
+    """
+    Null means every managed domain.
+    """
+    domain: MailDomain
+    addressPattern: String!
+    createdByUserId: ID!
+    createdAt: DateTime!
+  }
+
   type User {
     id: ID!
     email: String!
     name: String!
     role: UserRole!
+    """
+    False once deactivated; a deactivated user cannot sign in.
+    """
+    active: Boolean!
+    """
+    Empty for an ADMIN with no self-imposed denies, and for a MEMBER/VIEWER
+    with no mailbox assigned yet.
+    """
+    permissions: [UserMailPermission!]!
     createdAt: DateTime!
+    updatedAt: DateTime!
   }
 
   """
@@ -540,6 +584,25 @@ export const typeDefs = /* GraphQL */ `
     expiresAt: DateTime
   }
 
+  """
+  No password: the created user signs in through the existing passwordless
+  email flow.
+  """
+  input CreateUserInput {
+    email: String!
+    name: String!
+    role: UserRole!
+  }
+
+  input UserMailPermissionInput {
+    effect: UserPermissionEffect!
+    """
+    Null means every managed domain.
+    """
+    domainId: ID
+    addressPattern: String = "*"
+  }
+
   type Query {
     viewer: Viewer
 
@@ -567,6 +630,11 @@ export const typeDefs = /* GraphQL */ `
 
     "Requires DOMAIN_ADMIN."
     classificationRules: [ClassificationRule!]!
+
+    "Admin only."
+    users: [User!]!
+    "Admin only."
+    user(id: ID!): User
   }
 
   type Mutation {
@@ -644,5 +712,19 @@ export const typeDefs = /* GraphQL */ `
     requestEmailAuth(email: String!): Boolean!
     verifyEmailAuthToken(token: String!): AuthPayload!
     logout: Boolean!
+
+    "Admin only. Creates a user with no password; see CreateUserInput."
+    createUser(input: CreateUserInput!): User!
+    "Admin only. Rejected if it would demote the last active admin."
+    setUserRole(id: ID!, role: UserRole!): User!
+    "Admin only. Rejected if it would deactivate the last active admin."
+    setUserActive(id: ID!, active: Boolean!): User!
+    "Admin only."
+    addUserMailPermission(
+      userId: ID!
+      input: UserMailPermissionInput!
+    ): UserMailPermission!
+    "Admin only."
+    removeUserMailPermission(id: ID!): Boolean!
   }
 `;

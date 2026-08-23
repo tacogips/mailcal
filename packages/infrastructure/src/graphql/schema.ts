@@ -18,17 +18,21 @@ import {
   classificationRuleResolvers,
   messageEventResolvers,
   threadResolvers,
+  userMailPermissionResolvers,
+  userResolvers,
   viewerResolvers,
 } from "./resolvers/types";
 import { useSelectionLimit } from "./selection-limit";
 
 /** Merges the SDL with every resolver module into an executable schema.
  *
- * `MailboxAddress`, `DnsRecord`, `User`, `MessagePage`, `AuthPayload` and
+ * `MailboxAddress`, `DnsRecord`, `MessagePage`, `AuthPayload` and
  * `CreatedFileLink` need no dedicated resolvers: their fields are plain
  * property access on the objects the use cases already return.
  * `BootstrapPayload` reuses `ApiKeyWithSecret`'s resolvers -- both carry an
- * `apiKey` plus a one-time `secret`, and `user` is plain property access. */
+ * `apiKey` plus a one-time `secret`, and `user` is plain property access.
+ * `User` does need resolvers now: `active` is computed and `permissions` is
+ * loader-based, mirroring `ApiKey.scopes`. */
 export function buildGraphQLSchema(): GraphQLSchema {
   return createSchema<GraphQLContext>({
     typeDefs,
@@ -48,6 +52,8 @@ export function buildGraphQLSchema(): GraphQLSchema {
       ClassificationRule: classificationRuleResolvers,
       MessageEvent: messageEventResolvers,
       Viewer: viewerResolvers,
+      User: userResolvers,
+      UserMailPermission: userMailPermissionResolvers,
     },
   });
 }

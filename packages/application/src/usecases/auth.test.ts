@@ -10,6 +10,11 @@ import {
   deactivateUser,
   UserRole,
 } from "@yabumi/domain/entities/user";
+import {
+  createUserMailPermission,
+  UserPermissionEffect,
+} from "@yabumi/domain/entities/user-mail-permission";
+import { MATCH_ALL_ADDRESSES } from "@yabumi/domain/value-objects/address-pattern";
 import { createDomainName } from "@yabumi/domain/value-objects/domain-name";
 import { createEmailAddress } from "@yabumi/domain/value-objects/email-address";
 import {
@@ -17,6 +22,7 @@ import {
   createSessionId,
   createAttachmentId,
   createUserId,
+  createUserMailPermissionId,
 } from "@yabumi/domain/value-objects/ids";
 import { beforeEach, describe, expect, test } from "vitest";
 import { createUseCases } from "../usecases";
@@ -95,7 +101,38 @@ describe("resolveViewerFromToken", () => {
       kind: "USER",
       userId: user.id,
       role: UserRole.Admin,
+      permissions: [],
     });
+  });
+
+  test("reloads current user mail permissions for every session request", async () => {
+    const user = seedUser(fake);
+    const session = createSession({
+      id: createSessionId("ses-1"),
+      tokenHash: "hash(session-token)",
+      userId: user.id,
+      expiresAt: "2026-09-23T00:00:00.000Z",
+      createdAt: NOW,
+    });
+    fake.stores.sessions.set(session.id, session);
+    const permission = createUserMailPermission({
+      id: createUserMailPermissionId("ump-1"),
+      userId: user.id,
+      effect: UserPermissionEffect.Deny,
+      domainId,
+      addressPattern: MATCH_ALL_ADDRESSES,
+      createdByUserId: user.id,
+      createdAt: NOW,
+    });
+    const resolve = createResolveViewerFromTokenUseCase(fake.deps);
+
+    expect(await resolve("session-token")).toMatchObject({ permissions: [] });
+    await fake.deps.userMailPermissionRepository.save(permission);
+    expect(await resolve("session-token")).toMatchObject({
+      permissions: [permission],
+    });
+    await fake.deps.userMailPermissionRepository.delete(permission.id);
+    expect(await resolve("session-token")).toMatchObject({ permissions: [] });
   });
 
   test("rejects an expired session", async () => {
@@ -153,6 +190,7 @@ describe("resolveViewerFromToken", () => {
     }
     expect(viewer.apiKeyId).toBe(issued.apiKey.id);
     expect(viewer.scopes).toHaveLength(1);
+    expect(viewer).not.toHaveProperty("permissions");
   });
 
   test("records last-used without blocking resolution", async () => {
@@ -251,7 +289,14 @@ describe("getViewerUser", () => {
     const user = seedUser(fake);
     const get = createGetViewerUserUseCase(fake.deps);
     expect(
-      (await get({ kind: "USER", userId: user.id, role: user.role }))?.id,
+      (
+        await get({
+          kind: "USER",
+          userId: user.id,
+          role: user.role,
+          permissions: [],
+        })
+      )?.id,
     ).toBe(user.id);
   });
 });

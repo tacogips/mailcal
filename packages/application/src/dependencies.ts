@@ -16,6 +16,7 @@ import type { MimeBuilder, MimeParser } from "./ports/mime";
 import type { Clock, RandomSource, TokenHasher } from "./ports/runtime-ports";
 import type { SqlDatabase } from "./ports/sql-database";
 import type { TagRepository } from "./ports/tag-repository";
+import type { UserMailPermissionRepository } from "./ports/user-mail-permission-repository";
 
 /** Instance-wide self-signup gate. Defaults to `"closed"`: this is a mail
  * server, not a SaaS trial, so an unset value must not leave registration
@@ -72,6 +73,7 @@ export interface AppDependencies {
   readonly apiKeyRepository: ApiKeyRepository;
   readonly fileLinkRepository: FileLinkRepository;
   readonly userRepository: UserRepository;
+  readonly userMailPermissionRepository: UserMailPermissionRepository;
   readonly sessionRepository: SessionRepository;
   readonly emailAuthChallengeRepository: EmailAuthChallengeRepository;
 

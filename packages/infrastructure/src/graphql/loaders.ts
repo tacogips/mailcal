@@ -8,12 +8,14 @@ import type { MessageEvent } from "@yabumi/domain/entities/message-event";
 import type { SpamMark } from "@yabumi/domain/entities/spam-mark";
 import type { Tag } from "@yabumi/domain/entities/tag";
 import type { ApiKeyScope } from "@yabumi/domain/entities/api-key";
+import type { UserMailPermission } from "@yabumi/domain/entities/user-mail-permission";
 import {
   type ApiKeyId,
   createTagId,
   type DomainId,
   type MessageId,
   type TagId,
+  type UserId,
 } from "@yabumi/domain/value-objects/ids";
 
 /** Batches keys requested within one microtask turn into a single call.
@@ -84,6 +86,10 @@ export interface RequestLoaders {
   readonly domainById: BatchLoader<DomainId, MailDomain | null>;
   readonly scopesByApiKey: BatchLoader<ApiKeyId, readonly ApiKeyScope[]>;
   readonly messageCountByTag: BatchLoader<TagId, number>;
+  readonly permissionsByUser: BatchLoader<
+    UserId,
+    readonly UserMailPermission[]
+  >;
 }
 
 const EMPTY_ARRAY: readonly never[] = [];
@@ -190,6 +196,25 @@ export function createRequestLoaders(
     messageCountByTag: createBatchLoader<TagId, number>(
       (ids) => deps.tagRepository.countMessages(ids),
       () => 0,
+    ),
+
+    // No batch method on the port (admin-only, low-cardinality data), so
+    // this issues one point lookup per key -- still coalesced into the
+    // request's microtask batch by `createBatchLoader`.
+    permissionsByUser: createBatchLoader<UserId, readonly UserMailPermission[]>(
+      async (ids) => {
+        const entries = await Promise.all(
+          ids.map(
+            async (id) =>
+              [
+                id,
+                await deps.userMailPermissionRepository.listByUserId(id),
+              ] as const,
+          ),
+        );
+        return new Map(entries);
+      },
+      () => EMPTY_ARRAY,
     ),
   };
 }

@@ -13,6 +13,7 @@ export type ApiKeyId = Brand<string, "ApiKeyId">;
 export type ApiKeyScopeId = Brand<string, "ApiKeyScopeId">;
 export type FileLinkId = Brand<string, "FileLinkId">;
 export type UserId = Brand<string, "UserId">;
+export type UserMailPermissionId = Brand<string, "UserMailPermissionId">;
 export type SessionId = Brand<string, "SessionId">;
 export type EmailAuthChallengeId = Brand<string, "EmailAuthChallengeId">;
 export type MessageEventId = Brand<string, "MessageEventId">;
@@ -62,6 +63,15 @@ export function createFileLinkId(value: string): FileLinkId {
 
 export function createUserId(value: string): UserId {
   return requireNonEmptyId(value, "userId") as UserId;
+}
+
+export function createUserMailPermissionId(
+  value: string,
+): UserMailPermissionId {
+  return requireNonEmptyId(
+    value,
+    "userMailPermissionId",
+  ) as UserMailPermissionId;
 }
 
 export function createSessionId(value: string): SessionId {

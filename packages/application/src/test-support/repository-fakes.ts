@@ -10,6 +10,7 @@ import {
   type Tag,
 } from "@yabumi/domain/entities/tag";
 import type { User } from "@yabumi/domain/entities/user";
+import type { UserMailPermission } from "@yabumi/domain/entities/user-mail-permission";
 import { createTagId } from "@yabumi/domain/value-objects/ids";
 import type { ApiKeyRepository } from "../ports/api-key-repository";
 import type {
@@ -20,6 +21,7 @@ import type {
 import type { FileLinkRepository } from "../ports/file-link-repository";
 import type { MailDomainRepository } from "../ports/mail-domain-repository";
 import type { TagRepository } from "../ports/tag-repository";
+import type { UserMailPermissionRepository } from "../ports/user-mail-permission-repository";
 
 /** Backing stores exposed so tests can seed and assert directly rather than
  * driving every setup through use cases. */
@@ -30,6 +32,7 @@ export interface FakeStores {
   readonly apiKeyScopes: Map<string, ApiKeyScope>;
   readonly fileLinks: Map<string, FileLink>;
   readonly users: Map<string, User>;
+  readonly userMailPermissions: Map<string, UserMailPermission>;
   readonly sessions: Map<string, Session>;
   readonly challenges: Map<string, EmailAuthChallenge>;
   /** Message counts per domain, consulted by `countMessages`. */
@@ -46,6 +49,7 @@ export function createFakeStores(): FakeStores {
     apiKeyScopes: new Map(),
     fileLinks: new Map(),
     users: new Map(),
+    userMailPermissions: new Map(),
     sessions: new Map(),
     challenges: new Map(),
     domainMessageCounts: new Map(),
@@ -281,6 +285,37 @@ export function fakeUserRepository(stores: FakeStores): UserRepository {
       }
       stores.users.set(user.id, user);
       return true;
+    },
+  };
+}
+
+export function fakeUserMailPermissionRepository(
+  stores: FakeStores,
+): UserMailPermissionRepository {
+  return {
+    async findById(id) {
+      return stores.userMailPermissions.get(id) ?? null;
+    },
+    async listByUserId(userId) {
+      return [...stores.userMailPermissions.values()]
+        .filter((permission) => permission.userId === userId)
+        .sort((a, b) =>
+          a.createdAt < b.createdAt
+            ? -1
+            : a.createdAt > b.createdAt
+              ? 1
+              : a.id < b.id
+                ? -1
+                : a.id > b.id
+                  ? 1
+                  : 0,
+        );
+    },
+    async save(permission) {
+      stores.userMailPermissions.set(permission.id, permission);
+    },
+    async delete(id) {
+      stores.userMailPermissions.delete(id);
     },
   };
 }

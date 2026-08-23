@@ -49,6 +49,12 @@ export const VIEWER_QUERY = `
   }
 `;
 
+export const UNREAD_COUNT_QUERY = `
+  query UnreadCount($filter: MessageFilter) {
+    messages(filter: $filter, first: 1) { totalCount }
+  }
+`;
+
 export const MESSAGES_QUERY = `
   query Messages($filter: MessageFilter, $first: Int, $after: String) {
     messages(filter: $filter, first: $first, after: $after) {
@@ -363,6 +369,70 @@ export const DELETE_CLASSIFICATION_RULE_MUTATION = `
 export const APPLY_CLASSIFICATION_RULE_MUTATION = `
   mutation ApplyClassificationRule($id: ID!) {
     applyClassificationRule(id: $id) { examined matched }
+  }
+`;
+
+const USER_FIELDS = `
+  id
+  email
+  name
+  role
+  active
+  createdAt
+  updatedAt
+  permissions {
+    id
+    effect
+    addressPattern
+    createdByUserId
+    createdAt
+    domain { id name }
+  }
+`;
+
+export const USERS_QUERY = `
+  query Users {
+    users { ${USER_FIELDS} }
+  }
+`;
+
+export const CREATE_USER_MUTATION = `
+  mutation CreateUser($input: CreateUserInput!) {
+    createUser(input: $input) { ${USER_FIELDS} }
+  }
+`;
+
+export const SET_USER_ROLE_MUTATION = `
+  mutation SetUserRole($id: ID!, $role: UserRole!) {
+    setUserRole(id: $id, role: $role) { ${USER_FIELDS} }
+  }
+`;
+
+export const SET_USER_ACTIVE_MUTATION = `
+  mutation SetUserActive($id: ID!, $active: Boolean!) {
+    setUserActive(id: $id, active: $active) { ${USER_FIELDS} }
+  }
+`;
+
+export const ADD_USER_MAIL_PERMISSION_MUTATION = `
+  mutation AddUserMailPermission(
+    $userId: ID!
+    $input: UserMailPermissionInput!
+  ) {
+    addUserMailPermission(userId: $userId, input: $input) {
+      id
+      effect
+      addressPattern
+      createdByUserId
+      createdAt
+      domain { id name }
+    }
+  }
+`;
+
+export const REMOVE_USER_MAIL_PERMISSION_MUTATION = `
+  mutation RemoveUserMailPermission($id: ID!) {
+    removeUserMailPermission(id: $id)
   }
 `;
 

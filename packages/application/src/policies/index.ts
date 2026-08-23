@@ -1,6 +1,11 @@
 export {
   authorizesAnyAddress,
   authorizesGlobal,
+  type MailAuthorizationRule,
+  mailAuthorizationRules,
+  type MailPermissionFilter,
+  mailPermissionFilterAuthorizesAnyAddress,
+  mailPermissionListFilter,
   readableAddressPatterns,
   requireAddressCapability,
   requireGlobalCapability,

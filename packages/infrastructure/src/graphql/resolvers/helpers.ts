@@ -13,13 +13,21 @@ export function requireViewerOrThrow(ctx: GraphQLContext): Viewer {
   return ctx.viewer;
 }
 
-/** The capabilities a viewer effectively holds, for `Viewer.capabilities`.
+/** The capabilities a viewer's *role* may exercise at all, for
+ * `Viewer.capabilities` -- mirroring `policies/authorization.ts`'s
+ * `roleGrantsCapability`, not the address-scoped ALLOW/DENY rules
+ * underneath it. This is a role-level ceiling, so it does not shrink to
+ * "empty" for a MEMBER/VIEWER with no mailbox rules yet: the client uses it
+ * to decide which UI to show, not to predict a specific mailbox's outcome.
  *
- * A user's set is derived from its role rather than stored, mirroring
- * `policies/authorization.ts`: both roles may work with mail, only an admin
- * may administer the instance. */
+ * ADMIN holds every mail capability plus instance administration. MEMBER
+ * holds every non-global mail capability. VIEWER holds only MAIL_READ and
+ * FILE_LINK -- it can never send or mutate mail, regardless of its rules. */
 export function viewerCapabilities(viewer: Viewer): readonly Capability[] {
   if (viewer.kind === "USER") {
+    if (viewer.role === UserRole.Viewer) {
+      return [Capability.MailRead, Capability.FileLink];
+    }
     const mail = [
       Capability.MailRead,
       Capability.MailSend,

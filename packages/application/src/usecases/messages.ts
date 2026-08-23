@@ -21,6 +21,7 @@ import type { AppDependencies } from "../dependencies";
 import { BadUserInputError } from "../errors";
 import {
   authorizesAnyAddress,
+  mailPermissionListFilter,
   readableAddressPatterns,
   scopedDomainIds,
 } from "../policies/authorization";
@@ -278,6 +279,7 @@ export async function buildMessageListFilter(
       : { mailingList: filter.mailingList }),
     ...(filter.listId === undefined ? {} : { listId: filter.listId }),
     allowedPatterns: readableAddressPatterns(viewer, Capability.MailRead),
+    mailPermissionFilter: mailPermissionListFilter(viewer, Capability.MailRead),
     ...(filter.fetchStatus === undefined || apiKeyId === null
       ? {}
       : {

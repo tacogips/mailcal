@@ -12,6 +12,7 @@ import {
   LOGOUT_MUTATION,
   SAVE_DRAFT_MUTATION,
   SEND_DRAFT_MUTATION,
+  UNREAD_COUNT_QUERY,
   UPCOMING_EVENTS_QUERY,
   UPDATE_MESSAGE_EVENT_MUTATION,
   MARK_NOT_SPAM_MUTATION,
@@ -31,6 +32,7 @@ import type {
   MessagePageView,
   MessageView,
   SendMessageVariables,
+  SystemTagSlug,
   TagView,
   ViewerView,
 } from "../api/schema-types";
@@ -50,12 +52,15 @@ export interface AppStore {
   readonly loading: () => boolean;
   readonly selectedIds: () => ReadonlySet<string>;
   readonly view: () => MailboxView;
+  readonly unreadOnly: () => boolean;
+  readonly inboxUnreadCount: () => number;
   readonly upcomingEvents: () => readonly MessageEventView[];
   reloadUpcomingEvents(): Promise<void>;
 
   rehydrateSession(): Promise<void>;
   loadReferenceData(): Promise<void>;
   setView(view: MailboxView): Promise<void>;
+  setUnreadOnly(value: boolean): Promise<void>;
   reloadMessages(): Promise<void>;
   loadMore(): Promise<void>;
 
@@ -63,11 +68,17 @@ export interface AppStore {
   clearSelection(): void;
   selectAll(): void;
 
+  systemTag(slug: SystemTagSlug): TagView | null;
   tagSelected(tagIds: readonly string[]): Promise<void>;
   untagSelected(tagIds: readonly string[]): Promise<void>;
   markSelectedSpam(spam: boolean): Promise<void>;
   markSelectedRead(read: boolean): Promise<void>;
   deleteSelected(): Promise<void>;
+  setStarred(messageIds: readonly string[], starred: boolean): Promise<boolean>;
+  setArchived(
+    messageIds: readonly string[],
+    archived: boolean,
+  ): Promise<boolean>;
   send(input: SendMessageVariables): Promise<boolean>;
   saveDraft(input: SaveDraftVariables): Promise<MessageView | null>;
   sendDraft(id: string): Promise<boolean>;
@@ -145,6 +156,8 @@ export function createAppStore(): AppStore {
     new Set(),
   );
   const [view, setViewSignal] = createSignal<MailboxView>({ kind: "INBOX" });
+  const [unreadOnly, setUnreadOnlySignal] = createSignal(false);
+  const [inboxUnreadCount, setInboxUnreadCount] = createSignal(0);
 
   function reportFailure(result: GraphQLResult<unknown>): boolean {
     if (result.ok) {
@@ -160,7 +173,10 @@ export function createAppStore(): AppStore {
       { readonly messages: MessagePageView },
       Record<string, unknown>
     >(MESSAGES_QUERY, {
-      filter: viewToFilter(view(), tags()),
+      filter: {
+        ...viewToFilter(view(), tags()),
+        ...(unreadOnly() ? { unreadOnly: true } : {}),
+      },
       first: PAGE_SIZE,
       after,
     });
@@ -183,10 +199,10 @@ export function createAppStore(): AppStore {
     document: string,
     variables: Record<string, unknown>,
     optimistic: (message: MessageView) => MessageView,
-  ): Promise<void> {
+  ): Promise<boolean> {
     const ids = selectedIds();
     if (ids.size === 0) {
-      return;
+      return false;
     }
     const rollback = optimisticPatch(setMessages, messages(), ids, optimistic);
     const result = await graphqlRequest<TData, Record<string, unknown>>(
@@ -196,11 +212,12 @@ export function createAppStore(): AppStore {
     if (!result.ok) {
       rollback();
       pushToast("error", describeErrors(result.errors));
-      return;
+      return false;
     }
     // Re-reads the page so counts and any server-side reclassification
     // (spam leaving the inbox, for instance) are reflected.
     await fetchPage(null);
+    return true;
   }
 
   /** Everything due in the next 30 days, open items only. */
@@ -217,6 +234,67 @@ export function createAppStore(): AppStore {
     }
   }
 
+  /** Re-runs the tags query so system-tag counts (Starred, Archived,
+   * Trash) and user-tag counts stay in sync after a mutation, shared by
+   * initial load and the star/archive toggles. */
+  async function reloadTags(): Promise<void> {
+    const result = await graphqlRequest<{
+      readonly tags: readonly TagView[];
+    }>(TAGS_QUERY);
+    if (result.ok) {
+      setTags(result.data.tags);
+    }
+  }
+
+  /** Best-effort inbox unread count for the sidebar badge: a stale or
+   * missing count is a cosmetic problem, not worth a toast. */
+  async function reloadInboxUnread(): Promise<void> {
+    const result = await graphqlRequest<
+      { readonly messages: MessagePageView },
+      Record<string, unknown>
+    >(UNREAD_COUNT_QUERY, {
+      filter: { direction: "INBOUND", unreadOnly: true },
+    });
+    if (result.ok) {
+      setInboxUnreadCount(result.data.messages.totalCount);
+    }
+  }
+
+  function findSystemTag(slug: SystemTagSlug): TagView | null {
+    return (
+      tags().find((tag) => tag.kind === "SYSTEM" && tag.systemSlug === slug) ??
+      null
+    );
+  }
+
+  async function setSystemTagged(
+    messageIds: readonly string[],
+    slug: SystemTagSlug,
+    tagged: boolean,
+    missingTagMessage: string,
+  ): Promise<boolean> {
+    if (messageIds.length === 0) {
+      return false;
+    }
+    const tag = findSystemTag(slug);
+    if (tag === null) {
+      pushToast("error", missingTagMessage);
+      return false;
+    }
+    const document = tagged ? TAG_MESSAGES_MUTATION : UNTAG_MESSAGES_MUTATION;
+    const result = await graphqlRequest<unknown, Record<string, unknown>>(
+      document,
+      { messageIds, tagIds: [tag.id] },
+    );
+    if (!result.ok) {
+      pushToast("error", describeErrors(result.errors));
+      return false;
+    }
+    await fetchPage(null);
+    await reloadTags();
+    return true;
+  }
+
   return {
     viewer,
     domains,
@@ -227,6 +305,8 @@ export function createAppStore(): AppStore {
     loading,
     selectedIds,
     view,
+    unreadOnly,
+    inboxUnreadCount,
 
     async rehydrateSession() {
       const result = await graphqlRequest<{
@@ -242,27 +322,35 @@ export function createAppStore(): AppStore {
     },
 
     async loadReferenceData() {
-      const [domainResult, tagResult] = await Promise.all([
+      const [domainResult] = await Promise.all([
         graphqlRequest<{ readonly domains: readonly MailDomainView[] }>(
           DOMAINS_QUERY,
         ),
-        graphqlRequest<{ readonly tags: readonly TagView[] }>(TAGS_QUERY),
+        reloadTags(),
       ]);
       if (domainResult.ok) {
         setDomains(domainResult.data.domains);
       }
-      if (tagResult.ok) {
-        setTags(tagResult.data.tags);
-      }
-      // Best-effort: the agenda failing must not block the mailbox.
-      await reloadUpcomingEvents().catch(() => undefined);
+      // Best-effort: the agenda and unread count failing must not block the
+      // mailbox.
+      await Promise.all([
+        reloadUpcomingEvents().catch(() => undefined),
+        reloadInboxUnread().catch(() => undefined),
+      ]);
     },
 
     reloadUpcomingEvents,
 
     async setView(next) {
       setViewSignal(() => next);
+      setUnreadOnlySignal(false);
       setSelectedIds(new Set<string>());
+      setCursor(null);
+      await fetchPage(null);
+    },
+
+    async setUnreadOnly(value) {
+      setUnreadOnlySignal(value);
       setCursor(null);
       await fetchPage(null);
     },
@@ -270,6 +358,7 @@ export function createAppStore(): AppStore {
     async reloadMessages() {
       setCursor(null);
       await fetchPage(null);
+      await reloadInboxUnread().catch(() => undefined);
     },
 
     async loadMore() {
@@ -298,6 +387,10 @@ export function createAppStore(): AppStore {
       setSelectedIds(new Set(messages().map((message) => message.id)));
     },
 
+    systemTag(slug) {
+      return findSystemTag(slug);
+    },
+
     async tagSelected(tagIds) {
       await mutateSelected(
         TAG_MESSAGES_MUTATION,
@@ -315,15 +408,18 @@ export function createAppStore(): AppStore {
     },
 
     async markSelectedSpam(spam) {
-      await mutateSelected(
+      const succeeded = await mutateSelected(
         spam ? MARK_SPAM_MUTATION : MARK_NOT_SPAM_MUTATION,
         { messageIds: [...selectedIds()] },
         (message) => ({ ...message, isSpam: spam }),
       );
+      if (succeeded) {
+        await reloadInboxUnread().catch(() => undefined);
+      }
     },
 
     async markSelectedRead(read) {
-      await mutateSelected(
+      const succeeded = await mutateSelected(
         MARK_READ_MUTATION,
         { messageIds: [...selectedIds()], read },
         (message) => ({
@@ -331,6 +427,9 @@ export function createAppStore(): AppStore {
           readAt: read ? new Date().toISOString() : null,
         }),
       );
+      if (succeeded) {
+        await reloadInboxUnread().catch(() => undefined);
+      }
     },
 
     async deleteSelected() {
@@ -359,6 +458,25 @@ export function createAppStore(): AppStore {
       pushToast("success", `Deleted ${result.data.deleteMessages} message(s)`);
       setSelectedIds(new Set<string>());
       await fetchPage(null);
+      await reloadInboxUnread().catch(() => undefined);
+    },
+
+    async setStarred(messageIds, starred) {
+      return setSystemTagged(
+        messageIds,
+        "STARRED",
+        starred,
+        "Star tag is not available",
+      );
+    },
+
+    async setArchived(messageIds, archived) {
+      return setSystemTagged(
+        messageIds,
+        "ARCHIVED",
+        archived,
+        "Archive tag is not available",
+      );
     },
 
     async send(input) {

@@ -2,22 +2,54 @@ import { For, type JSX, Show } from "solid-js";
 import type {
   MailDomainView,
   MessageEventView,
+  SystemTagSlug,
   TagView,
 } from "../api/schema-types";
 import type { MailboxView } from "../lib/filter-params";
+import {
+  ArchiveIcon,
+  FileIcon,
+  FlameIcon,
+  GearIcon,
+  InboxIcon,
+  type IconComponent,
+  PaperPlaneIcon,
+  StarIcon,
+  TagIcon,
+  TrashIcon,
+} from "./icons";
 import "./mailbox-sidebar.css";
 
 const SYSTEM_VIEWS: readonly {
   readonly view: MailboxView;
   readonly label: string;
+  readonly icon: IconComponent;
+  /** System tags carry a message count from the `tags` prop; views without
+   * one (Sent, Drafts, Spam) show no meta at all. */
+  readonly slug?: SystemTagSlug;
 }[] = [
-  { view: { kind: "INBOX" }, label: "Inbox" },
-  { view: { kind: "STARRED" }, label: "Starred" },
-  { view: { kind: "SENT" }, label: "Sent" },
-  { view: { kind: "DRAFTS" }, label: "Drafts" },
-  { view: { kind: "ARCHIVED" }, label: "Archived" },
-  { view: { kind: "SPAM" }, label: "Spam" },
-  { view: { kind: "TRASH" }, label: "Trash" },
+  { view: { kind: "INBOX" }, label: "Inbox", icon: InboxIcon },
+  {
+    view: { kind: "STARRED" },
+    label: "Starred",
+    icon: StarIcon,
+    slug: "STARRED",
+  },
+  { view: { kind: "SENT" }, label: "Sent", icon: PaperPlaneIcon },
+  { view: { kind: "DRAFTS" }, label: "Drafts", icon: FileIcon },
+  {
+    view: { kind: "ARCHIVED" },
+    label: "Archived",
+    icon: ArchiveIcon,
+    slug: "ARCHIVED",
+  },
+  { view: { kind: "SPAM" }, label: "Spam", icon: FlameIcon },
+  {
+    view: { kind: "TRASH" },
+    label: "Trash",
+    icon: TrashIcon,
+    slug: "TRASH",
+  },
 ];
 
 function sameView(a: MailboxView, b: MailboxView): boolean {
@@ -48,6 +80,7 @@ export function MailboxSidebar(props: {
   readonly domains: readonly MailDomainView[];
   readonly tags: readonly TagView[];
   readonly upcomingEvents: readonly MessageEventView[];
+  readonly inboxUnread: number;
   readonly onSelect: (view: MailboxView) => void;
   readonly onCompose: () => void;
   readonly onOpenEvent: (messageId: string) => void;
@@ -55,15 +88,20 @@ export function MailboxSidebar(props: {
   // System tags already have dedicated views above, so listing them again
   // under "Tags" would be a confusing duplicate.
   const userTags = () => props.tags.filter((tag) => tag.kind === "USER");
+  const systemTagCount = (slug: SystemTagSlug): number =>
+    props.tags.find((tag) => tag.kind === "SYSTEM" && tag.systemSlug === slug)
+      ?.messageCount ?? 0;
 
   return (
     <nav class="mailbox-sidebar">
+      <div class="sidebar-brand">yabumi</div>
+
       <button
         type="button"
-        class="primary sidebar-compose"
+        class="primary pill sidebar-compose"
         onClick={() => props.onCompose()}
       >
-        Compose
+        New message
       </button>
 
       <ul class="sidebar-group">
@@ -78,7 +116,24 @@ export function MailboxSidebar(props: {
                 }}
                 onClick={() => props.onSelect(entry.view)}
               >
-                {entry.label}
+                <span class="sidebar-item-icon">
+                  <entry.icon size={16} />
+                </span>
+                <span class="sidebar-item-label">{entry.label}</span>
+                <Show
+                  when={entry.view.kind === "INBOX" && props.inboxUnread > 0}
+                >
+                  <span class="sidebar-badge">{props.inboxUnread}</span>
+                </Show>
+                <Show
+                  when={
+                    entry.slug !== undefined && systemTagCount(entry.slug) > 0
+                  }
+                >
+                  <span class="sidebar-item-meta muted">
+                    {entry.slug === undefined ? 0 : systemTagCount(entry.slug)}
+                  </span>
+                </Show>
               </button>
             </li>
           )}
@@ -114,7 +169,10 @@ export function MailboxSidebar(props: {
               <li>
                 <span class="sidebar-static">
                   {domain.name}
-                  <span class="muted"> ({domain.messageCount})</span>
+                  <span class="sidebar-item-meta muted">
+                    {" "}
+                    ({domain.messageCount})
+                  </span>
                 </span>
               </li>
             )}
@@ -123,7 +181,16 @@ export function MailboxSidebar(props: {
       </Show>
 
       <Show when={userTags().length > 0}>
-        <h2 class="sidebar-heading">Tags</h2>
+        <div class="sidebar-heading-row">
+          <h2 class="sidebar-heading">Tags</h2>
+          <a
+            href="/settings/tags"
+            class="sidebar-heading-action"
+            aria-label="Manage tags"
+          >
+            <GearIcon size={14} />
+          </a>
+        </div>
         <ul class="sidebar-group">
           <For each={userTags()}>
             {(tag) => (
@@ -146,8 +213,18 @@ export function MailboxSidebar(props: {
                     })
                   }
                 >
-                  {tag.name}
-                  <span class="muted"> ({tag.messageCount})</span>
+                  <span
+                    class="sidebar-item-icon"
+                    style={
+                      tag.color === null ? undefined : { color: tag.color }
+                    }
+                  >
+                    <TagIcon size={16} />
+                  </span>
+                  <span class="sidebar-item-label">{tag.name}</span>
+                  <span class="sidebar-item-meta muted">
+                    {tag.messageCount}
+                  </span>
                 </button>
               </li>
             )}

@@ -86,6 +86,7 @@ Large features are split into multiple related plans with cross-references.
 | `infrastructure-http.md` | 4 | Completed | `design-graphql-api.md` |
 | `app-web-client.md` | 5 | Completed | `design-web-client.md` |
 | `app-cli.md` | 5 | Completed | `command.md` |
+| `user-mail-permissions.md` | 6 | Completed | `design-user-mail-permissions.md` |
 
 Note: `app-api-migrations.md` is assigned to Phase 1 because its TASK-001
 (the D1 schema) has no dependencies and is needed early by the adapter
@@ -111,6 +112,7 @@ Only plans from eligible phases should be read to minimize context loading.
 | 3 | COMPLETED | Phase 2 |
 | 4 | COMPLETED | Phase 3 |
 | 5 | COMPLETED | Phase 4 |
+| 6 | READY | Phase 5 |
 
 ### Phase to Plans Mapping
 
@@ -136,6 +138,9 @@ PHASE_TO_PLANS = {
   5: [
     "app-web-client.md",
     "app-cli.md",
+  ],
+  6: [
+    "user-mail-permissions.md",
   ]
 }
 ```

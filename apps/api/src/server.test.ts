@@ -75,6 +75,7 @@ describe("createLocalApp", () => {
       kind: "USER" as const,
       userId: user.id,
       role: user.role,
+      permissions: [],
     };
     const domain = await usecases.createDomain(viewer, "example.com", true);
     // Activate directly at the repository: verifyDomain now performs a
@@ -99,7 +100,7 @@ describe("createLocalApp", () => {
     expect(body.subject).toBe("Local dev message");
 
     const page = await deps.messageRepository.list(
-      { allowedPatterns: null },
+      { allowedPatterns: null, mailPermissionFilter: null },
       10,
       null,
     );

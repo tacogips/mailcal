@@ -1,6 +1,14 @@
 import type { ClassificationRule } from "@yabumi/domain/entities/classification-rule";
 import type { MessageEvent } from "@yabumi/domain/entities/message-event";
-import { matchAddressPattern } from "@yabumi/domain/value-objects/address-pattern";
+import {
+  type AddressPattern,
+  matchAddressPattern,
+} from "@yabumi/domain/value-objects/address-pattern";
+import type { EmailAddress } from "@yabumi/domain/value-objects/email-address";
+import {
+  type MailPermissionFilter,
+  mailPermissionFilterAuthorizesAnyAddress,
+} from "../policies/authorization";
 import type { ClassificationRuleRepository } from "../ports/classification-rule-repository";
 import type { MessageEventRepository } from "../ports/message-event-repository";
 import type { FakeMessageStores } from "./message-repository-fake";
@@ -31,31 +39,47 @@ export function createMessageEventRepositoryFake(
   stores: FakeEventStores,
   messageStores: FakeMessageStores,
 ): MessageEventRepository {
+  // Both checks apply through the owning message, independently of each
+  // other, mirroring `MessageEventListFilter.allowedPatterns` and
+  // `.mailPermissionFilter` -- see message-repository-fake.ts's equivalent
+  // pair for the message-listing case.
   const messageVisible = (
     messageId: string,
-    allowedPatterns: readonly string[] | null,
+    allowedPatterns: readonly AddressPattern[] | null,
+    mailPermissionFilter: MailPermissionFilter | null,
   ): boolean => {
-    if (allowedPatterns === null) {
+    if (allowedPatterns === null && mailPermissionFilter === null) {
       return true;
     }
     const message = messageStores.messages.get(messageId);
     if (message === undefined) {
       return false;
     }
-    const addresses = [
-      message.fromAddress as string,
+    const addresses: readonly EmailAddress[] = [
+      message.fromAddress,
       ...(messageStores.recipients.get(messageId) ?? []).map(
-        (recipient) => recipient.address as string,
+        (recipient) => recipient.address,
       ),
     ];
-    return allowedPatterns.some((pattern) =>
-      addresses.some((address) =>
-        matchAddressPattern(
-          pattern as Parameters<typeof matchAddressPattern>[0],
-          address as Parameters<typeof matchAddressPattern>[1],
-        ),
-      ),
-    );
+    if (allowedPatterns !== null) {
+      const matched = allowedPatterns.some((pattern) =>
+        addresses.some((address) => matchAddressPattern(pattern, address)),
+      );
+      if (!matched) {
+        return false;
+      }
+    }
+    if (mailPermissionFilter !== null) {
+      const matched = mailPermissionFilterAuthorizesAnyAddress(
+        mailPermissionFilter,
+        message.domainId,
+        addresses,
+      );
+      if (!matched) {
+        return false;
+      }
+    }
+    return true;
   };
 
   return {
@@ -97,7 +121,11 @@ export function createMessageEventRepositoryFake(
           ) {
             return false;
           }
-          return messageVisible(event.messageId, filter.allowedPatterns);
+          return messageVisible(
+            event.messageId,
+            filter.allowedPatterns,
+            filter.mailPermissionFilter,
+          );
         })
         .sort(byDue)
         .slice(0, limit);

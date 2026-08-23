@@ -6,21 +6,47 @@ import type {
   MessageDetailView,
 } from "../api/schema-types";
 import { formatMailbox, formatRecipients } from "../lib/address-format";
+import { avatarClass, avatarInitial } from "../lib/avatar";
 import { describeErrors } from "../lib/mutation-error";
 import { formatAbsoluteTime, formatBytes } from "../lib/relative-time";
 import { pushToast } from "../lib/toast";
 import { AttachmentTile } from "./attachment-tile";
 import { EventPanel } from "./event-panel";
 import { HtmlBodyFrame } from "./html-body-frame";
+import {
+  ArchiveIcon,
+  DownloadIcon,
+  EnvelopeIcon,
+  FlameIcon,
+  ForwardIcon,
+  ReplyAllIcon,
+  ReplyIcon,
+  StarIcon,
+  TrashIcon,
+} from "./icons";
 import { SpamBanner } from "./spam-banner";
 import { TagChip } from "./tag-chip";
 import "./message-view.css";
 
+function hasSystemTag(
+  message: MessageDetailView,
+  slug: "STARRED" | "ARCHIVED",
+): boolean {
+  return message.tags.some(
+    (tag) => tag.kind === "SYSTEM" && tag.systemSlug === slug,
+  );
+}
+
 export function MessageView(props: {
   readonly message: MessageDetailView;
   readonly onReply: (replyAll: boolean) => void;
+  readonly onForward: () => void;
   readonly onNotSpam: () => void;
+  readonly onMarkSpam: () => void;
+  readonly onMarkUnread: () => void;
   readonly onDelete: () => void;
+  readonly onToggleStar: (starred: boolean) => void;
+  readonly onToggleArchive: (archived: boolean) => void;
 }): JSX.Element {
   const [rawLink, setRawLink] = createSignal<string | null>(null);
 
@@ -40,6 +66,11 @@ export function MessageView(props: {
     pushToast("success", "Temporary link to the raw message created");
   }
 
+  const starred = () => hasSystemTag(props.message, "STARRED");
+  const archived = () => hasSystemTag(props.message, "ARCHIVED");
+  const userTags = () =>
+    props.message.tags.filter((tag) => tag.kind === "USER");
+
   const toRecipients = () =>
     props.message.recipients.filter(
       (recipient) => recipient.kind === "TO" || recipient.kind === "ENVELOPE",
@@ -49,6 +80,88 @@ export function MessageView(props: {
 
   return (
     <article class="message-view">
+      <div class="message-view-toolbar">
+        <button
+          type="button"
+          class="icon-button"
+          title="Mark as unread"
+          aria-label="Mark as unread"
+          onClick={() => props.onMarkUnread()}
+        >
+          <EnvelopeIcon />
+        </button>
+        <button
+          type="button"
+          classList={{ "icon-button": true, active: archived() }}
+          title={archived() ? "Unarchive" : "Archive"}
+          aria-label={archived() ? "Unarchive" : "Archive"}
+          onClick={() => props.onToggleArchive(!archived())}
+        >
+          <ArchiveIcon />
+        </button>
+        <Show when={!props.message.isSpam}>
+          <button
+            type="button"
+            class="icon-button"
+            title="Mark spam"
+            aria-label="Mark spam"
+            onClick={() => props.onMarkSpam()}
+          >
+            <FlameIcon />
+          </button>
+        </Show>
+        <button
+          type="button"
+          class="icon-button danger"
+          title="Delete"
+          aria-label="Delete"
+          onClick={() => props.onDelete()}
+        >
+          <TrashIcon />
+        </button>
+        <button
+          type="button"
+          class="icon-button"
+          title={`Raw message (${formatBytes(props.message.rawSize)})`}
+          aria-label={`Raw message (${formatBytes(props.message.rawSize)})`}
+          onClick={() => void mintRawLink()}
+        >
+          <DownloadIcon />
+        </button>
+        <span class="message-view-toolbar-spacer" />
+        <button
+          type="button"
+          class="icon-button"
+          title="Reply"
+          aria-label="Reply"
+          onClick={() => props.onReply(false)}
+        >
+          <ReplyIcon />
+        </button>
+        <button
+          type="button"
+          class="icon-button"
+          title="Reply all"
+          aria-label="Reply all"
+          onClick={() => props.onReply(true)}
+        >
+          <ReplyAllIcon />
+        </button>
+        <button
+          type="button"
+          class="icon-button"
+          title="Forward"
+          aria-label="Forward"
+          onClick={() => props.onForward()}
+        >
+          <ForwardIcon />
+        </button>
+      </div>
+
+      <Show when={rawLink() !== null}>
+        <code class="message-view-rawlink">{rawLink()}</code>
+      </Show>
+
       <Show when={props.message.isSpam}>
         <SpamBanner message={props.message} onNotSpam={props.onNotSpam} />
       </Show>
@@ -59,59 +172,66 @@ export function MessageView(props: {
             ? "(no subject)"
             : props.message.subject}
         </h1>
-        <dl class="message-view-fields">
-          <dt>From</dt>
-          <dd>{formatMailbox(props.message.from)}</dd>
-          <dt>To</dt>
-          <dd>{formatRecipients(toRecipients())}</dd>
-          <Show when={ccRecipients().length > 0}>
-            <dt>Cc</dt>
-            <dd>{formatRecipients(ccRecipients())}</dd>
-          </Show>
-          <dt>Date</dt>
-          <dd>{formatAbsoluteTime(props.message.occurredAt)}</dd>
-          <Show when={props.message.deliveryStatus === "FAILED"}>
-            <dt>Delivery</dt>
-            <dd class="error-text">
-              Failed
-              {props.message.deliveryError === null
-                ? ""
-                : ` (${props.message.deliveryError})`}
-            </dd>
-          </Show>
-        </dl>
+
+        <div class="message-view-sender-row">
+          <span
+            class={`avatar message-view-avatar ${avatarClass(props.message.from.address)}`}
+          >
+            {avatarInitial(
+              props.message.from.name ?? props.message.from.address,
+            )}
+          </span>
+          <div class="message-view-sender-col">
+            <strong>{formatMailbox(props.message.from)}</strong>
+            <span class="muted message-view-recipients">
+              To: {formatRecipients(toRecipients())}
+              <Show when={ccRecipients().length > 0}>
+                {" "}
+                Cc: {formatRecipients(ccRecipients())}
+              </Show>
+            </span>
+            <Show when={props.message.deliveryStatus === "FAILED"}>
+              <span class="error-text">
+                Delivery failed
+                {props.message.deliveryError === null
+                  ? ""
+                  : ` (${props.message.deliveryError})`}
+              </span>
+            </Show>
+          </div>
+          <div class="message-view-header-meta">
+            <button
+              type="button"
+              classList={{ "icon-button": true, active: starred() }}
+              aria-label={starred() ? "Unstar" : "Star"}
+              title={starred() ? "Unstar" : "Star"}
+              onClick={() => props.onToggleStar(!starred())}
+            >
+              <StarIcon filled={starred()} />
+            </button>
+            <span class="muted message-view-date">
+              {formatAbsoluteTime(props.message.occurredAt)}
+            </span>
+          </div>
+        </div>
 
         <Show when={props.message.isMailingList}>
-          <p class="muted">
-            This message is from a mailing list
-            {props.message.listId === null ? "" : ` (${props.message.listId})`}.
-          </p>
-        </Show>
-
-        <Show when={props.message.tags.length > 0}>
-          <div class="message-view-tags">
-            <For each={props.message.tags}>
-              {(tag) => <TagChip tag={tag} />}
-            </For>
+          <div class="mailing-list-banner">
+            <EnvelopeIcon size={16} />
+            <span>
+              This message is from a mailing list.
+              <Show when={props.message.listId !== null}>
+                {" "}
+                <span class="muted">{props.message.listId}</span>
+              </Show>
+            </span>
           </div>
         </Show>
 
-        <div class="message-view-actions">
-          <button type="button" onClick={() => props.onReply(false)}>
-            Reply
-          </button>
-          <button type="button" onClick={() => props.onReply(true)}>
-            Reply all
-          </button>
-          <button type="button" onClick={() => void mintRawLink()}>
-            Temp link to raw ({formatBytes(props.message.rawSize)})
-          </button>
-          <button type="button" class="danger" onClick={() => props.onDelete()}>
-            Delete
-          </button>
-        </div>
-        <Show when={rawLink() !== null}>
-          <code class="message-view-rawlink">{rawLink()}</code>
+        <Show when={userTags().length > 0}>
+          <div class="message-view-tags">
+            <For each={userTags()}>{(tag) => <TagChip tag={tag} />}</For>
+          </div>
         </Show>
       </header>
 

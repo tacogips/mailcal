@@ -2,11 +2,12 @@ import { ValidationError } from "../errors";
 import type { EmailAddress } from "../value-objects/email-address";
 import type { UserId } from "../value-objects/ids";
 
-/** `ADMIN` may manage domains and issue API keys; `MEMBER` may read, send
- * and manage mail but never administer the instance. */
+/** `ADMIN` administers the instance, `MEMBER` may mutate assigned mail, and
+ * `VIEWER` has read-only access to assigned mail. */
 export enum UserRole {
   Admin = "ADMIN",
   Member = "MEMBER",
+  Viewer = "VIEWER",
 }
 
 export interface User {

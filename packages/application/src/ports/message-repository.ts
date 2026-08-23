@@ -21,6 +21,7 @@ import type {
   TagId,
   ThreadId,
 } from "@yabumi/domain/value-objects/ids";
+import type { MailPermissionFilter } from "../policies/authorization";
 
 export { FetchStatus };
 
@@ -69,6 +70,12 @@ export interface MessageListFilter {
    * viewer can see nothing, and must yield an empty page rather than
    * everything. */
   readonly allowedPatterns: readonly AddressPattern[] | null;
+  /** Interactive-user mailbox-rule scoping (ADMIN/MEMBER/VIEWER). `null`
+   * for an API-key viewer or a capability without per-address rules --
+   * that credential's visibility is governed entirely by `allowedPatterns`
+   * above instead. The two mechanisms are deliberately independent and
+   * both apply when both are non-restrictive. */
+  readonly mailPermissionFilter: MailPermissionFilter | null;
   /** Restricts to rows whose fetch state *for this key* has the given
    * status. A `NOT_FETCHED` filter must also match messages with no state
    * row at all, since an absent row means not yet fetched. */

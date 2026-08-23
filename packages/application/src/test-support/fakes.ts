@@ -20,6 +20,7 @@ import {
   fakeMailDomainRepository,
   fakeSessionRepository,
   fakeTagRepository,
+  fakeUserMailPermissionRepository,
   fakeUserRepository,
   type FakeStores,
   seedSystemTags,
@@ -118,6 +119,7 @@ export function createFakeDependencies(
     apiKeyRepository: fakeApiKeyRepository(stores),
     fileLinkRepository: fakeFileLinkRepository(stores),
     userRepository: fakeUserRepository(stores),
+    userMailPermissionRepository: fakeUserMailPermissionRepository(stores),
     sessionRepository: fakeSessionRepository(stores),
     emailAuthChallengeRepository: fakeEmailAuthChallengeRepository(stores),
     instanceConfig: {

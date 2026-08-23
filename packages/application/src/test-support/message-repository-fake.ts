@@ -16,6 +16,7 @@ import {
   type TagId,
   type ThreadId,
 } from "@yabumi/domain/value-objects/ids";
+import { mailPermissionFilterAuthorizesAnyAddress } from "../policies/authorization";
 import type {
   MessageListFilter,
   MessagePage,
@@ -102,6 +103,26 @@ function matchesAllowedPatterns(
   const addresses = addressesOf(stores, message);
   return patterns.some((pattern) =>
     addresses.some((address) => matchAddressPattern(pattern, address)),
+  );
+}
+
+/** Mirrors `buildMailPermissionFilterCondition`'s SQL semantics: `null`
+ * imposes no restriction, otherwise a candidate address must dodge every
+ * matching DENY and then be covered by the admin baseline or a matching
+ * ALLOW. Independent of `matchesAllowedPatterns` above -- both apply when
+ * both are present. */
+function matchesMailPermissionFilter(
+  stores: FakeMessageStores,
+  message: Message,
+  filter: MessageListFilter,
+): boolean {
+  if (filter.mailPermissionFilter === null) {
+    return true;
+  }
+  return mailPermissionFilterAuthorizesAnyAddress(
+    filter.mailPermissionFilter,
+    message.domainId,
+    addressesOf(stores, message),
   );
 }
 
@@ -284,6 +305,7 @@ function matchesFilter(
     (filter.spam === undefined ||
       stores.spamMarks.has(message.id) === filter.spam) &&
     matchesAllowedPatterns(stores, message, filter) &&
+    matchesMailPermissionFilter(stores, message, filter) &&
     matchesFetchStatus(stores, message, filter)
   );
 }

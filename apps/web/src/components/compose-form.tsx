@@ -3,6 +3,7 @@ import { uploadAttachment } from "../api/graphql-client";
 import type { SendMessageVariables } from "../api/schema-types";
 import { describeErrors } from "../lib/mutation-error";
 import { pushToast } from "../lib/toast";
+import { CloseIcon, MinusIcon, PaperclipIcon, TrashIcon } from "./icons";
 import "./compose-form.css";
 
 export interface ComposeDraft {
@@ -67,6 +68,12 @@ export function ComposeForm(props: {
   const [draftId, setDraftId] = createSignal<string | null>(
     props.draft.draftId ?? null,
   );
+  const [showCc, setShowCc] = createSignal(props.draft.cc.length > 0);
+  const [minimized, setMinimized] = createSignal(false);
+  let fileInputRef: HTMLInputElement | undefined;
+
+  const title = () =>
+    props.draft.inReplyToMessageId === undefined ? "New message" : "Reply";
 
   function currentContent(): ComposeContent {
     const id = draftId();
@@ -147,115 +154,192 @@ export function ComposeForm(props: {
     }
   }
 
+  function draftStatusLabel(): string {
+    if (savingDraft()) {
+      return "Saving...";
+    }
+    return draftId() !== null ? "Saved" : "Not saved";
+  }
+
   return (
-    <form class="compose-form" onSubmit={(event) => void handleSend(event)}>
-      <div class="field">
-        <label for="compose-from">From</label>
-        <Show
-          when={props.sendableAddresses.length > 0}
-          fallback={
-            <p class="muted">
-              No sender address is available to you. An administrator must add
-              and verify a domain, and grant you a MAIL_SEND scope.
-            </p>
-          }
-        >
-          <select
-            id="compose-from"
-            value={from()}
-            onChange={(event) => setFrom(event.currentTarget.value)}
-          >
-            <For each={props.sendableAddresses}>
-              {(address) => <option value={address}>{address}</option>}
-            </For>
-          </select>
-        </Show>
-      </div>
-
-      <div class="field">
-        <label for="compose-to">To</label>
-        <input
-          id="compose-to"
-          type="text"
-          autocomplete="off"
-          placeholder="someone@example.com, other@example.com"
-          value={to()}
-          onInput={(event) => setTo(event.currentTarget.value)}
-        />
-      </div>
-
-      <div class="field">
-        <label for="compose-cc">Cc</label>
-        <input
-          id="compose-cc"
-          type="text"
-          autocomplete="off"
-          value={cc()}
-          onInput={(event) => setCc(event.currentTarget.value)}
-        />
-      </div>
-
-      <div class="field">
-        <label for="compose-subject">Subject</label>
-        <input
-          id="compose-subject"
-          type="text"
-          value={subject()}
-          onInput={(event) => setSubject(event.currentTarget.value)}
-        />
-      </div>
-
-      <div class="field">
-        <label for="compose-body">Message</label>
-        <textarea
-          id="compose-body"
-          rows={16}
-          value={text()}
-          onInput={(event) => setText(event.currentTarget.value)}
-        />
-      </div>
-
-      <div class="field">
-        <label for="compose-files">Attachments</label>
-        <input
-          id="compose-files"
-          type="file"
-          multiple
-          disabled={uploading()}
-          onChange={(event) => void handleFiles(event.currentTarget.files)}
-        />
-        <Show when={attachments().length > 0}>
-          <ul class="compose-attachments">
-            <For each={attachments()}>
-              {(attachment) => <li>{attachment.fileName}</li>}
-            </For>
-          </ul>
-        </Show>
-      </div>
-
-      <div class="row">
+    <section class="compose-window">
+      <div class="compose-titlebar">
+        <span class="compose-titlebar-title">{title()}</span>
+        <span class="compose-titlebar-spacer" />
         <button
-          type="submit"
-          class="primary"
-          disabled={
-            sending() || uploading() || props.sendableAddresses.length === 0
-          }
+          type="button"
+          class="icon-button compose-titlebar-button"
+          aria-label="Minimize"
+          onClick={() => setMinimized((current) => !current)}
         >
-          {sending() ? "Sending..." : "Send"}
+          <MinusIcon />
         </button>
-        <Show when={props.onSaveDraft !== undefined}>
-          <button
-            type="button"
-            disabled={savingDraft() || sending() || uploading()}
-            onClick={() => void handleSaveDraft()}
-          >
-            {savingDraft() ? "Saving..." : "Save draft"}
-          </button>
-        </Show>
-        <button type="button" onClick={() => props.onCancel()}>
-          Cancel
+        <button
+          type="button"
+          class="icon-button compose-titlebar-button"
+          aria-label="Close"
+          onClick={() => props.onCancel()}
+        >
+          <CloseIcon />
         </button>
       </div>
-    </form>
+
+      <Show when={!minimized()}>
+        <form class="compose-form" onSubmit={(event) => void handleSend(event)}>
+          <div class="compose-body">
+            <div class="compose-row">
+              <label for="compose-from" class="compose-row-label">
+                From
+              </label>
+              <Show
+                when={props.sendableAddresses.length > 0}
+                fallback={
+                  <p class="muted compose-no-sender">
+                    No sender address is available to you. An administrator must
+                    add and verify a domain, and grant you a MAIL_SEND scope.
+                  </p>
+                }
+              >
+                <select
+                  id="compose-from"
+                  class="compose-row-input"
+                  value={from()}
+                  onChange={(event) => setFrom(event.currentTarget.value)}
+                >
+                  <For each={props.sendableAddresses}>
+                    {(address) => <option value={address}>{address}</option>}
+                  </For>
+                </select>
+              </Show>
+            </div>
+
+            <div class="compose-row">
+              <label for="compose-to" class="compose-row-label">
+                To
+              </label>
+              <input
+                id="compose-to"
+                type="text"
+                class="compose-row-input"
+                autocomplete="off"
+                placeholder="someone@example.com, other@example.com"
+                value={to()}
+                onInput={(event) => setTo(event.currentTarget.value)}
+              />
+              <Show when={!showCc()}>
+                <button
+                  type="button"
+                  class="compose-row-toggle"
+                  onClick={() => setShowCc(true)}
+                >
+                  Cc
+                </button>
+              </Show>
+            </div>
+
+            <Show when={showCc()}>
+              <div class="compose-row">
+                <label for="compose-cc" class="compose-row-label">
+                  Cc
+                </label>
+                <input
+                  id="compose-cc"
+                  type="text"
+                  class="compose-row-input"
+                  autocomplete="off"
+                  value={cc()}
+                  onInput={(event) => setCc(event.currentTarget.value)}
+                />
+              </div>
+            </Show>
+
+            <div class="compose-row">
+              <label for="compose-subject" class="compose-row-label">
+                Subject
+              </label>
+              <input
+                id="compose-subject"
+                type="text"
+                class="compose-row-input"
+                value={subject()}
+                onInput={(event) => setSubject(event.currentTarget.value)}
+              />
+            </div>
+
+            <textarea
+              id="compose-body"
+              class="compose-body-text"
+              aria-label="Message"
+              value={text()}
+              onInput={(event) => setText(event.currentTarget.value)}
+            />
+
+            <Show when={attachments().length > 0}>
+              <ul class="compose-attachments">
+                <For each={attachments()}>
+                  {(attachment) => (
+                    <li class="compose-attachment-chip">
+                      <PaperclipIcon size={14} />
+                      {attachment.fileName}
+                    </li>
+                  )}
+                </For>
+              </ul>
+            </Show>
+          </div>
+
+          <input
+            ref={fileInputRef}
+            type="file"
+            multiple
+            class="compose-file-input"
+            disabled={uploading()}
+            onChange={(event) => void handleFiles(event.currentTarget.files)}
+          />
+
+          <div class="compose-footer">
+            <button
+              type="button"
+              class="icon-button"
+              aria-label="Discard draft"
+              title="Discard draft"
+              onClick={() => props.onCancel()}
+            >
+              <TrashIcon />
+            </button>
+            <button
+              type="button"
+              class="icon-button"
+              aria-label="Attach files"
+              title="Attach files"
+              disabled={uploading()}
+              onClick={() => fileInputRef?.click()}
+            >
+              <PaperclipIcon />
+            </button>
+            <span class="compose-footer-spacer" />
+            <span class="muted compose-draft-status">{draftStatusLabel()}</span>
+            <Show when={props.onSaveDraft !== undefined}>
+              <button
+                type="button"
+                disabled={savingDraft() || sending() || uploading()}
+                onClick={() => void handleSaveDraft()}
+              >
+                {savingDraft() ? "Saving..." : "Save draft"}
+              </button>
+            </Show>
+            <button
+              type="submit"
+              class="primary pill"
+              disabled={
+                sending() || uploading() || props.sendableAddresses.length === 0
+              }
+            >
+              {sending() ? "Sending..." : "Send"}
+            </button>
+          </div>
+        </form>
+      </Show>
+    </section>
   );
 }

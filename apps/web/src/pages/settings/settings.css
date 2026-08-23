@@ -63,3 +63,31 @@ tr.revoked td {
 .dns-table code {
   word-break: break-all;
 }
+
+.user-row {
+  margin-bottom: 12px;
+}
+
+.user-row-header {
+  justify-content: space-between;
+  flex-wrap: wrap;
+  margin-bottom: 8px;
+}
+
+.user-row-header select {
+  width: auto;
+}
+
+.permission-list {
+  list-style: none;
+  padding-left: 0;
+  margin-bottom: 8px;
+}
+
+.permission-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 4px 0;
+}

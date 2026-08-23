@@ -12,6 +12,7 @@ import {
   createTagId,
   createThreadId,
   createUserId,
+  createUserMailPermissionId,
 } from "./ids";
 
 const constructors = [
@@ -24,6 +25,7 @@ const constructors = [
   ["apiKeyScopeId", createApiKeyScopeId],
   ["fileLinkId", createFileLinkId],
   ["userId", createUserId],
+  ["userMailPermissionId", createUserMailPermissionId],
   ["sessionId", createSessionId],
   ["emailAuthChallengeId", createEmailAuthChallengeId],
 ] as const;

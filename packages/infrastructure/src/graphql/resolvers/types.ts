@@ -13,6 +13,8 @@ import type { ClassificationRule } from "@yabumi/domain/entities/classification-
 import type { MessageEvent } from "@yabumi/domain/entities/message-event";
 import type { SpamMark } from "@yabumi/domain/entities/spam-mark";
 import type { Tag } from "@yabumi/domain/entities/tag";
+import { isUserActive, type User } from "@yabumi/domain/entities/user";
+import type { UserMailPermission } from "@yabumi/domain/entities/user-mail-permission";
 import type { GraphQLContext } from "../context";
 import { holdsCapability, viewerCapabilities } from "./helpers";
 
@@ -315,6 +317,35 @@ export const viewerResolvers = {
     ctx: GraphQLContext,
   ): Promise<readonly string[]> {
     return ctx.usecases.listSendableAddresses(source.viewer);
+  },
+};
+
+export const userResolvers = {
+  active(user: User): boolean {
+    return isUserActive(user);
+  },
+
+  /** Loader-based, like `ApiKey.scopes` -- the use cases that return a
+   * `User` do not bundle its permissions, so this always re-fetches rather
+   * than trusting a caller-supplied shape. */
+  async permissions(
+    user: User,
+    _args: unknown,
+    ctx: GraphQLContext,
+  ): Promise<readonly UserMailPermission[]> {
+    return ctx.loaders.permissionsByUser.load(user.id);
+  },
+};
+
+export const userMailPermissionResolvers = {
+  async domain(
+    permission: UserMailPermission,
+    _args: unknown,
+    ctx: GraphQLContext,
+  ) {
+    return permission.domainId === null
+      ? null
+      : ctx.loaders.domainById.load(permission.domainId);
   },
 };
 

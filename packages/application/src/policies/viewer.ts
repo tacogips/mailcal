@@ -1,4 +1,5 @@
 import type { ApiKeyScope } from "@yabumi/domain/entities/api-key";
+import type { UserMailPermission } from "@yabumi/domain/entities/user-mail-permission";
 import { UserRole } from "@yabumi/domain/entities/user";
 import type { ApiKeyId, UserId } from "@yabumi/domain/value-objects/ids";
 
@@ -7,12 +8,15 @@ import type { ApiKeyId, UserId } from "@yabumi/domain/value-objects/ids";
  *
  * An `API_KEY` viewer is authorized purely by its own scope list -- there is
  * deliberately no inheritance from the user that created it, so deactivating
- * a user neither silently widens nor narrows an existing key's reach. */
+ * a user neither silently widens nor narrows an existing key's reach. A
+ * `USER` viewer carries the permission snapshot loaded for its current
+ * request; it is never reused as session state. */
 export type Viewer =
   | {
       readonly kind: "USER";
       readonly userId: UserId;
       readonly role: UserRole;
+      readonly permissions: readonly UserMailPermission[];
     }
   | {
       readonly kind: "API_KEY";

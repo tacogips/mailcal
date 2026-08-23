@@ -86,7 +86,10 @@ function envelopeTo(address: string): readonly MessageRecipient[] {
   ];
 }
 
-const UNRESTRICTED = { allowedPatterns: null } as const;
+const UNRESTRICTED = {
+  allowedPatterns: null,
+  mailPermissionFilter: null,
+} as const;
 
 describe("messageRepository", () => {
   let db: SqlDatabase;
@@ -227,7 +230,10 @@ describe("messageRepository", () => {
 
     test("filters by an exact address pattern", async () => {
       const page = await repository.list(
-        { allowedPatterns: [createAddressPattern("support@example.com")] },
+        {
+          allowedPatterns: [createAddressPattern("support@example.com")],
+          mailPermissionFilter: null,
+        },
         10,
         null,
       );
@@ -239,7 +245,10 @@ describe("messageRepository", () => {
 
     test("filters by a prefix wildcard pattern", async () => {
       const page = await repository.list(
-        { allowedPatterns: [createAddressPattern("support-*@example.com")] },
+        {
+          allowedPatterns: [createAddressPattern("support-*@example.com")],
+          mailPermissionFilter: null,
+        },
         10,
         null,
       );
@@ -248,7 +257,10 @@ describe("messageRepository", () => {
 
     test("filters by a domain wildcard pattern", async () => {
       const page = await repository.list(
-        { allowedPatterns: [createAddressPattern("*@example.com")] },
+        {
+          allowedPatterns: [createAddressPattern("*@example.com")],
+          mailPermissionFilter: null,
+        },
         10,
         null,
       );
@@ -256,14 +268,21 @@ describe("messageRepository", () => {
     });
 
     test("an empty allowlist matches nothing", async () => {
-      const page = await repository.list({ allowedPatterns: [] }, 10, null);
+      const page = await repository.list(
+        { allowedPatterns: [], mailPermissionFilter: null },
+        10,
+        null,
+      );
       expect(page.nodes).toEqual([]);
       expect(page.totalCount).toBe(0);
     });
 
     test("a match-all pattern imposes no restriction", async () => {
       const page = await repository.list(
-        { allowedPatterns: [MATCH_ALL_ADDRESSES] },
+        {
+          allowedPatterns: [MATCH_ALL_ADDRESSES],
+          mailPermissionFilter: null,
+        },
         10,
         null,
       );
@@ -531,6 +550,10 @@ describe("messageRepository", () => {
       expect(page.nodes.map((message) => message.id)).not.toContain("msg-1");
     });
   });
+
+  // mailPermissionFilter (user mailbox rules) listing tests live in
+  // message-repository-permissions.test.ts, split out to keep this file
+  // under the repository's line-count target.
 
   describe("fetch state", () => {
     const apiKeyId = createApiKeyId("key-a");

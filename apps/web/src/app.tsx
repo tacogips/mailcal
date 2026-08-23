@@ -14,6 +14,7 @@ const DomainsPage = lazy(() => import("./pages/settings/domains-page"));
 const ApiKeysPage = lazy(() => import("./pages/settings/api-keys-page"));
 const TagsPage = lazy(() => import("./pages/settings/tags-page"));
 const RulesPage = lazy(() => import("./pages/settings/rules-page"));
+const UsersPage = lazy(() => import("./pages/settings/users-page"));
 
 export function App(): JSX.Element {
   const store = createAppStore();
@@ -74,6 +75,14 @@ export function App(): JSX.Element {
             <AuthGuard ready={ready()}>
               <TagsPage />
             </AuthGuard>
+          )}
+        />
+        <Route
+          path="/settings/users"
+          component={() => (
+            <AdminGuard ready={ready()}>
+              <UsersPage />
+            </AdminGuard>
           )}
         />
         <Route path="*" component={() => <p class="empty">Not found.</p>} />

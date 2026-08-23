@@ -94,7 +94,12 @@ async function createHarness(): Promise<Harness> {
   );
 
   const issued = await usecases.createApiKey(
-    { kind: "USER", userId: user.id, role: UserRole.Admin },
+    {
+      kind: "USER",
+      userId: user.id,
+      role: UserRole.Admin,
+      permissions: [],
+    },
     {
       name: "agent",
       scopes: [
@@ -537,7 +542,12 @@ describe("app", () => {
   describe("file link route", () => {
     async function mintLink(): Promise<string> {
       const created = await harness.usecases.createAttachmentLink(
-        { kind: "USER", userId: createUserId("usr-1"), role: UserRole.Admin },
+        {
+          kind: "USER",
+          userId: createUserId("usr-1"),
+          role: UserRole.Admin,
+          permissions: [],
+        },
         attachmentId,
         900,
         2,

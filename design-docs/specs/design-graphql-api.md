@@ -155,6 +155,26 @@ type ApiKeyScope {
 # The plaintext secret is returned exactly once, here, and never again.
 type ApiKeyWithSecret { apiKey: ApiKey!  secret: String! }
 
+enum UserRole { ADMIN MEMBER VIEWER }
+enum UserPermissionEffect { ALLOW DENY }
+
+type UserMailPermission {
+  id: ID!
+  effect: UserPermissionEffect!
+  domain: MailDomain
+  addressPattern: String!
+  createdAt: DateTime!
+}
+
+type User {
+  id: ID!
+  email: String!
+  name: String!
+  role: UserRole!
+  active: Boolean!
+  permissions: [UserMailPermission!]!
+}
+
 type FileLink {
   id: ID!
   url: String!                # absolute, /files/<token>
@@ -189,7 +209,25 @@ type Query {
 
   tags: [Tag!]!
   apiKeys: [ApiKey!]!                 # KEY_ADMIN / ADMIN only
+  users: [User!]!                     # ADMIN user only
+  user(id: ID!): User                 # ADMIN user only
   fileLinks(messageId: ID): [FileLink!]!
+}
+
+input UserMailPermissionInput {
+  effect: UserPermissionEffect!
+  domainId: ID
+  addressPattern: String = "*"
+}
+
+input CreateUserInput { email: String! name: String! role: UserRole! }
+
+type Mutation {
+  createUser(input: CreateUserInput!): User!
+  setUserRole(id: ID!, role: UserRole!): User!
+  setUserActive(id: ID!, active: Boolean!): User!
+  addUserMailPermission(userId: ID!, permission: UserMailPermissionInput!): User!
+  removeUserMailPermission(permissionId: ID!): Boolean!
 }
 
 input MessageFilter {

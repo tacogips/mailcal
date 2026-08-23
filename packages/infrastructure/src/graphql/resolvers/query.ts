@@ -10,6 +10,7 @@ import {
   createMessageId,
   createTagId,
   createThreadId,
+  createUserId,
 } from "@yabumi/domain/value-objects/ids";
 import type { GraphQLContext } from "../context";
 import { requireViewerOrThrow } from "./helpers";
@@ -199,5 +200,25 @@ export const queryResolvers = {
       requireViewerOrThrow(ctx),
       createMessageId(args.messageId),
     );
+  },
+
+  /** Admin only -- `listUsers` throws for anyone else. Discards the
+   * use case's bundled `permissions` in favor of `User.permissions`'s
+   * loader, same as `apiKeys`/`ApiKey.scopes`. */
+  async users(_parent: unknown, _args: unknown, ctx: GraphQLContext) {
+    const entries = await ctx.usecases.listUsers(requireViewerOrThrow(ctx));
+    return entries.map((entry) => entry.user);
+  },
+
+  async user(
+    _parent: unknown,
+    args: { readonly id: string },
+    ctx: GraphQLContext,
+  ) {
+    const entry = await ctx.usecases.getUser(
+      requireViewerOrThrow(ctx),
+      createUserId(args.id),
+    );
+    return entry === null ? null : entry.user;
   },
 };

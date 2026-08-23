@@ -6,6 +6,7 @@ import type {
   MessageDetailView,
   MessageView,
   SendMessageVariables,
+  TagView,
 } from "../api/schema-types";
 import { AppShell } from "../components/app-shell";
 import {
@@ -13,6 +14,7 @@ import {
   type ComposeDraft,
   ComposeForm,
 } from "../components/compose-form";
+import { EnvelopeIcon } from "../components/icons";
 import { MailboxSidebar } from "../components/mailbox-sidebar";
 import { MessageList } from "../components/message-list";
 import { MessageView as MessageDetail } from "../components/message-view";
@@ -25,7 +27,12 @@ import {
   viewToSearchParams,
 } from "../lib/filter-params";
 import { describeErrors } from "../lib/mutation-error";
-import { quoteBody, replySubject } from "../lib/quote-reply";
+import {
+  forwardBody,
+  forwardSubject,
+  quoteBody,
+  replySubject,
+} from "../lib/quote-reply";
 import { pushToast } from "../lib/toast";
 import { useStore } from "../store/store-context";
 import "./mailbox-page.css";
@@ -120,16 +127,24 @@ export default function MailboxPage(): JSX.Element {
     setDraft({ ...EMPTY_DRAFT, from: sender });
   }
 
+  /** The mailbox that received a message, used as the sender for a reply
+   * or forward: the envelope recipient when known, else the reader's
+   * first sendable address. */
+  function resolveSelfAddress(message: MessageDetailView): string | null {
+    const viewer = store.viewer();
+    const envelope = message.recipients.find(
+      (recipient) => recipient.kind === "ENVELOPE",
+    );
+    return envelope?.address ?? viewer?.sendableAddresses[0] ?? null;
+  }
+
   function startReply(replyAll: boolean): void {
     const message = active();
     if (message === null) {
       return;
     }
     const viewer = store.viewer();
-    const envelope = message.recipients.find(
-      (recipient) => recipient.kind === "ENVELOPE",
-    );
-    const self = envelope?.address ?? viewer?.sendableAddresses[0] ?? null;
+    const self = resolveSelfAddress(message);
     const { to, cc } = buildReplyRecipients({
       from: message.from,
       recipients: message.recipients,
@@ -143,6 +158,22 @@ export default function MailboxPage(): JSX.Element {
       subject: replySubject(message.subject),
       text: quoteBody(message),
       inReplyToMessageId: message.id,
+    });
+  }
+
+  function startForward(): void {
+    const message = active();
+    if (message === null) {
+      return;
+    }
+    const viewer = store.viewer();
+    const self = resolveSelfAddress(message);
+    setDraft({
+      from: self ?? viewer?.sendableAddresses[0] ?? "",
+      to: "",
+      cc: "",
+      subject: forwardSubject(message.subject),
+      text: forwardBody(message),
     });
   }
 
@@ -212,14 +243,72 @@ export default function MailboxPage(): JSX.Element {
     setActive({ ...message, isSpam: false });
   }
 
+  async function markActiveSpam(): Promise<void> {
+    const message = active();
+    if (message === null) {
+      return;
+    }
+    store.clearSelection();
+    store.toggleSelection(message.id);
+    await store.markSelectedSpam(true);
+    store.clearSelection();
+    setActive(null);
+  }
+
+  async function markActiveUnread(): Promise<void> {
+    const message = active();
+    if (message === null) {
+      return;
+    }
+    store.clearSelection();
+    store.toggleSelection(message.id);
+    await store.markSelectedRead(false);
+    store.clearSelection();
+    setActive(null);
+  }
+
+  function patchActiveSystemTag(
+    slug: "STARRED" | "ARCHIVED",
+    tagged: boolean,
+  ): void {
+    const message = active();
+    const tag = store.systemTag(slug);
+    if (message === null || tag === null) {
+      return;
+    }
+    const nextTags: readonly TagView[] = tagged
+      ? [...message.tags, tag]
+      : message.tags.filter((entry) => entry.id !== tag.id);
+    setActive({ ...message, tags: nextTags });
+  }
+
+  async function toggleActiveStar(starred: boolean): Promise<void> {
+    const message = active();
+    if (message === null) {
+      return;
+    }
+    const succeeded = await store.setStarred([message.id], starred);
+    if (succeeded) {
+      patchActiveSystemTag("STARRED", starred);
+    }
+  }
+
+  async function toggleActiveArchive(archived: boolean): Promise<void> {
+    const message = active();
+    if (message === null) {
+      return;
+    }
+    const succeeded = await store.setArchived([message.id], archived);
+    if (succeeded) {
+      patchActiveSystemTag("ARCHIVED", archived);
+    }
+  }
+
   return (
     <AppShell
       topbar={
         <Topbar
           viewer={store.viewer()}
-          title={viewTitle(store.view())}
-          totalCount={store.totalCount()}
-          selectedCount={store.selectedIds().size}
           onSearch={(query) =>
             selectView(
               query.trim().length === 0
@@ -227,10 +316,6 @@ export default function MailboxPage(): JSX.Element {
                 : { kind: "SEARCH", query: query.trim() },
             )
           }
-          onRefresh={() => void store.reloadMessages()}
-          onMarkRead={(read) => void store.markSelectedRead(read)}
-          onMarkSpam={(spam) => void store.markSelectedSpam(spam)}
-          onDelete={() => void store.deleteSelected()}
           onLogout={() => {
             void store.logout().finally(() => navigate("/login"));
           }}
@@ -242,6 +327,7 @@ export default function MailboxPage(): JSX.Element {
           domains={store.domains()}
           tags={store.tags()}
           upcomingEvents={store.upcomingEvents()}
+          inboxUnread={store.inboxUnreadCount()}
           onSelect={selectView}
           onOpenEvent={(messageId) => void openMessageById(messageId)}
           onCompose={startCompose}
@@ -249,6 +335,9 @@ export default function MailboxPage(): JSX.Element {
       }
     >
       <MessageList
+        title={viewTitle(store.view())}
+        totalCount={store.totalCount()}
+        unreadOnly={store.unreadOnly()}
         messages={store.messages()}
         selectedIds={store.selectedIds()}
         activeId={active()?.id ?? null}
@@ -256,27 +345,46 @@ export default function MailboxPage(): JSX.Element {
         hasMore={store.hasMore()}
         onOpen={(message) => void openMessage(message)}
         onToggleSelect={(id) => store.toggleSelection(id)}
+        onToggleUnreadOnly={() => void store.setUnreadOnly(!store.unreadOnly())}
+        onRefresh={() => void store.reloadMessages()}
+        onSelectAll={(all) =>
+          all ? store.selectAll() : store.clearSelection()
+        }
+        onMarkRead={(read) => void store.markSelectedRead(read)}
+        onMarkSpam={(spam) => void store.markSelectedSpam(spam)}
+        onArchive={() => {
+          void store
+            .setArchived([...store.selectedIds()], true)
+            .then(() => store.clearSelection());
+        }}
+        onDelete={() => void store.deleteSelected()}
         onLoadMore={() => void store.loadMore()}
       />
 
       <Show
-        when={draft() !== null}
+        when={active() !== null}
         fallback={
-          <Show
-            when={active() !== null}
-            fallback={
-              <p class="empty">Select a message, or compose a new one.</p>
-            }
-          >
-            <MessageDetail
-              message={active() as MessageDetailView}
-              onReply={startReply}
-              onNotSpam={() => void markActiveNotSpam()}
-              onDelete={() => void deleteActive()}
-            />
-          </Show>
+          <div class="mailbox-empty">
+            <EnvelopeIcon size={48} />
+            <p>Select a message to read</p>
+            <p class="muted">or start a new one with New message</p>
+          </div>
         }
       >
+        <MessageDetail
+          message={active() as MessageDetailView}
+          onReply={startReply}
+          onForward={startForward}
+          onNotSpam={() => void markActiveNotSpam()}
+          onMarkSpam={() => void markActiveSpam()}
+          onMarkUnread={() => void markActiveUnread()}
+          onDelete={() => void deleteActive()}
+          onToggleStar={(starred) => void toggleActiveStar(starred)}
+          onToggleArchive={(archived) => void toggleActiveArchive(archived)}
+        />
+      </Show>
+
+      <Show when={draft() !== null}>
         <ComposeForm
           draft={draft() as ComposeDraft}
           sendableAddresses={store.viewer()?.sendableAddresses ?? []}
