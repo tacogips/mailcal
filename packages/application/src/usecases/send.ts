@@ -296,6 +296,7 @@ export function createSendMessageUseCase(
       const rfcMessageId = `${messageId}@${domain.name}`;
       const thread = await resolveThreadContext(deps, input.inReplyToMessageId);
 
+      const mimeAttachments = await readAttachmentBytes(deps, attachments);
       const raw = deps.mimeBuilder.build({
         from: { address: from, name: null },
         to: recipients.to.map((address) => ({ address, name: null })),
@@ -309,7 +310,7 @@ export function createSendMessageUseCase(
         references: thread.references,
         date: now,
         headers,
-        attachments: await readAttachmentBytes(deps, attachments),
+        attachments: mimeAttachments,
       });
 
       const rawKey = buildRawMessageBlobKey(messageId);
@@ -360,6 +361,14 @@ export function createSendMessageUseCase(
         ...(input.html === undefined ? {} : { html: input.html }),
         headers,
         raw,
+        // Same bytes `raw` already encodes, handed over structurally for a
+        // provider that assembles the MIME itself.
+        attachments: mimeAttachments.map((attachment) => ({
+          fileName: attachment.fileName,
+          contentType: attachment.contentType,
+          content: attachment.content,
+          inline: attachment.inline,
+        })),
       });
     });
 }
