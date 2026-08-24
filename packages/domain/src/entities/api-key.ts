@@ -21,6 +21,50 @@ export enum Capability {
   FileLink = "FILE_LINK",
   DomainAdmin = "DOMAIN_ADMIN",
   KeyAdmin = "KEY_ADMIN",
+  TemplateRead = "TEMPLATE_READ",
+  TemplateCreate = "TEMPLATE_CREATE",
+  TemplateUpdate = "TEMPLATE_UPDATE",
+  TemplateDelete = "TEMPLATE_DELETE",
+  CalendarRead = "CALENDAR_READ",
+  CalendarWrite = "CALENDAR_WRITE",
+}
+
+/** The two calendar capabilities, as a narrowed type: a per-user calendar
+ * rule may only name one of these, and the compiler should say so rather
+ * than the CHECK constraint. */
+export type CalendarCapability =
+  | Capability.CalendarRead
+  | Capability.CalendarWrite;
+
+export const CALENDAR_CAPABILITIES: readonly CalendarCapability[] = [
+  Capability.CalendarRead,
+  Capability.CalendarWrite,
+];
+
+export function isCalendarCapability(
+  capability: Capability,
+): capability is CalendarCapability {
+  return (CALENDAR_CAPABILITIES as readonly Capability[]).includes(capability);
+}
+
+/** The mail-template capabilities, narrowed the same way. */
+export type TemplateCapability =
+  | Capability.TemplateRead
+  | Capability.TemplateCreate
+  | Capability.TemplateUpdate
+  | Capability.TemplateDelete;
+
+export const TEMPLATE_CAPABILITIES: readonly TemplateCapability[] = [
+  Capability.TemplateRead,
+  Capability.TemplateCreate,
+  Capability.TemplateUpdate,
+  Capability.TemplateDelete,
+];
+
+export function isTemplateCapability(
+  capability: Capability,
+): capability is TemplateCapability {
+  return (TEMPLATE_CAPABILITIES as readonly Capability[]).includes(capability);
 }
 
 /** Capabilities that are instance-wide rather than per-address: they are
@@ -28,6 +72,12 @@ export enum Capability {
 export const GLOBAL_CAPABILITIES: ReadonlySet<Capability> = new Set([
   Capability.DomainAdmin,
   Capability.KeyAdmin,
+  // Templates are instance-wide objects, not per-address ones: a template
+  // is not owned by a mailbox, so a template scope carries no address.
+  Capability.TemplateRead,
+  Capability.TemplateCreate,
+  Capability.TemplateUpdate,
+  Capability.TemplateDelete,
 ]);
 
 export function isGlobalCapability(capability: Capability): boolean {

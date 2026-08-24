@@ -1,3 +1,4 @@
+import { Capability } from "@mailcal/domain/entities/api-key";
 import {
   createFakeDependencies,
   type FakeDependencies,
@@ -595,7 +596,10 @@ describe("graphql schema", () => {
       // Without this credential a deployed instance would be unreachable:
       // login needs a verified sending domain that only an admin can add.
       expect(payload.secret.startsWith(payload.apiKey.keyPrefix)).toBe(true);
-      expect(payload.apiKey.scopes).toHaveLength(6);
+      // One scope per capability: mail, templates and calendars alike.
+      expect(payload.apiKey.scopes).toHaveLength(
+        Object.values(Capability).length,
+      );
     });
 
     test("the door closes permanently after the first admin exists", async () => {

@@ -1,5 +1,7 @@
 import type { ApiKeyScope } from "@mailcal/domain/entities/api-key";
+import type { UserCalendarPermission } from "@mailcal/domain/entities/user-calendar-permission";
 import type { UserMailPermission } from "@mailcal/domain/entities/user-mail-permission";
+import type { UserTemplatePermission } from "@mailcal/domain/entities/user-template-permission";
 import { UserRole } from "@mailcal/domain/entities/user";
 import type { ApiKeyId, UserId } from "@mailcal/domain/value-objects/ids";
 
@@ -17,6 +19,10 @@ export type Viewer =
       readonly userId: UserId;
       readonly role: UserRole;
       readonly permissions: readonly UserMailPermission[];
+      /** Admin-assigned template rules, loaded alongside the mail ones. */
+      readonly templatePermissions: readonly UserTemplatePermission[];
+      /** Admin-assigned calendar rules, layered over the role baseline. */
+      readonly calendarPermissions: readonly UserCalendarPermission[];
     }
   | {
       readonly kind: "API_KEY";

@@ -25,7 +25,54 @@ import type {
   UserId,
   UserMailPermissionId,
 } from "@mailcal/domain/value-objects/ids";
+import type {
+  MailTemplate,
+  MailTemplateContentInput,
+} from "@mailcal/domain/entities/mail-template";
+export type { MailTemplateContentInput };
+import type { UserCalendarPermission } from "@mailcal/domain/entities/user-calendar-permission";
+import type { UserTemplatePermission } from "@mailcal/domain/entities/user-template-permission";
+import type {
+  MailTemplateId,
+  UserCalendarPermissionId,
+  UserTemplatePermissionId,
+} from "@mailcal/domain/value-objects/ids";
+import type {
+  TemplateValidation,
+  TemplateValueEntry,
+} from "@mailcal/domain/entities/template-values";
 import type { AppDependencies } from "./dependencies";
+import {
+  type CalendarUseCases,
+  createCalendarUseCases,
+} from "./usecases/calendar-usecases";
+import {
+  createCreateMailTemplateUseCase,
+  createDeleteMailTemplateUseCase,
+  createGetMailTemplateUseCase,
+  createListMailTemplatesUseCase,
+  createMailTemplateReferencesUseCase,
+  createUpdateMailTemplateUseCase,
+} from "./usecases/mail-templates";
+import {
+  createPreviewMailTemplateUseCase,
+  createSendTemplatedMessageUseCase,
+  createValidateMailTemplateValuesUseCase,
+  type RenderedTemplate,
+  type SendTemplatedMessageInput,
+} from "./usecases/mail-template-send";
+import {
+  createAddUserCalendarPermissionUseCase,
+  createListUserCalendarPermissionsUseCase,
+  createRemoveUserCalendarPermissionUseCase,
+  type UserCalendarPermissionInput,
+} from "./usecases/user-calendar-permissions";
+import {
+  createAddUserTemplatePermissionUseCase,
+  createListUserTemplatePermissionsUseCase,
+  createRemoveUserTemplatePermissionUseCase,
+  type UserTemplatePermissionInput,
+} from "./usecases/user-template-permissions";
 import type { Viewer } from "./policies/viewer";
 import type { MessagePage } from "./ports/message-repository";
 import {
@@ -397,10 +444,103 @@ export interface UseCases {
     viewer: Viewer,
     id: UserMailPermissionId,
   ) => Promise<boolean>;
+
+  // --- mail templates ---
+  readonly listMailTemplates: (
+    viewer: Viewer,
+  ) => Promise<readonly MailTemplate[]>;
+  readonly getMailTemplate: (
+    viewer: Viewer,
+    id: MailTemplateId,
+  ) => Promise<MailTemplate | null>;
+  readonly createMailTemplate: (
+    viewer: Viewer,
+    input: MailTemplateContentInput,
+  ) => Promise<MailTemplate>;
+  readonly updateMailTemplate: (
+    viewer: Viewer,
+    id: MailTemplateId,
+    input: MailTemplateContentInput,
+  ) => Promise<MailTemplate>;
+  readonly deleteMailTemplate: (
+    viewer: Viewer,
+    id: MailTemplateId,
+  ) => Promise<boolean>;
+  readonly mailTemplateReferences: (
+    template: MailTemplate,
+  ) => readonly string[];
+  readonly validateMailTemplateValues: (
+    viewer: Viewer,
+    id: MailTemplateId,
+    values: readonly TemplateValueEntry[],
+  ) => Promise<TemplateValidation>;
+  readonly previewMailTemplate: (
+    viewer: Viewer,
+    id: MailTemplateId,
+    values: readonly TemplateValueEntry[],
+  ) => Promise<RenderedTemplate>;
+  readonly sendTemplatedMessage: (
+    viewer: Viewer,
+    input: SendTemplatedMessageInput,
+  ) => Promise<Message>;
+  readonly listUserTemplatePermissions: (
+    viewer: Viewer,
+    userIds: readonly UserId[],
+  ) => Promise<ReadonlyMap<string, readonly UserTemplatePermission[]>>;
+  readonly addUserTemplatePermission: (
+    viewer: Viewer,
+    userId: UserId,
+    input: UserTemplatePermissionInput,
+  ) => Promise<UserTemplatePermission>;
+  readonly removeUserTemplatePermission: (
+    viewer: Viewer,
+    id: UserTemplatePermissionId,
+  ) => Promise<boolean>;
+
+  // --- calendar permissions ---
+  readonly listUserCalendarPermissions: (
+    viewer: Viewer,
+    userIds: readonly UserId[],
+  ) => Promise<ReadonlyMap<string, readonly UserCalendarPermission[]>>;
+  readonly addUserCalendarPermission: (
+    viewer: Viewer,
+    userId: UserId,
+    input: UserCalendarPermissionInput,
+  ) => Promise<UserCalendarPermission>;
+  readonly removeUserCalendarPermission: (
+    viewer: Viewer,
+    id: UserCalendarPermissionId,
+  ) => Promise<boolean>;
 }
 
+/** The calendar half is declared in its own module and spread in, so this
+ * file does not grow a second feature's worth of entries. */
+export interface UseCases extends CalendarUseCases {}
+
 export function createUseCases(deps: AppDependencies): UseCases {
+  const sendMessage = createSendMessageUseCase(deps);
   return {
+    ...createCalendarUseCases(deps),
+
+    listMailTemplates: createListMailTemplatesUseCase(deps),
+    getMailTemplate: createGetMailTemplateUseCase(deps),
+    createMailTemplate: createCreateMailTemplateUseCase(deps),
+    updateMailTemplate: createUpdateMailTemplateUseCase(deps),
+    deleteMailTemplate: createDeleteMailTemplateUseCase(deps),
+    mailTemplateReferences: createMailTemplateReferencesUseCase(deps),
+    validateMailTemplateValues: createValidateMailTemplateValuesUseCase(deps),
+    previewMailTemplate: createPreviewMailTemplateUseCase(deps),
+    sendTemplatedMessage: createSendTemplatedMessageUseCase(deps, sendMessage),
+    listUserTemplatePermissions: createListUserTemplatePermissionsUseCase(deps),
+    addUserTemplatePermission: createAddUserTemplatePermissionUseCase(deps),
+    removeUserTemplatePermission:
+      createRemoveUserTemplatePermissionUseCase(deps),
+
+    listUserCalendarPermissions: createListUserCalendarPermissionsUseCase(deps),
+    addUserCalendarPermission: createAddUserCalendarPermissionUseCase(deps),
+    removeUserCalendarPermission:
+      createRemoveUserCalendarPermissionUseCase(deps),
+
     resolveViewerFromToken: createResolveViewerFromTokenUseCase(deps),
     logout: createLogoutUseCase(deps),
     getViewerUser: createGetViewerUserUseCase(deps),
@@ -411,7 +551,7 @@ export function createUseCases(deps: AppDependencies): UseCases {
 
     receiveMessage: createReceiveMessageUseCase(deps),
 
-    sendMessage: createSendMessageUseCase(deps),
+    sendMessage,
     saveDraft: createSaveDraftUseCase(deps),
     sendDraft: createSendDraftUseCase(deps),
     retrySend: createRetrySendUseCase(deps),

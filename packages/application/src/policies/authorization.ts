@@ -1,17 +1,21 @@
 import {
+  type CalendarCapability,
   Capability,
   isGlobalCapability,
   scopesAuthorize,
   scopesAuthorizeGlobal,
   scopesForCapability,
+  type TemplateCapability,
 } from "@mailcal/domain/entities/api-key";
+import { resolveUserCalendarCapability } from "@mailcal/domain/entities/user-calendar-permission";
+import { resolveUserTemplateCapability } from "@mailcal/domain/entities/user-template-permission";
 import { UserRole } from "@mailcal/domain/entities/user";
 import {
   type AddressPattern,
   matchAddressPattern,
 } from "@mailcal/domain/value-objects/address-pattern";
 import type { EmailAddress } from "@mailcal/domain/value-objects/email-address";
-import type { DomainId } from "@mailcal/domain/value-objects/ids";
+import type { DomainId, UserId } from "@mailcal/domain/value-objects/ids";
 import { ForbiddenError, UnauthenticatedError } from "../errors";
 import { isAdminViewer, type Viewer } from "./viewer";
 
@@ -273,4 +277,141 @@ export function scopedDomainIds(
     }
   }
   return ids;
+}
+
+/** Identity of a calendar's owner, as an authorization decision needs it.
+ *
+ * The owner's *account email* (plus its domain, when that domain is managed
+ * here) is what an API key's calendar scope is matched against, mirroring
+ * how a mail scope is matched against a mailbox address. */
+export interface CalendarOwnerRef {
+  readonly userId: UserId;
+  readonly email: EmailAddress;
+  readonly domainId: DomainId | null;
+}
+
+function keyAuthorizesCalendar(
+  viewer: Extract<Viewer, { kind: "API_KEY" }>,
+  capability: CalendarCapability,
+  owner: CalendarOwnerRef,
+): boolean {
+  return viewer.scopes.some(
+    (scope) =>
+      scope.capability === capability &&
+      (scope.domainId === null || scope.domainId === owner.domainId) &&
+      matchAddressPattern(scope.addressPattern, owner.email),
+  );
+}
+
+/** One calendar capability check, for either credential kind.
+ *
+ * A per-user DENY rule is consulted before *every* other consideration,
+ * including an admin's, so an admin's default access to every calendar can
+ * be revoked while leaving that admin able to administer permissions -- as
+ * in mail: `addUserCalendarPermission` is gated on the ADMIN role, and never
+ * on whether the admin can read the calendar it is granting. */
+export function authorizesCalendarCapability(
+  viewer: Viewer,
+  capability: CalendarCapability,
+  owner: CalendarOwnerRef,
+): boolean {
+  if (viewer.kind === "USER") {
+    return resolveUserCalendarCapability(viewer, capability, owner.userId);
+  }
+  return keyAuthorizesCalendar(viewer, capability, owner);
+}
+
+/** Non-throwing calendar read check. A failing read is reported by its use
+ * case as `NOT_FOUND`, never `FORBIDDEN`. */
+export function authorizesCalendarRead(
+  viewer: Viewer,
+  owner: CalendarOwnerRef,
+): boolean {
+  return authorizesCalendarCapability(viewer, Capability.CalendarRead, owner);
+}
+
+export function authorizesCalendarWrite(
+  viewer: Viewer,
+  owner: CalendarOwnerRef,
+): boolean {
+  return authorizesCalendarCapability(viewer, Capability.CalendarWrite, owner);
+}
+
+/** Throwing write check. Callers must have already established that the
+ * viewer can *read* the calendar, so reporting FORBIDDEN here leaks nothing
+ * the caller does not already know. */
+export function requireCalendarWrite(
+  viewer: Viewer,
+  owner: CalendarOwnerRef,
+): void {
+  if (!authorizesCalendarWrite(viewer, owner)) {
+    throw new ForbiddenError(
+      "This credential is not permitted to modify this calendar",
+    );
+  }
+}
+
+/** Read authorization for one event: calendar-level read, or a mention of
+ * the viewer's own account address. A mention grants that one event, read
+ * only -- never the calendar, and never a write. */
+export function authorizesEventRead(
+  viewer: Viewer,
+  owner: CalendarOwnerRef,
+  mentions: readonly EmailAddress[],
+  viewerEmail: EmailAddress | null,
+): boolean {
+  if (authorizesCalendarRead(viewer, owner)) {
+    return true;
+  }
+  return viewerEmail !== null && mentions.includes(viewerEmail);
+}
+
+/** Narrows to a USER viewer, for the operations that need a user identity to
+ * act on -- creating a calendar needs an owner, and a key inherits none. */
+export function requireUserViewer(
+  viewer: Viewer,
+  message: string,
+): Extract<Viewer, { kind: "USER" }> {
+  if (viewer.kind !== "USER") {
+    throw new ForbiddenError(message);
+  }
+  return viewer;
+}
+
+/** CalDAV accounts are strictly per-user: an API key must not be able to
+ * connect, rotate or delete one, because that would let an agent exfiltrate
+ * a person's iCloud credentials. A suitably scoped key may still trigger
+ * `syncCalendar`, which touches no credential of its own. */
+export function requireCaldavAccountUser(viewer: Viewer): UserId {
+  return requireUserViewer(
+    viewer,
+    "CalDAV accounts can only be managed by a signed-in user",
+  ).userId;
+}
+
+/** Non-throwing template capability check. Templates are instance-wide, so
+ * there is no address axis: a key's scope is the capability alone. */
+export function authorizesTemplateCapability(
+  viewer: Viewer,
+  capability: TemplateCapability,
+): boolean {
+  if (viewer.kind === "USER") {
+    return resolveUserTemplateCapability(
+      viewer.role,
+      viewer.templatePermissions,
+      capability,
+    );
+  }
+  return viewer.scopes.some((scope) => scope.capability === capability);
+}
+
+export function requireTemplateCapability(
+  viewer: Viewer,
+  capability: TemplateCapability,
+): void {
+  if (!authorizesTemplateCapability(viewer, capability)) {
+    throw new ForbiddenError(
+      `This credential is not permitted to perform ${capability} operations`,
+    );
+  }
 }

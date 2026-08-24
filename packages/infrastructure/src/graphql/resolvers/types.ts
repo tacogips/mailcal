@@ -335,6 +335,14 @@ export const userResolvers = {
   ): Promise<readonly UserMailPermission[]> {
     return ctx.loaders.permissionsByUser.load(user.id);
   },
+
+  async templatePermissions(user: User, _args: unknown, ctx: GraphQLContext) {
+    return ctx.loaders.templatePermissionsByUser.load(user.id);
+  },
+
+  async calendarPermissions(user: User, _args: unknown, ctx: GraphQLContext) {
+    return ctx.loaders.calendarPermissionsByUser.load(user.id);
+  },
 };
 
 export const userMailPermissionResolvers = {

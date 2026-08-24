@@ -2,8 +2,15 @@ import type { GraphQLSchema } from "graphql";
 import { createSchema, createYoga } from "graphql-yoga";
 import type { GraphQLContext } from "./context";
 import { useDepthLimit } from "./depth-limit";
+import { calendarTypeDefs } from "./schema-calendar.graphql";
 import { typeDefs } from "./schema.graphql";
 import { toGraphQLError } from "./errors";
+import { calendarMutationResolvers } from "./resolvers/calendar-mutation";
+import { calendarQueryResolvers } from "./resolvers/calendar-query";
+import {
+  calendarEventResolvers,
+  eventOccurrenceResolvers,
+} from "./resolvers/calendar-types";
 import { mutationResolvers } from "./resolvers/mutation";
 import { queryResolvers } from "./resolvers/query";
 import {
@@ -22,6 +29,11 @@ import {
   userResolvers,
   viewerResolvers,
 } from "./resolvers/types";
+import {
+  mailTemplateResolvers,
+  templateMutationResolvers,
+  templateQueryResolvers,
+} from "./resolvers/templates";
 import { useSelectionLimit } from "./selection-limit";
 
 /** Merges the SDL with every resolver module into an executable schema.
@@ -35,10 +47,24 @@ import { useSelectionLimit } from "./selection-limit";
  * loader-based, mirroring `ApiKey.scopes`. */
 export function buildGraphQLSchema(): GraphQLSchema {
   return createSchema<GraphQLContext>({
-    typeDefs,
+    // Three SDL documents, merged by `createSchema`: the mail contract, and
+    // the calendar module that `extend`s Query/Mutation. Neither file has to
+    // carry the other feature's shapes.
+    typeDefs: [typeDefs, calendarTypeDefs],
     resolvers: {
-      Query: queryResolvers,
-      Mutation: mutationResolvers,
+      Query: {
+        ...queryResolvers,
+        ...templateQueryResolvers,
+        ...calendarQueryResolvers,
+      },
+      Mutation: {
+        ...mutationResolvers,
+        ...templateMutationResolvers,
+        ...calendarMutationResolvers,
+      },
+      MailTemplate: mailTemplateResolvers,
+      CalendarEvent: calendarEventResolvers,
+      EventOccurrence: eventOccurrenceResolvers,
       Message: messageResolvers,
       MailDomain: mailDomainResolvers,
       Tag: tagResolvers,

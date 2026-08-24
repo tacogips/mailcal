@@ -5,6 +5,10 @@ import {
   sessionStore,
 } from "../api/graphql-client";
 import {
+  MAIL_TEMPLATES_QUERY,
+  MAIL_TEMPLATE_VALIDATION_QUERY,
+  PREVIEW_MAIL_TEMPLATE_QUERY,
+  SEND_TEMPLATED_MESSAGE_MUTATION,
   DELETE_MESSAGES_MUTATION,
   DOMAINS_QUERY,
   CREATE_MESSAGE_EVENT_MUTATION,
@@ -26,6 +30,11 @@ import {
   VIEWER_QUERY,
 } from "../api/documents";
 import type {
+  MailTemplateView,
+  RenderedTemplateView,
+  SendTemplatedMessageVariables,
+  TemplateValidationView,
+  TemplateValueInput,
   MessageEventKind,
   MessageEventView,
   MailDomainView,
@@ -91,6 +100,19 @@ export interface AppStore {
   ): Promise<MessageEventView | null>;
   deleteMessageEvent(id: string): Promise<boolean>;
   logout(): Promise<void>;
+
+  // --- mail templates ---
+  readonly mailTemplates: () => readonly MailTemplateView[];
+  loadMailTemplates(): Promise<void>;
+  validateTemplateValues(
+    id: string,
+    values: readonly TemplateValueInput[],
+  ): Promise<TemplateValidationView | null>;
+  previewTemplate(
+    id: string,
+    values: readonly TemplateValueInput[],
+  ): Promise<RenderedTemplateView | null>;
+  sendTemplatedMessage(input: SendTemplatedMessageVariables): Promise<boolean>;
 }
 
 export interface SaveDraftVariables {
@@ -155,6 +177,9 @@ export function createAppStore(): AppStore {
   const [selectedIds, setSelectedIds] = createSignal<ReadonlySet<string>>(
     new Set(),
   );
+  const [mailTemplates, setMailTemplates] = createSignal<
+    readonly MailTemplateView[]
+  >([]);
   const [view, setViewSignal] = createSignal<MailboxView>({ kind: "INBOX" });
   const [unreadOnly, setUnreadOnlySignal] = createSignal(false);
   const [inboxUnreadCount, setInboxUnreadCount] = createSignal(0);
@@ -299,6 +324,7 @@ export function createAppStore(): AppStore {
     viewer,
     domains,
     tags,
+    mailTemplates,
     messages,
     totalCount,
     hasMore: () => cursor() !== null,
@@ -577,6 +603,54 @@ export function createAppStore(): AppStore {
       setMessages([]);
       setSelectedIds(new Set<string>());
       sessionStore.clear();
+    },
+
+    async loadMailTemplates(): Promise<void> {
+      const result = await graphqlRequest<{
+        readonly mailTemplates: readonly MailTemplateView[];
+      }>(MAIL_TEMPLATES_QUERY);
+      if (reportFailure(result) || !result.ok) {
+        return;
+      }
+      setMailTemplates(result.data.mailTemplates);
+    },
+
+    /** Validation is asked of the *server* rather than re-derived here: a
+     * client-side copy of "is this filled in?" is one more place for the two
+     * to disagree. */
+    async validateTemplateValues(id, values) {
+      const result = await graphqlRequest<
+        { readonly mailTemplateValidation: TemplateValidationView },
+        { id: string; values: readonly TemplateValueInput[] }
+      >(MAIL_TEMPLATE_VALIDATION_QUERY, { id, values });
+      if (reportFailure(result) || !result.ok) {
+        return null;
+      }
+      return result.data.mailTemplateValidation;
+    },
+
+    async previewTemplate(id, values) {
+      const result = await graphqlRequest<
+        { readonly previewMailTemplate: RenderedTemplateView },
+        { id: string; values: readonly TemplateValueInput[] }
+      >(PREVIEW_MAIL_TEMPLATE_QUERY, { id, values });
+      if (reportFailure(result) || !result.ok) {
+        return null;
+      }
+      return result.data.previewMailTemplate;
+    },
+
+    async sendTemplatedMessage(input) {
+      const result = await graphqlRequest<
+        { readonly sendTemplatedMessage: MessageView },
+        { input: SendTemplatedMessageVariables }
+      >(SEND_TEMPLATED_MESSAGE_MUTATION, { input });
+      if (reportFailure(result) || !result.ok) {
+        return false;
+      }
+      pushToast("success", "Message sent");
+      await fetchPage(null);
+      return true;
     },
   };
 }

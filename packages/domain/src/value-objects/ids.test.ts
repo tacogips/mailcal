@@ -4,6 +4,14 @@ import {
   createApiKeyId,
   createApiKeyScopeId,
   createAttachmentId,
+  createCaldavAccountId,
+  createCaldavCalendarId,
+  createCalendarEventId,
+  createCalendarId,
+  createEventLinkId,
+  createMailTemplateId,
+  createUserCalendarPermissionId,
+  createUserTemplatePermissionId,
   createDomainId,
   createEmailAuthChallengeId,
   createFileLinkId,
@@ -50,4 +58,26 @@ describe("branded id constructors", () => {
       expect(() => create("   ")).toThrow(ValidationError);
     },
   );
+});
+
+describe("calendar and template ids", () => {
+  const constructors = [
+    ["calendarId", createCalendarId],
+    ["calendarEventId", createCalendarEventId],
+    ["eventLinkId", createEventLinkId],
+    ["caldavAccountId", createCaldavAccountId],
+    ["caldavCalendarId", createCaldavCalendarId],
+    ["mailTemplateId", createMailTemplateId],
+    ["userCalendarPermissionId", createUserCalendarPermissionId],
+    ["userTemplatePermissionId", createUserTemplatePermissionId],
+  ] as const;
+
+  test.each(constructors)("%s accepts a non-empty value", (_field, create) => {
+    expect(create("abc")).toBe("abc");
+  });
+
+  test.each(constructors)("%s rejects blank input", (_field, create) => {
+    expect(() => create("")).toThrow(ValidationError);
+    expect(() => create("   ")).toThrow(ValidationError);
+  });
 });

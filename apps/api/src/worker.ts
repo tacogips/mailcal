@@ -4,6 +4,7 @@ import {
   assertMailOriginConsistency,
   type BuildDependenciesConfig,
   resolveBlobBackend,
+  resolveCredentialKey,
   resolveFileLinkMaxTtl,
   resolveMailFrom,
   resolvePublicOrigin,
@@ -35,6 +36,7 @@ export function buildWorkerConfig(env: Env): BuildDependenciesConfig {
   const publicOrigin = resolvePublicOrigin(record);
   const mailFrom = resolveMailFrom(record);
   assertMailOriginConsistency({ mailFrom, publicOrigin });
+  const credentialKey = resolveCredentialKey(record);
 
   return {
     sqlBackend: "d1",
@@ -49,6 +51,7 @@ export function buildWorkerConfig(env: Env): BuildDependenciesConfig {
     ...(mailFrom === undefined ? {} : { mailFrom }),
     ...(blobBackend === "r2" ? { r2: env.BLOB } : {}),
     ...(blobBackend === "s3" ? { s3: resolveS3Config(record) } : {}),
+    ...(credentialKey === undefined ? {} : { credentialKey }),
   };
 }
 

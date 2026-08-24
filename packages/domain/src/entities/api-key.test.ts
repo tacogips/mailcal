@@ -11,11 +11,15 @@ import {
   createDomainId,
 } from "../value-objects/ids";
 import {
+  CALENDAR_CAPABILITIES,
   Capability,
+  TEMPLATE_CAPABILITIES,
   createApiKey,
   createApiKeyScope,
   isApiKeyUsable,
+  isCalendarCapability,
   isGlobalCapability,
+  isTemplateCapability,
   recordApiKeyUsage,
   revokeApiKey,
   scopeMatches,
@@ -241,5 +245,55 @@ describe("scope lists", () => {
       }),
     ).toBe(false);
     expect(scopesAuthorizeGlobal([], Capability.KeyAdmin)).toBe(false);
+  });
+});
+
+describe("calendar and template capabilities", () => {
+  test("the enum carries every capability the migrations admit", () => {
+    // Kept in step with the CHECK constraints in 0006 and 0007: a value in
+    // one and not the other is a row the database refuses to store.
+    expect(new Set(Object.values(Capability))).toEqual(
+      new Set([
+        "MAIL_READ",
+        "MAIL_SEND",
+        "MAIL_MANAGE",
+        "FILE_LINK",
+        "DOMAIN_ADMIN",
+        "KEY_ADMIN",
+        "TEMPLATE_READ",
+        "TEMPLATE_CREATE",
+        "TEMPLATE_UPDATE",
+        "TEMPLATE_DELETE",
+        "CALENDAR_READ",
+        "CALENDAR_WRITE",
+      ]),
+    );
+  });
+
+  test("narrows the calendar capabilities and nothing else", () => {
+    expect(isCalendarCapability(Capability.CalendarRead)).toBe(true);
+    expect(isCalendarCapability(Capability.CalendarWrite)).toBe(true);
+    expect(isCalendarCapability(Capability.MailRead)).toBe(false);
+    expect(isCalendarCapability(Capability.TemplateRead)).toBe(false);
+    expect(CALENDAR_CAPABILITIES).toHaveLength(2);
+  });
+
+  test("narrows the template capabilities and nothing else", () => {
+    for (const capability of TEMPLATE_CAPABILITIES) {
+      expect(isTemplateCapability(capability)).toBe(true);
+    }
+    expect(isTemplateCapability(Capability.CalendarRead)).toBe(false);
+    expect(isTemplateCapability(Capability.MailSend)).toBe(false);
+    expect(TEMPLATE_CAPABILITIES).toHaveLength(4);
+  });
+
+  test("calendar capabilities are per-address, template ones instance-wide", () => {
+    // A calendar scope is matched against the owner's account address, so it
+    // must not be global; a template belongs to no mailbox, so it must be.
+    expect(isGlobalCapability(Capability.CalendarRead)).toBe(false);
+    expect(isGlobalCapability(Capability.CalendarWrite)).toBe(false);
+    for (const capability of TEMPLATE_CAPABILITIES) {
+      expect(isGlobalCapability(capability)).toBe(true);
+    }
   });
 });

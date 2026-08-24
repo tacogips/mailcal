@@ -91,3 +91,18 @@ tr.revoked td {
   gap: 8px;
   padding: 4px 0;
 }
+
+/* The templates editor's button row: Save/Cancel/Delete sit together at the
+   end of the form. `panel` and `field` come from global.css, so this is the
+   only template-specific rule the settings pages need. */
+.settings-actions {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  flex-wrap: wrap;
+  margin-top: 16px;
+}
+
+.settings-actions .danger {
+  margin-left: auto;
+}

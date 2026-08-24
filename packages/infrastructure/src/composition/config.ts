@@ -36,6 +36,10 @@ export interface BuildDependenciesConfig {
   readonly spamThreshold?: number;
   readonly spamPhrases?: readonly string[];
   readonly fileLinkMaxTtlSeconds?: number;
+  /** base64-encoded 32-byte AES key for stored CalDAV credentials. Absent
+   * means CalDAV is simply disabled; the rest of the calendar feature works
+   * without it. */
+  readonly credentialKey?: string;
   readonly clock?: Clock;
   readonly dns?: DnsResolver;
   readonly random?: RandomSource;
@@ -50,6 +54,17 @@ export class PublicOriginConfigurationError extends Error {
   constructor(message: string) {
     super(message);
     this.name = "PublicOriginConfigurationError";
+  }
+}
+
+/** A set-but-invalid `MAILCAL_CREDENTIAL_KEY`. Same reasoning as
+ * {@link PublicOriginConfigurationError}: an operator who set the secret
+ * meant CalDAV to work, and quietly running without encryption would be
+ * worse than refusing to start. */
+export class CredentialKeyConfigurationError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = "CredentialKeyConfigurationError";
   }
 }
 
@@ -86,6 +101,31 @@ export function resolvePublicOrigin(env: EnvLike): string | undefined {
     );
   }
   return url.origin;
+}
+
+/** Returns `undefined` when unset -- which disables CalDAV mutations with a
+ * clear `SERVICE_UNAVAILABLE` -- and throws for a value that is set but not
+ * a base64-encoded 32-byte key. */
+export function resolveCredentialKey(env: EnvLike): string | undefined {
+  const raw = env["MAILCAL_CREDENTIAL_KEY"];
+  if (raw === undefined || raw.trim().length === 0) {
+    return undefined;
+  }
+  const trimmed = raw.trim();
+  let decoded: string;
+  try {
+    decoded = atob(trimmed);
+  } catch {
+    throw new CredentialKeyConfigurationError(
+      "MAILCAL_CREDENTIAL_KEY must be base64-encoded",
+    );
+  }
+  if (decoded.length !== 32) {
+    throw new CredentialKeyConfigurationError(
+      "MAILCAL_CREDENTIAL_KEY must decode to exactly 32 bytes",
+    );
+  }
+  return trimmed;
 }
 
 export function resolveMailFrom(
@@ -222,6 +262,8 @@ export function loadConfigFromEnv(env: EnvLike): BuildDependenciesConfig {
   const mailFrom = resolveMailFrom(env);
   assertMailOriginConsistency({ mailFrom, publicOrigin });
 
+  const credentialKey = resolveCredentialKey(env);
+
   const blobBackend = resolveBlobBackend(env);
   const localBlobBackend: BlobBackend =
     env["MAILCAL_BLOB_BACKEND"] === undefined ? "memory" : blobBackend;
@@ -239,5 +281,6 @@ export function loadConfigFromEnv(env: EnvLike): BuildDependenciesConfig {
     spamThreshold: resolveSpamThreshold(env),
     spamPhrases: resolveSpamPhrases(env),
     fileLinkMaxTtlSeconds: resolveFileLinkMaxTtl(env),
+    ...(credentialKey === undefined ? {} : { credentialKey }),
   };
 }

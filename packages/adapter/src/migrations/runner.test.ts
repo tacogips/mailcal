@@ -86,6 +86,9 @@ describe("createMigrationRunner", () => {
       "0003_attachment_kind.sql",
       "0004_spam_status_events.sql",
       "0005_user_mail_permissions.sql",
+      "0006_calendar.sql",
+      "0007_mail_templates.sql",
+      "0008_user_calendar_permissions.sql",
     ]);
 
     const names = await tableNames(db);

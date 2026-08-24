@@ -5,7 +5,10 @@ import {
   createCryptoRandomSource,
   createSha256TokenHasher,
 } from "@mailcal/adapter/crypto";
+import { createCaldavClient } from "@mailcal/adapter/caldav/caldav-client";
+import { createCredentialCipher } from "@mailcal/adapter/crypto/credential-cipher";
 import { createDohResolver } from "@mailcal/adapter/dns/doh-resolver";
+import { createIcsCodec } from "@mailcal/adapter/ics/ics-codec";
 import {
   createCloudflareMailSender,
   createUnavailableMailSender,
@@ -18,7 +21,14 @@ import {
   createSessionRepository,
   createUserRepository,
 } from "@mailcal/adapter/repositories/auth-repository";
+import { createCaldavAccountRepository } from "@mailcal/adapter/repositories/caldav-account-repository";
+import { createCalendarEventRepository } from "@mailcal/adapter/repositories/calendar-event-repository";
+import { createCalendarRepository } from "@mailcal/adapter/repositories/calendar-repository";
 import { createClassificationRuleRepository } from "@mailcal/adapter/repositories/classification-rule-repository";
+import { createMailTemplateRepository } from "@mailcal/adapter/repositories/mail-template-repository";
+import { createUserCalendarPermissionRepository } from "@mailcal/adapter/repositories/user-calendar-permission-repository";
+import { createUserTemplatePermissionRepository } from "@mailcal/adapter/repositories/user-template-permission-repository";
+import { createEtaTemplateRenderer } from "@mailcal/adapter/templates/eta-renderer";
 import { createFileLinkRepository } from "@mailcal/adapter/repositories/file-link-repository";
 import { createMessageEventRepository } from "@mailcal/adapter/repositories/message-event-repository";
 import { createMailDomainRepository } from "@mailcal/adapter/repositories/mail-domain-repository";
@@ -109,6 +119,15 @@ export function buildDependencies(
       config.email === undefined || config.mailFrom === undefined
         ? createUnavailableMailSender()
         : createCloudflareMailSender(config.email, config.mailFrom),
+    // Parses Eta rather than compiling it: this same object runs inside a
+    // Cloudflare Worker, where `new Function` is not available at all.
+    templateRenderer: createEtaTemplateRenderer(),
+    // CalDAV: without `MAILCAL_CREDENTIAL_KEY` the cipher reports
+    // `available: false` and the CalDAV use cases fail with
+    // SERVICE_UNAVAILABLE, while calendars and events keep working.
+    icsCodec: createIcsCodec(),
+    caldavClient: createCaldavClient(),
+    credentialCipher: createCredentialCipher(config.credentialKey ?? null),
 
     mailDomainRepository: createMailDomainRepository(db),
     messageRepository: createMessageRepository(db),
@@ -120,6 +139,14 @@ export function buildDependencies(
     fileLinkRepository: createFileLinkRepository(db),
     userRepository: createUserRepository(db),
     userMailPermissionRepository: createUserMailPermissionRepository(db),
+    mailTemplateRepository: createMailTemplateRepository(db),
+    userTemplatePermissionRepository:
+      createUserTemplatePermissionRepository(db),
+    userCalendarPermissionRepository:
+      createUserCalendarPermissionRepository(db),
+    calendarRepository: createCalendarRepository(db),
+    calendarEventRepository: createCalendarEventRepository(db),
+    caldavAccountRepository: createCaldavAccountRepository(db),
     sessionRepository: createSessionRepository(db),
     emailAuthChallengeRepository: createEmailAuthChallengeRepository(db),
 

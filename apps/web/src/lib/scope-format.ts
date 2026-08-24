@@ -8,6 +8,12 @@ export const CAPABILITY_LABELS: Readonly<Record<Capability, string>> = {
   MAIL_MANAGE: "Manage mail (tag, mark, delete)",
   FILE_LINK: "Create file links",
   DOMAIN_ADMIN: "Administer domains",
+  TEMPLATE_READ: "Read templates",
+  TEMPLATE_CREATE: "Create templates",
+  TEMPLATE_UPDATE: "Update templates",
+  TEMPLATE_DELETE: "Delete templates",
+  CALENDAR_READ: "Read calendars",
+  CALENDAR_WRITE: "Write calendars",
   KEY_ADMIN: "Issue and revoke API keys",
 };
 

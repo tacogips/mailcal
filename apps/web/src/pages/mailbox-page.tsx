@@ -14,6 +14,7 @@ import {
   type ComposeDraft,
   ComposeForm,
 } from "../components/compose-form";
+import { TemplateSendPanel } from "../components/template-send-panel";
 import { EnvelopeIcon } from "../components/icons";
 import { MailboxSidebar } from "../components/mailbox-sidebar";
 import { MessageList } from "../components/message-list";
@@ -52,6 +53,15 @@ export default function MailboxPage(): JSX.Element {
 
   const [active, setActive] = createSignal<MessageDetailView | null>(null);
   const [draft, setDraft] = createSignal<ComposeDraft | null>(null);
+  const [templateSendOpen, setTemplateSendOpen] = createSignal(false);
+  /** The catalogue is only fetched when the panel is actually opened: a
+   * mailbox visitor who never sends from a template should not pay for it. */
+  const canUseTemplates = (): boolean =>
+    store.viewer()?.capabilities.includes("TEMPLATE_READ") ?? false;
+  function openTemplateSend(): void {
+    void store.loadMailTemplates();
+    setTemplateSendOpen(true);
+  }
 
   // The URL is the source of truth for which mailbox is shown, so a
   // bookmark or a reload lands on the same view.
@@ -331,6 +341,9 @@ export default function MailboxPage(): JSX.Element {
           onSelect={selectView}
           onOpenEvent={(messageId) => void openMessageById(messageId)}
           onCompose={startCompose}
+          onComposeFromTemplate={
+            canUseTemplates() ? openTemplateSend : undefined
+          }
         />
       }
     >
@@ -381,6 +394,23 @@ export default function MailboxPage(): JSX.Element {
           onDelete={() => void deleteActive()}
           onToggleStar={(starred) => void toggleActiveStar(starred)}
           onToggleArchive={(archived) => void toggleActiveArchive(archived)}
+        />
+      </Show>
+
+      <Show when={templateSendOpen()}>
+        <TemplateSendPanel
+          templates={store.mailTemplates()}
+          sendableAddresses={store.viewer()?.sendableAddresses ?? []}
+          onValidate={(id, values) => store.validateTemplateValues(id, values)}
+          onPreview={(id, values) => store.previewTemplate(id, values)}
+          onSend={async (input) => {
+            const sent = await store.sendTemplatedMessage(input);
+            if (sent) {
+              setTemplateSendOpen(false);
+            }
+            return sent;
+          }}
+          onClose={() => setTemplateSendOpen(false)}
         />
       </Show>
 

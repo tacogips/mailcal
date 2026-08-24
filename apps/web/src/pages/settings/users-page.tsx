@@ -1,15 +1,21 @@
 import { createSignal, For, type JSX, onMount, Show } from "solid-js";
 import {
+  ADD_USER_CALENDAR_PERMISSION_MUTATION,
   ADD_USER_MAIL_PERMISSION_MUTATION,
+  ADD_USER_TEMPLATE_PERMISSION_MUTATION,
   CREATE_USER_MUTATION,
+  REMOVE_USER_CALENDAR_PERMISSION_MUTATION,
   REMOVE_USER_MAIL_PERMISSION_MUTATION,
+  REMOVE_USER_TEMPLATE_PERMISSION_MUTATION,
   SET_USER_ACTIVE_MUTATION,
   SET_USER_ROLE_MUTATION,
   USERS_QUERY,
 } from "../../api/documents";
 import { graphqlRequest } from "../../api/graphql-client";
 import type {
+  CalendarCapability,
   MailDomainView,
+  TemplateCapability,
   UserPermissionEffect,
   UserRole,
   UserView,
@@ -46,6 +52,16 @@ function UserRow(props: {
   readonly onSetActive: (active: boolean) => void;
   readonly onAddRule: (form: AddRuleFormState) => Promise<boolean>;
   readonly onRemoveRule: (permissionId: string) => void;
+  readonly onAddTemplateRule: (
+    capability: TemplateCapability,
+    effect: UserPermissionEffect,
+  ) => void;
+  readonly onRemoveTemplateRule: (id: string) => void;
+  readonly onAddCalendarRule: (
+    capability: CalendarCapability,
+    effect: UserPermissionEffect,
+  ) => void;
+  readonly onRemoveCalendarRule: (id: string) => void;
 }): JSX.Element {
   const [form, setForm] = createSignal<AddRuleFormState>(EMPTY_RULE_FORM);
   const [adding, setAdding] = createSignal(false);
@@ -172,7 +188,121 @@ function UserRow(props: {
           Add rule
         </button>
       </form>
+
+      <CapabilityRules
+        title="Template permission rules"
+        capabilities={TEMPLATE_CAPABILITIES}
+        rules={props.user.templatePermissions}
+        onAdd={props.onAddTemplateRule}
+        onRemove={props.onRemoveTemplateRule}
+      />
+
+      <CapabilityRules
+        title="Calendar permission rules"
+        capabilities={CALENDAR_CAPABILITIES}
+        rules={props.user.calendarPermissions}
+        onAdd={props.onAddCalendarRule}
+        onRemove={props.onRemoveCalendarRule}
+      />
     </div>
+  );
+}
+
+const TEMPLATE_CAPABILITIES: readonly TemplateCapability[] = [
+  "TEMPLATE_READ",
+  "TEMPLATE_CREATE",
+  "TEMPLATE_UPDATE",
+  "TEMPLATE_DELETE",
+];
+
+const CALENDAR_CAPABILITIES: readonly CalendarCapability[] = [
+  "CALENDAR_READ",
+  "CALENDAR_WRITE",
+];
+
+/** Template and calendar rules share a shape -- a capability plus an
+ * ALLOW/DENY effect -- so one editor serves both rather than two near-copies
+ * that would drift. A calendar rule's owner axis is deliberately not exposed
+ * here: the common case is "all owners", and per-owner scoping remains
+ * available through the API. */
+function CapabilityRules<T extends string>(props: {
+  readonly title: string;
+  readonly capabilities: readonly T[];
+  readonly rules: readonly {
+    readonly id: string;
+    readonly capability: T;
+    readonly effect: UserPermissionEffect;
+  }[];
+  readonly onAdd: (capability: T, effect: UserPermissionEffect) => void;
+  readonly onRemove: (id: string) => void;
+}): JSX.Element {
+  const [capability, setCapability] = createSignal<T>(
+    props.capabilities[0] as T,
+  );
+  const [effect, setEffect] = createSignal<UserPermissionEffect>("ALLOW");
+
+  return (
+    <>
+      <h3>{props.title}</h3>
+      <Show
+        when={props.rules.length > 0}
+        fallback={<p class="muted">No rules yet; the role default applies.</p>}
+      >
+        <ul class="scope-list permission-list">
+          <For each={props.rules}>
+            {(rule) => (
+              <li class="permission-row">
+                <span>
+                  {rule.effect} <code>{rule.capability}</code>
+                </span>
+                <button
+                  type="button"
+                  class="danger"
+                  aria-label={`Remove rule ${rule.capability}`}
+                  onClick={() => props.onRemove(rule.id)}
+                >
+                  Remove
+                </button>
+              </li>
+            )}
+          </For>
+        </ul>
+      </Show>
+      <form
+        class="scope-row"
+        onSubmit={(event) => {
+          event.preventDefault();
+          props.onAdd(capability(), effect());
+        }}
+      >
+        <select
+          aria-label={`${props.title} effect`}
+          value={effect()}
+          onChange={(event) =>
+            setEffect(event.currentTarget.value as UserPermissionEffect)
+          }
+        >
+          <For each={EFFECT_OPTIONS}>
+            {(value) => <option value={value}>{value}</option>}
+          </For>
+        </select>
+        <select
+          aria-label={`${props.title} capability`}
+          value={capability()}
+          // Updater form: with `T extends string`, Solid cannot tell a bare
+          // value from a setter function.
+          onChange={(event) => {
+            const next = event.currentTarget.value as T;
+            setCapability(() => next);
+          }}
+        >
+          <For each={props.capabilities}>
+            {(value) => <option value={value}>{value}</option>}
+          </For>
+        </select>
+        <button type="submit">Add rule</button>
+      </form>
+    </>
   );
 }
 
@@ -306,6 +436,40 @@ export default function UsersPage(): JSX.Element {
     await reload();
   }
 
+  /** Template and calendar rules take the same `(userId, input)` shape, so
+   * one helper drives both mutations rather than four near-identical ones. */
+  async function addCapabilityRule(
+    document: string,
+    userId: string,
+    capability: string,
+    effect: UserPermissionEffect,
+  ): Promise<void> {
+    const result = await graphqlRequest<
+      Record<string, unknown>,
+      Record<string, unknown>
+    >(document, { userId, input: { capability, effect } });
+    if (!result.ok) {
+      pushToast("error", describeErrors(result.errors));
+      return;
+    }
+    await reload();
+  }
+
+  async function removeCapabilityRule(
+    document: string,
+    id: string,
+  ): Promise<void> {
+    const result = await graphqlRequest<
+      Record<string, unknown>,
+      Record<string, unknown>
+    >(document, { id });
+    if (!result.ok) {
+      pushToast("error", describeErrors(result.errors));
+      return;
+    }
+    await reload();
+  }
+
   return (
     <div class="settings-page">
       <h1>Users</h1>
@@ -372,6 +536,34 @@ export default function UsersPage(): JSX.Element {
                   onSetActive={(active) => void setActiveFor(user, active)}
                   onAddRule={(form) => addRuleFor(user, form)}
                   onRemoveRule={(id) => void removeRule(id)}
+                  onAddTemplateRule={(capability, effect) =>
+                    void addCapabilityRule(
+                      ADD_USER_TEMPLATE_PERMISSION_MUTATION,
+                      user.id,
+                      capability,
+                      effect,
+                    )
+                  }
+                  onRemoveTemplateRule={(id) =>
+                    void removeCapabilityRule(
+                      REMOVE_USER_TEMPLATE_PERMISSION_MUTATION,
+                      id,
+                    )
+                  }
+                  onAddCalendarRule={(capability, effect) =>
+                    void addCapabilityRule(
+                      ADD_USER_CALENDAR_PERMISSION_MUTATION,
+                      user.id,
+                      capability,
+                      effect,
+                    )
+                  }
+                  onRemoveCalendarRule={(id) =>
+                    void removeCapabilityRule(
+                      REMOVE_USER_CALENDAR_PERMISSION_MUTATION,
+                      id,
+                    )
+                  }
                 />
               )}
             </For>

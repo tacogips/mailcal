@@ -9,6 +9,8 @@ import type { SpamMark } from "@mailcal/domain/entities/spam-mark";
 import type { Tag } from "@mailcal/domain/entities/tag";
 import type { ApiKeyScope } from "@mailcal/domain/entities/api-key";
 import type { UserMailPermission } from "@mailcal/domain/entities/user-mail-permission";
+import type { UserCalendarPermission } from "@mailcal/domain/entities/user-calendar-permission";
+import type { UserTemplatePermission } from "@mailcal/domain/entities/user-template-permission";
 import {
   type ApiKeyId,
   createTagId,
@@ -89,6 +91,14 @@ export interface RequestLoaders {
   readonly permissionsByUser: BatchLoader<
     UserId,
     readonly UserMailPermission[]
+  >;
+  readonly templatePermissionsByUser: BatchLoader<
+    UserId,
+    readonly UserTemplatePermission[]
+  >;
+  readonly calendarPermissionsByUser: BatchLoader<
+    UserId,
+    readonly UserCalendarPermission[]
   >;
 }
 
@@ -198,8 +208,26 @@ export function createRequestLoaders(
       () => 0,
     ),
 
-    // No batch method on the port (admin-only, low-cardinality data), so
-    // this issues one point lookup per key -- still coalesced into the
+    // These two ports offer a batch method, so one round trip covers every
+    // user in the page.
+    templatePermissionsByUser: createBatchLoader<
+      UserId,
+      readonly UserTemplatePermission[]
+    >(
+      async (ids) => deps.userTemplatePermissionRepository.listByUserIds(ids),
+      () => EMPTY_ARRAY,
+    ),
+
+    calendarPermissionsByUser: createBatchLoader<
+      UserId,
+      readonly UserCalendarPermission[]
+    >(
+      async (ids) => deps.userCalendarPermissionRepository.listByUserIds(ids),
+      () => EMPTY_ARRAY,
+    ),
+
+    // No batch method on this port (admin-only, low-cardinality data), so
+    // it issues one point lookup per key -- still coalesced into the
     // request's microtask batch by `createBatchLoader`.
     permissionsByUser: createBatchLoader<UserId, readonly UserMailPermission[]>(
       async (ids) => {
