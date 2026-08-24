@@ -138,3 +138,96 @@ else
   echo "Using existing custom Git hooks path: $hooks_path"
 fi
 '''
+
+
+# --- Cloudflare mail plumbing -------------------------------------------
+#
+# Everything mailcal needs on the Cloudflare side, so setting up a new
+# sending domain never means clicking through the dashboard. All of it runs
+# through `wrangler email`, which uses the same OAuth session as `deploy`
+# (`mise exec -- wrangler login` if you have none).
+#
+# Two independent Cloudflare products are involved, and mailcal cares about
+# them for different reasons:
+#
+#   Email Routing  -- receiving, and the `send_email` Worker binding. Free,
+#                     but the binding will only deliver to addresses
+#                     registered AND verified as destinations on the
+#                     account. Fine for mailing your own operators, useless
+#                     for mailing customers.
+#   Email Sending  -- outbound to *any* recipient, no per-recipient
+#                     registration. Workers Paid. This is what a real mail
+#                     server wants; set MAILCAL_EMAIL_SENDING_ACCOUNT_ID and
+#                     MAILCAL_EMAIL_SENDING_TOKEN and mailcal prefers it.
+#
+# `mail-status` first, then `mail-setup-receiving` or `mail-setup-sending`.
+
+[tasks.mail-status]
+description = "Show Cloudflare Email Routing/Sending state and verified destinations"
+run = '''
+echo "== Email Routing: zones =="
+wrangler email routing list || true
+echo
+echo "== Email Routing: destination addresses (the send_email binding can only reach verified ones) =="
+wrangler email routing addresses list || true
+echo
+echo "== Email Sending: domains (arbitrary recipients, Workers Paid) =="
+wrangler email sending list || echo "  (unavailable: needs Email Sending permission on the token, or the feature enabled)"
+'''
+
+[tasks.mail-routing-enable]
+description = "Enable Email Routing on a zone (receiving + the send_email binding)"
+usage = 'arg "<domain>"'
+run = '''
+wrangler email routing enable "$usage_domain"
+echo
+echo "Publish the records below, then re-run 'mise run mail-status'."
+wrangler email routing dns get "$usage_domain"
+'''
+
+[tasks.mail-routing-dns]
+description = "Show the DNS records Email Routing needs for a zone"
+usage = 'arg "<domain>"'
+run = 'wrangler email routing dns get "$usage_domain"'
+
+[tasks.mail-dest-add]
+description = "Register a destination address; Cloudflare mails it a verification link that a human must click"
+usage = 'arg "<email>"'
+run = '''
+wrangler email routing addresses create "$usage_email"
+echo
+echo "A verification link has been sent to $usage_email."
+echo "Until someone clicks it the send_email binding will refuse this recipient."
+'''
+
+[tasks.mail-dest-list]
+description = "List destination addresses and whether each is verified"
+run = 'wrangler email routing addresses list'
+
+[tasks.mail-sending-enable]
+description = "Enable Email Sending for a domain, so mailcal can mail arbitrary recipients (Workers Paid)"
+usage = 'arg "<domain>"'
+run = '''
+wrangler email sending enable "$usage_domain"
+echo
+echo "Publish the records below (SPF/DKIM/DMARC), then set the Worker secret:"
+echo "  wrangler secret put MAILCAL_EMAIL_SENDING_TOKEN"
+echo "and MAILCAL_EMAIL_SENDING_ACCOUNT_ID as a var, then redeploy."
+wrangler email sending dns get "$usage_domain"
+'''
+
+[tasks.mail-sending-dns]
+description = "Show the DNS records Email Sending needs for a domain"
+usage = 'arg "<domain>"'
+run = 'wrangler email sending dns get "$usage_domain"'
+
+[tasks.mail-setup-receiving]
+description = "Enable Email Routing on a zone and register one destination address"
+usage = '''
+arg "<domain>"
+arg "<destination_email>"
+'''
+run = '''
+mise run mail-routing-enable "$usage_domain"
+mise run mail-dest-add "$usage_destination_email"
+'''

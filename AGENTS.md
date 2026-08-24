@@ -179,6 +179,16 @@ This is mailcal - a TypeScript project with Bun runtime and mise-managed develop
 
 **Skill Reference**: Refer to `.agents/skills/design-doc/SKILL.md` for design document guidelines, templates, and naming conventions.
 
+## Cloudflare Mail Configuration
+
+**Skill Reference**: Use `.agents/skills/cloudflare-mail-setup/SKILL.md` when a
+deployment cannot send or receive mail, when adding a sending domain or
+recipient, or when a send returns `MailDeliveryError` / `SERVICE_UNAVAILABLE`.
+
+The `mise run mail-*` tasks wrap `wrangler email`, so Email Routing, Email
+Sending, destination addresses and their DNS records are all configurable
+from the command line. Start with `mise run mail-status`.
+
 **Output Location**: All design documents MUST be saved to `design-docs/` directory (NOT `docs/`).
 
 **Design References**: See `design-docs/references/README.md` for all external references and design materials.
