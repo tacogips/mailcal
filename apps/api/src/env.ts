@@ -47,6 +47,11 @@ export interface Env {
   readonly EMAIL: CloudflareSendEmailBinding;
   readonly MAILCAL_PUBLIC_ORIGIN?: string;
   readonly MAILCAL_MAIL_FROM?: string;
+  /** Cloudflare Email Sending credentials. Set both to send to arbitrary
+   * recipients instead of only the account's verified destinations. Keep
+   * the token a Worker *secret*, never a plaintext var. */
+  readonly MAILCAL_EMAIL_SENDING_ACCOUNT_ID?: string;
+  readonly MAILCAL_EMAIL_SENDING_TOKEN?: string;
   readonly MAILCAL_SIGNUP?: string;
   readonly MAILCAL_SPAM_THRESHOLD?: string;
   readonly MAILCAL_SPAM_PHRASES?: string;
@@ -66,6 +71,8 @@ export function envToRecord(env: Env): Record<string, string | undefined> {
   return {
     MAILCAL_PUBLIC_ORIGIN: env.MAILCAL_PUBLIC_ORIGIN,
     MAILCAL_MAIL_FROM: env.MAILCAL_MAIL_FROM,
+    MAILCAL_EMAIL_SENDING_ACCOUNT_ID: env.MAILCAL_EMAIL_SENDING_ACCOUNT_ID,
+    MAILCAL_EMAIL_SENDING_TOKEN: env.MAILCAL_EMAIL_SENDING_TOKEN,
     MAILCAL_SIGNUP: env.MAILCAL_SIGNUP,
     MAILCAL_SPAM_THRESHOLD: env.MAILCAL_SPAM_THRESHOLD,
     MAILCAL_SPAM_PHRASES: env.MAILCAL_SPAM_PHRASES,

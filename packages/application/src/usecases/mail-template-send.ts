@@ -26,6 +26,14 @@ import { requireTemplate } from "./mail-templates";
 import type { SendMessageHeaderInput, SendMessageInput } from "./send";
 import { withAsyncDomainErrorTranslation } from "./translate-domain-error";
 
+/** Everything {@link renderTemplate} and its helper need from
+ * `AppDependencies`. Narrowed so the render path can be unit-tested without
+ * constructing a full dependency set. */
+export type TemplateRenderDependencies = Pick<
+  AppDependencies,
+  "templateRenderer"
+>;
+
 /** The exact mail a template plus a value set produces. What the web
  * client's review step displays, and what the send path is handed. */
 export interface RenderedTemplate {
@@ -65,7 +73,7 @@ function splitAddresses(rendered: string): readonly string[] {
 }
 
 function renderSlot(
-  deps: AppDependencies,
+  deps: TemplateRenderDependencies,
   source: string,
   data: Readonly<Record<string, string | number | boolean>>,
   mode: TemplateEscapeMode,
@@ -86,7 +94,7 @@ function renderSlot(
 
 /** Renders a template without any authorization or send side effect. */
 export function renderTemplate(
-  deps: AppDependencies,
+  deps: TemplateRenderDependencies,
   template: MailTemplate,
   values: readonly TemplateValueEntry[],
 ): RenderedTemplate {

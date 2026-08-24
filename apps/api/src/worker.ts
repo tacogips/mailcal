@@ -6,6 +6,8 @@ import {
   resolveBlobBackend,
   resolveCredentialKey,
   resolveFileLinkMaxTtl,
+  resolveEmailSendingAccountId,
+  resolveEmailSendingToken,
   resolveMailFrom,
   resolvePublicOrigin,
   resolveS3Config,
@@ -37,6 +39,8 @@ export function buildWorkerConfig(env: Env): BuildDependenciesConfig {
   const mailFrom = resolveMailFrom(record);
   assertMailOriginConsistency({ mailFrom, publicOrigin });
   const credentialKey = resolveCredentialKey(record);
+  const emailSendingAccountId = resolveEmailSendingAccountId(record);
+  const emailSendingToken = resolveEmailSendingToken(record);
 
   return {
     sqlBackend: "d1",
@@ -52,6 +56,8 @@ export function buildWorkerConfig(env: Env): BuildDependenciesConfig {
     ...(blobBackend === "r2" ? { r2: env.BLOB } : {}),
     ...(blobBackend === "s3" ? { s3: resolveS3Config(record) } : {}),
     ...(credentialKey === undefined ? {} : { credentialKey }),
+    ...(emailSendingAccountId === undefined ? {} : { emailSendingAccountId }),
+    ...(emailSendingToken === undefined ? {} : { emailSendingToken }),
   };
 }
 

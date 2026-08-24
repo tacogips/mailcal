@@ -31,6 +31,12 @@ export interface BuildDependenciesConfig {
   readonly s3?: S3Config;
   readonly email?: CloudflareSendEmailBinding;
   readonly mailFrom?: CloudflareSenderAddress;
+  /** Cloudflare Email Sending credentials. When both are present this REST
+   * path is preferred over the `send_email` binding, because the binding
+   * can only reach addresses already verified as destinations on the
+   * account -- unusable for a general mail server. */
+  readonly emailSendingAccountId?: string;
+  readonly emailSendingToken?: string;
   readonly publicOrigin?: string;
   readonly signupMode?: SignupMode;
   readonly spamThreshold?: number;
@@ -283,4 +289,31 @@ export function loadConfigFromEnv(env: EnvLike): BuildDependenciesConfig {
     fileLinkMaxTtlSeconds: resolveFileLinkMaxTtl(env),
     ...(credentialKey === undefined ? {} : { credentialKey }),
   };
+}
+
+/** Trimmed non-empty value, or `undefined`. Both Email Sending settings go
+ * through this so a blank var reads as "not configured" rather than as an
+ * empty credential the API would reject at send time. */
+function optionalEnv(
+  env: Record<string, string | undefined>,
+  key: string,
+): string | undefined {
+  const raw = env[key];
+  if (raw === undefined) {
+    return undefined;
+  }
+  const trimmed = raw.trim();
+  return trimmed.length === 0 ? undefined : trimmed;
+}
+
+export function resolveEmailSendingAccountId(
+  env: Record<string, string | undefined>,
+): string | undefined {
+  return optionalEnv(env, "MAILCAL_EMAIL_SENDING_ACCOUNT_ID");
+}
+
+export function resolveEmailSendingToken(
+  env: Record<string, string | undefined>,
+): string | undefined {
+  return optionalEnv(env, "MAILCAL_EMAIL_SENDING_TOKEN");
 }

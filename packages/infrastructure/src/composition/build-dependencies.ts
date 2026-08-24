@@ -9,6 +9,7 @@ import { createCaldavClient } from "@mailcal/adapter/caldav/caldav-client";
 import { createCredentialCipher } from "@mailcal/adapter/crypto/credential-cipher";
 import { createDohResolver } from "@mailcal/adapter/dns/doh-resolver";
 import { createIcsCodec } from "@mailcal/adapter/ics/ics-codec";
+import { createCloudflareEmailApiSender } from "@mailcal/adapter/mail/cloudflare-email-api";
 import {
   createCloudflareMailSender,
   createUnavailableMailSender,
@@ -40,6 +41,7 @@ import { createD1Database } from "@mailcal/adapter/sql/d1";
 import { createLibsqlDatabase } from "@mailcal/adapter/sql/libsql";
 import type { AppDependencies } from "@mailcal/application/dependencies";
 import type { BlobStore } from "@mailcal/application/ports/blob-store";
+import type { MailSender } from "@mailcal/application/ports/mail-sender";
 import type { Clock } from "@mailcal/application/ports/runtime-ports";
 import type { SqlDatabase } from "@mailcal/application/ports/sql-database";
 import {
@@ -72,6 +74,32 @@ function resolveDb(config: BuildDependenciesConfig): SqlDatabase {
     return createD1Database(config.d1);
   }
   return createLibsqlDatabase(config.sqliteUrl ?? DEFAULT_SQLITE_URL);
+}
+
+/** Picks the outbound path.
+ *
+ * Email Sending's REST API wins when configured: it delivers to any
+ * recipient. The `send_email` binding only reaches addresses already
+ * verified as destinations on the Cloudflare account, so it is the
+ * fallback, not the default -- useful for a private deployment that only
+ * mails its own operators. Neither configured means every send fails with a
+ * clear `SERVICE_UNAVAILABLE` rather than a masked internal error.
+ *
+ * Note `mailFrom` gates neither: it is the *system* sender for login links,
+ * not the sender for user mail. */
+function resolveMailSender(config: BuildDependenciesConfig): MailSender {
+  if (
+    config.emailSendingAccountId !== undefined &&
+    config.emailSendingToken !== undefined
+  ) {
+    return createCloudflareEmailApiSender({
+      accountId: config.emailSendingAccountId,
+      apiToken: config.emailSendingToken,
+    });
+  }
+  return config.email === undefined
+    ? createUnavailableMailSender()
+    : createCloudflareMailSender(config.email);
 }
 
 function resolveBlobs(config: BuildDependenciesConfig): BlobStore {
@@ -116,13 +144,7 @@ export function buildDependencies(
     tokenHasher: config.tokenHasher ?? createSha256TokenHasher(),
     mimeParser: createPostalMimeParser(),
     mimeBuilder: createMimeTextBuilder(),
-    // Gated on the binding alone. `mailFrom` is the *system* sender used for
-    // login links, not the sender for user mail -- a multi-address server
-    // must not funnel every send through one configured mailbox.
-    mailSender:
-      config.email === undefined
-        ? createUnavailableMailSender()
-        : createCloudflareMailSender(config.email),
+    mailSender: resolveMailSender(config),
     // Parses Eta rather than compiling it: this same object runs inside a
     // Cloudflare Worker, where `new Function` is not available at all.
     templateRenderer: createEtaTemplateRenderer(),

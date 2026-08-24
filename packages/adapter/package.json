@@ -19,7 +19,8 @@
     "./mime/postal-mime-parser": "./src/mime/postal-mime-parser.ts",
     "./mime/mime-builder": "./src/mime/mime-builder.ts",
     "./repositories/*": "./src/repositories/*.ts",
-    "./templates/eta-renderer": "./src/templates/eta-renderer.ts"
+    "./templates/eta-renderer": "./src/templates/eta-renderer.ts",
+    "./mail/cloudflare-email-api": "./src/mail/cloudflare-email-api.ts"
   },
   "scripts": {
     "typecheck": "tsc --noEmit",
