@@ -231,3 +231,19 @@ run = '''
 mise run mail-routing-enable "$usage_domain"
 mise run mail-dest-add "$usage_destination_email"
 '''
+
+[tasks.mail-login]
+description = "Re-authenticate wrangler WITH the email scopes (opens a browser; needed before mail-sending-enable)"
+run = '''
+# `wrangler login` grants a fixed scope set that omits both email scopes, so
+# every `wrangler email sending ...` call fails with Unauthorized [2036]
+# until the session is re-minted with them. Re-listing the existing scopes is
+# required: the flag replaces the set rather than adding to it.
+wrangler login --scopes \
+  account:read user:read \
+  workers:write workers_kv:write workers_routes:write workers_scripts:write workers_tail:read \
+  d1:write pages:write zone:read ssl_certs:write ai:write \
+  email_routing:write email_sending:write
+echo
+wrangler whoami
+'''

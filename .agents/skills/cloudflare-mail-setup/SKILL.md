@@ -68,6 +68,20 @@ Which is `mail-routing-enable` plus `mail-dest-add`. Then:
 
 ## Sending to arbitrary recipients (Workers Paid)
 
+First re-authenticate, once. `wrangler login` grants a fixed scope set that
+omits **both** email scopes, so every `wrangler email sending ...` call
+fails with `Unauthorized [code: 2036]` until the session is re-minted:
+
+```bash
+mise run mail-login     # opens a browser; a human must approve
+```
+
+The flag replaces the scope set rather than adding to it, which is why the
+task re-lists the Workers/D1/Pages scopes alongside `email_routing:write`
+and `email_sending:write`. Confirm with `wrangler whoami`.
+
+Then:
+
 ```bash
 mise run mail-sending-enable <domain>
 ```
