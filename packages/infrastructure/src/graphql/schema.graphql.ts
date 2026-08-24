@@ -71,6 +71,39 @@ export const typeDefs = /* GraphQL */ `
     FILE_LINK
     DOMAIN_ADMIN
     KEY_ADMIN
+    TEMPLATE_READ
+    TEMPLATE_CREATE
+    TEMPLATE_UPDATE
+    TEMPLATE_DELETE
+    CALENDAR_READ
+    CALENDAR_WRITE
+  }
+
+  """
+  The two calendar capabilities, as a per-user rule may name them. A
+  narrowed enum rather than Capability, so a rule cannot name a mail
+  capability through the calendar permission surface.
+  """
+  enum CalendarCapability {
+    CALENDAR_READ
+    CALENDAR_WRITE
+  }
+
+  "The mail-template capabilities, narrowed the same way."
+  enum TemplateCapability {
+    TEMPLATE_READ
+    TEMPLATE_CREATE
+    TEMPLATE_UPDATE
+    TEMPLATE_DELETE
+  }
+
+  enum TemplateVariableType {
+    TEXT
+    MULTILINE_TEXT
+    NUMBER
+    BOOLEAN
+    DATE
+    EMAIL
   }
 
   """
@@ -410,6 +443,148 @@ export const typeDefs = /* GraphQL */ `
     createdAt: DateTime!
   }
 
+  """
+  An admin-assigned grant or denial of one template capability. Templates
+  are instance-wide, so there is no address axis here.
+  """
+  type UserTemplatePermission {
+    id: ID!
+    capability: TemplateCapability!
+    effect: UserPermissionEffect!
+    createdByUserId: ID!
+    createdAt: DateTime!
+  }
+
+  input UserTemplatePermissionInput {
+    capability: TemplateCapability!
+    effect: UserPermissionEffect!
+  }
+
+  """
+  An admin-assigned grant or denial of one calendar capability, scoped to a
+  calendar owner.
+
+  This is what makes an admin's default access to every calendar revocable:
+  a DENY is consulted first, so an admin may administer permissions on a
+  calendar it cannot itself read.
+  """
+  type UserCalendarPermission {
+    id: ID!
+    capability: CalendarCapability!
+    effect: UserPermissionEffect!
+    "Null means every calendar owner, the holder's own included."
+    ownerUserId: ID
+    createdByUserId: ID!
+    createdAt: DateTime!
+  }
+
+  input UserCalendarPermissionInput {
+    capability: CalendarCapability!
+    effect: UserPermissionEffect!
+    """
+    Null means every calendar owner. A specific owner narrows the rule to
+    that person's calendars.
+    """
+    ownerUserId: ID
+  }
+
+  type TemplateVariable {
+    key: String!
+    label: String!
+    type: TemplateVariableType!
+    required: Boolean!
+    defaultValue: String
+    description: String
+  }
+
+  input TemplateVariableInput {
+    key: String!
+    label: String
+    type: TemplateVariableType!
+    required: Boolean
+    defaultValue: String
+    description: String
+  }
+
+  """
+  A reusable mail body with declared variables. Rendering is parse-only (no
+  runtime code generation), so a template can never execute anything.
+  """
+  type MailTemplate {
+    id: ID!
+    name: String!
+    description: String
+    subject: String!
+    textBody: String
+    htmlBody: String
+    from: String
+    to: [String!]!
+    cc: [String!]!
+    bcc: [String!]!
+    variables: [TemplateVariable!]!
+    "The variable keys the template body actually references."
+    referencedVariableKeys: [String!]!
+    createdByUserId: ID
+    createdAt: DateTime!
+    updatedAt: DateTime!
+  }
+
+  input MailTemplateInput {
+    name: String!
+    description: String
+    subject: String!
+    textBody: String
+    htmlBody: String
+    from: String
+    to: [String!]
+    cc: [String!]
+    bcc: [String!]
+    variables: [TemplateVariableInput!]!
+  }
+
+  input TemplateValueInput {
+    key: String!
+    value: String!
+  }
+
+  type TemplateValueProblem {
+    key: String!
+    reason: String!
+  }
+
+  type TemplateValidation {
+    valid: Boolean!
+    missing: [String!]!
+    invalid: [TemplateValueProblem!]!
+    unknown: [String!]!
+  }
+
+  "The review step: rendered but not sent."
+  type RenderedTemplate {
+    subject: String!
+    text: String
+    html: String
+    from: String
+    to: [String!]!
+    cc: [String!]!
+    bcc: [String!]!
+    validation: TemplateValidation!
+  }
+
+  input SendTemplatedMessageInput {
+    templateId: ID!
+    values: [TemplateValueInput!]!
+    "Overrides the template's own recipients and sender when supplied."
+    from: String
+    to: [String!]
+    cc: [String!]
+    bcc: [String!]
+    inReplyToMessageId: ID
+    attachmentIds: [ID!]
+    headers: [HeaderInput!]
+    tagIds: [ID!]
+  }
+
   type User {
     id: ID!
     email: String!
@@ -424,6 +599,16 @@ export const typeDefs = /* GraphQL */ `
     with no mailbox assigned yet.
     """
     permissions: [UserMailPermission!]!
+    """
+    Explicit template grants and denials. Empty means the role default
+    applies.
+    """
+    templatePermissions: [UserTemplatePermission!]!
+    """
+    Explicit calendar grants and denials. Empty means the role default
+    applies: an ADMIN reaches every calendar, everyone else only their own.
+    """
+    calendarPermissions: [UserCalendarPermission!]!
     createdAt: DateTime!
     updatedAt: DateTime!
   }
@@ -631,6 +816,19 @@ export const typeDefs = /* GraphQL */ `
     "Requires DOMAIN_ADMIN."
     classificationRules: [ClassificationRule!]!
 
+    mailTemplates: [MailTemplate!]!
+    mailTemplate(id: ID!): MailTemplate
+    "Checks a value set against a template's declared variables."
+    mailTemplateValidation(
+      id: ID!
+      values: [TemplateValueInput!]!
+    ): TemplateValidation!
+    "Renders without sending."
+    previewMailTemplate(
+      id: ID!
+      values: [TemplateValueInput!]!
+    ): RenderedTemplate!
+
     "Admin only."
     users: [User!]!
     "Admin only."
@@ -726,5 +924,29 @@ export const typeDefs = /* GraphQL */ `
     ): UserMailPermission!
     "Admin only."
     removeUserMailPermission(id: ID!): Boolean!
+
+    createMailTemplate(input: MailTemplateInput!): MailTemplate!
+    updateMailTemplate(id: ID!, input: MailTemplateInput!): MailTemplate!
+    deleteMailTemplate(id: ID!): Boolean!
+    "Renders the template with these values and sends the result."
+    sendTemplatedMessage(input: SendTemplatedMessageInput!): Message!
+    "Admin only."
+    addUserTemplatePermission(
+      userId: ID!
+      input: UserTemplatePermissionInput!
+    ): UserTemplatePermission!
+    "Admin only."
+    removeUserTemplatePermission(id: ID!): Boolean!
+    """
+    Admin only. Gated on the ADMIN role and never on whether the granting
+    admin can itself read the calendar: an admin denied access to a
+    calendar keeps the power to grant that calendar to somebody else.
+    """
+    addUserCalendarPermission(
+      userId: ID!
+      input: UserCalendarPermissionInput!
+    ): UserCalendarPermission!
+    "Admin only."
+    removeUserCalendarPermission(id: ID!): Boolean!
   }
 `;

@@ -37,7 +37,135 @@ export type Capability =
   | "MAIL_MANAGE"
   | "FILE_LINK"
   | "DOMAIN_ADMIN"
-  | "KEY_ADMIN";
+  | "KEY_ADMIN"
+  | "TEMPLATE_READ"
+  | "TEMPLATE_CREATE"
+  | "TEMPLATE_UPDATE"
+  | "TEMPLATE_DELETE"
+  | "CALENDAR_READ"
+  | "CALENDAR_WRITE";
+
+export type TemplateCapability =
+  | "TEMPLATE_READ"
+  | "TEMPLATE_CREATE"
+  | "TEMPLATE_UPDATE"
+  | "TEMPLATE_DELETE";
+
+export type CalendarCapability = "CALENDAR_READ" | "CALENDAR_WRITE";
+
+export type TemplateVariableType =
+  | "TEXT"
+  | "MULTILINE_TEXT"
+  | "NUMBER"
+  | "BOOLEAN"
+  | "DATE"
+  | "EMAIL";
+
+export interface TemplateVariableView {
+  readonly key: string;
+  readonly label: string;
+  readonly type: TemplateVariableType;
+  readonly required: boolean;
+  readonly defaultValue: string | null;
+  readonly description: string | null;
+}
+
+export interface MailTemplateView {
+  readonly id: string;
+  readonly name: string;
+  readonly description: string | null;
+  readonly subject: string;
+  readonly textBody: string | null;
+  readonly htmlBody: string | null;
+  readonly from: string | null;
+  readonly to: readonly string[];
+  readonly cc: readonly string[];
+  readonly bcc: readonly string[];
+  readonly variables: readonly TemplateVariableView[];
+  readonly referencedVariableKeys: readonly string[];
+  readonly createdByUserId: string | null;
+  readonly createdAt: string;
+  readonly updatedAt: string;
+}
+
+export interface TemplateValueInput {
+  readonly key: string;
+  readonly value: string;
+}
+
+export interface TemplateValueProblemView {
+  readonly key: string;
+  readonly reason: string;
+}
+
+export interface TemplateValidationView {
+  readonly valid: boolean;
+  readonly missing: readonly string[];
+  readonly invalid: readonly TemplateValueProblemView[];
+  readonly unknown: readonly string[];
+}
+
+export interface RenderedTemplateView {
+  readonly subject: string;
+  readonly text: string | null;
+  readonly html: string | null;
+  readonly from: string | null;
+  readonly to: readonly string[];
+  readonly cc: readonly string[];
+  readonly bcc: readonly string[];
+  readonly validation: TemplateValidationView;
+}
+
+export interface TemplateVariableInputVariables {
+  readonly key: string;
+  readonly label: string | null;
+  readonly type: TemplateVariableType;
+  readonly required: boolean;
+  readonly defaultValue: string | null;
+  readonly description: string | null;
+}
+
+export interface MailTemplateInputVariables {
+  readonly name: string;
+  readonly description: string | null;
+  readonly subject: string;
+  readonly textBody: string | null;
+  readonly htmlBody: string | null;
+  readonly from: string | null;
+  readonly to: readonly string[];
+  readonly cc: readonly string[];
+  readonly bcc: readonly string[];
+  readonly variables: readonly TemplateVariableInputVariables[];
+}
+
+export interface SendTemplatedMessageVariables {
+  readonly templateId: string;
+  readonly values: readonly TemplateValueInput[];
+  readonly from?: string;
+  readonly to?: readonly string[];
+  readonly cc?: readonly string[];
+  readonly bcc?: readonly string[];
+  readonly inReplyToMessageId?: string;
+  readonly attachmentIds?: readonly string[];
+  readonly tagIds?: readonly string[];
+}
+
+export interface UserTemplatePermissionView {
+  readonly id: string;
+  readonly capability: TemplateCapability;
+  readonly effect: "ALLOW" | "DENY";
+  readonly createdByUserId: string;
+  readonly createdAt: string;
+}
+
+export interface UserCalendarPermissionView {
+  readonly id: string;
+  readonly capability: CalendarCapability;
+  readonly effect: "ALLOW" | "DENY";
+  readonly ownerUserId: string | null;
+  readonly createdByUserId: string;
+  readonly createdAt: string;
+}
 
 export interface MailboxAddressView {
   readonly address: string;
@@ -183,6 +311,8 @@ export interface UserView {
   readonly role: UserRole;
   readonly active: boolean;
   readonly permissions: readonly UserMailPermissionView[];
+  readonly templatePermissions: readonly UserTemplatePermissionView[];
+  readonly calendarPermissions: readonly UserCalendarPermissionView[];
   readonly createdAt: string;
   readonly updatedAt: string;
 }

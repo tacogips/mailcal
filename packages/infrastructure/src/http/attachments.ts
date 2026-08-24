@@ -194,20 +194,36 @@ export function createAttachmentRoutes(
       return Response.json({ error: "Attachment not found" }, { status: 404 });
     }
 
-    // Authorization goes through the message the attachment belongs to; one
-    // the viewer cannot read reports as absent, matching the GraphQL rule
-    // that a scoped key cannot probe for other mailboxes.
+    // Authorization goes through whatever claims the attachment: a mail
+    // attachment through its message, an event attachment through the event
+    // that claimed it. Either way, one the viewer cannot read reports as
+    // absent, matching the GraphQL rule that a scoped key cannot probe for
+    // other mailboxes or calendars.
     //
-    // A staged upload has no message to authorize against, so it is simply
-    // not downloadable -- it only exists to be referenced by a subsequent
-    // `sendMessage`, and serving it here would mean any authenticated
-    // caller could read any other caller's pending upload.
+    // An attachment nothing has claimed has nothing to authorize against, so
+    // it is simply not downloadable -- it only exists to be referenced by a
+    // later `sendMessage` or `attachFileToEvent`, and serving it here would
+    // mean any authenticated caller could read any other caller's pending
+    // upload.
     if (attachment.messageId === null) {
-      return Response.json({ error: "Attachment not found" }, { status: 404 });
-    }
-    const message = await usecases.getMessage(viewer, attachment.messageId);
-    if (message === null) {
-      return Response.json({ error: "Attachment not found" }, { status: 404 });
+      const readableThroughEvent = await usecases.canViewerReadEventAttachment(
+        viewer,
+        attachmentId,
+      );
+      if (!readableThroughEvent) {
+        return Response.json(
+          { error: "Attachment not found" },
+          { status: 404 },
+        );
+      }
+    } else {
+      const message = await usecases.getMessage(viewer, attachment.messageId);
+      if (message === null) {
+        return Response.json(
+          { error: "Attachment not found" },
+          { status: 404 },
+        );
+      }
     }
 
     const blob = await deps.blobs.get(attachment.blobKey);

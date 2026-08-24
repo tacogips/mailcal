@@ -182,3 +182,19 @@ PHASE_TO_PLANS = {
 - **Keep each plan file under 400 lines** - split if necessary
 - **Always keep PROGRESS.json in sync** with plan file statuses
 - [Spam table, mail status, events, rules](completed/spam-table-status-events-rules.md) - Completed 2026-08-23
+
+## Calendar and CalDAV (phase 7)
+
+| Plan | Status |
+|------|--------|
+| [calendar-domain.md](calendar-domain.md) | Completed |
+| [calendar-application.md](calendar-application.md) | Completed |
+| [calendar-adapter.md](calendar-adapter.md) | Completed |
+| [calendar-graphql.md](calendar-graphql.md) | Completed |
+| [calendar-web.md](calendar-web.md) | Completed |
+
+Design reference: `design-docs/specs/design-calendar.md`.
+
+Mail templates (`mail-templates.md`) remains **In Progress**: the backend and
+the `/settings/templates` catalogue are done, but the web integration listed
+at the end of that plan is deferred after the 2026-08-24 checkout incident.

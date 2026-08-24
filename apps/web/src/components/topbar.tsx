@@ -14,6 +14,10 @@ export function Topbar(props: {
 }): JSX.Element {
   const [query, setQuery] = createSignal("");
   const isAdmin = () => props.viewer?.user?.role === "ADMIN";
+  /** The catalogue link is shown to anyone who may read templates at all --
+   * the page itself hides the editor without the write capabilities. */
+  const canReadTemplates = () =>
+    props.viewer?.capabilities.includes("TEMPLATE_READ") ?? false;
   const userLabel = () => {
     const user = props.viewer?.user;
     if (user === null || user === undefined) {
@@ -47,6 +51,9 @@ export function Topbar(props: {
       </form>
 
       <div class="topbar-actions">
+        <a href="/calendar" class="topbar-link">
+          Calendar
+        </a>
         <Show when={isAdmin()}>
           <a href="/settings/domains" class="topbar-link">
             Domains
@@ -64,6 +71,11 @@ export function Topbar(props: {
         <a href="/settings/tags" class="topbar-link">
           Tags
         </a>
+        <Show when={canReadTemplates()}>
+          <a href="/settings/templates" class="topbar-link">
+            Templates
+          </a>
+        </Show>
         <Show when={props.viewer?.user !== null && props.viewer !== null}>
           <button type="button" onClick={() => props.onLogout()}>
             Sign out

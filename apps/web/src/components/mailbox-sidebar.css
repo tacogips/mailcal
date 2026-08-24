@@ -24,6 +24,19 @@
   margin-bottom: 16px;
 }
 
+/* Sits directly under "New message" as the second, quieter entry point:
+   the same target, pre-filled from a saved template. */
+.sidebar-compose--secondary {
+  background: var(--sidebar-hover);
+  color: var(--sidebar-text);
+  border: 1px solid var(--sidebar-active);
+  margin-top: -8px;
+}
+
+.sidebar-compose--secondary:hover {
+  background: var(--sidebar-active);
+}
+
 .sidebar-group {
   list-style: none;
   margin: 0 0 12px;

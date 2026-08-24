@@ -83,6 +83,8 @@ export function MailboxSidebar(props: {
   readonly inboxUnread: number;
   readonly onSelect: (view: MailboxView) => void;
   readonly onCompose: () => void;
+  /** Absent for a viewer without TEMPLATE_READ, which hides the entry. */
+  readonly onComposeFromTemplate?: (() => void) | undefined;
   readonly onOpenEvent: (messageId: string) => void;
 }): JSX.Element {
   // System tags already have dedicated views above, so listing them again
@@ -103,6 +105,16 @@ export function MailboxSidebar(props: {
       >
         New message
       </button>
+
+      <Show when={props.onComposeFromTemplate !== undefined}>
+        <button
+          type="button"
+          class="pill sidebar-compose sidebar-compose--secondary"
+          onClick={() => props.onComposeFromTemplate?.()}
+        >
+          From template
+        </button>
+      </Show>
 
       <ul class="sidebar-group">
         <For each={SYSTEM_VIEWS}>

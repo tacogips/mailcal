@@ -15,6 +15,8 @@ const ApiKeysPage = lazy(() => import("./pages/settings/api-keys-page"));
 const TagsPage = lazy(() => import("./pages/settings/tags-page"));
 const RulesPage = lazy(() => import("./pages/settings/rules-page"));
 const UsersPage = lazy(() => import("./pages/settings/users-page"));
+const TemplatesPage = lazy(() => import("./pages/settings/templates-page"));
+const CalendarPage = lazy(() => import("./pages/calendar-page"));
 
 export function App(): JSX.Element {
   const store = createAppStore();
@@ -42,6 +44,14 @@ export function App(): JSX.Element {
           component={() => (
             <AuthGuard ready={ready()}>
               <MailboxPage />
+            </AuthGuard>
+          )}
+        />
+        <Route
+          path="/calendar"
+          component={() => (
+            <AuthGuard ready={ready()}>
+              <CalendarPage />
             </AuthGuard>
           )}
         />
@@ -74,6 +84,17 @@ export function App(): JSX.Element {
           component={() => (
             <AuthGuard ready={ready()}>
               <TagsPage />
+            </AuthGuard>
+          )}
+        />
+        {/* AuthGuard, not AdminGuard: every role may read the catalogue,
+            and the page hides the editor for a viewer without the matching
+            capability. */}
+        <Route
+          path="/settings/templates"
+          component={() => (
+            <AuthGuard ready={ready()}>
+              <TemplatesPage />
             </AuthGuard>
           )}
         />

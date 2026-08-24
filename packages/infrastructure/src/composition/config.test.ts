@@ -1,18 +1,21 @@
+import { createCredentialCipher } from "@mailcal/adapter/crypto/credential-cipher";
 import { describe, expect, test } from "vitest";
 import {
   buildDependencies,
   BuildDependenciesError,
 } from "./build-dependencies";
 import {
-  assertMailOriginConsistency,
+  CredentialKeyConfigurationError,
   DEFAULT_FILE_LINK_MAX_TTL_SECONDS,
   DEFAULT_SPAM_THRESHOLD,
-  loadConfigFromEnv,
   MailConfigurationError,
   PublicOriginConfigurationError,
-  resolveBlobBackend,
-  resolveFileLinkMaxTtl,
+  assertMailOriginConsistency,
+  loadConfigFromEnv,
   normalizeSqliteUrl,
+  resolveBlobBackend,
+  resolveCredentialKey,
+  resolveFileLinkMaxTtl,
   resolveMailFrom,
   resolvePublicOrigin,
   resolveSignupMode,
@@ -269,5 +272,59 @@ describe("buildDependencies", () => {
     ],
   ])("throws for %s", (_label, config) => {
     expect(() => buildDependencies(config)).toThrow(BuildDependenciesError);
+  });
+});
+
+describe("resolveCredentialKey", () => {
+  /** base64 of exactly 32 bytes, which is what AES-256-GCM needs. */
+  const VALID = btoa("x".repeat(32));
+
+  test("returns the key unchanged when it is a 32-byte base64 value", () => {
+    expect(resolveCredentialKey({ MAILCAL_CREDENTIAL_KEY: VALID })).toBe(VALID);
+    expect(resolveCredentialKey({ MAILCAL_CREDENTIAL_KEY: ` ${VALID} ` })).toBe(
+      VALID,
+    );
+  });
+
+  test("unset means CalDAV is simply disabled, not misconfigured", () => {
+    // The rest of the calendar feature has to keep working, so an absent key
+    // is `undefined` rather than a thrown error.
+    expect(resolveCredentialKey({})).toBeUndefined();
+    expect(
+      resolveCredentialKey({ MAILCAL_CREDENTIAL_KEY: "" }),
+    ).toBeUndefined();
+    expect(
+      resolveCredentialKey({ MAILCAL_CREDENTIAL_KEY: "   " }),
+    ).toBeUndefined();
+  });
+
+  test("fails fast for a set-but-unusable key", () => {
+    // An operator who set the secret meant it to be used; degrading to
+    // "no encryption" would store app-specific passwords in the clear.
+    for (const value of [
+      "not base64!!",
+      btoa("too short"),
+      btoa("y".repeat(31)),
+    ]) {
+      expect(() =>
+        resolveCredentialKey({ MAILCAL_CREDENTIAL_KEY: value }),
+      ).toThrow(CredentialKeyConfigurationError);
+    }
+  });
+
+  test("loadConfigFromEnv carries the key through, and omits it when unset", () => {
+    expect(
+      loadConfigFromEnv({ MAILCAL_CREDENTIAL_KEY: VALID }).credentialKey,
+    ).toBe(VALID);
+    expect(loadConfigFromEnv({}).credentialKey).toBeUndefined();
+  });
+});
+
+describe("credential cipher availability", () => {
+  test("no key yields an unavailable cipher; a key yields a working one", async () => {
+    expect(createCredentialCipher(null).available).toBe(false);
+    const cipher = createCredentialCipher(btoa("z".repeat(32)));
+    expect(cipher.available).toBe(true);
+    expect(await cipher.decrypt(await cipher.encrypt("secret"))).toBe("secret");
   });
 });

@@ -102,6 +102,8 @@ describe("resolveViewerFromToken", () => {
       userId: user.id,
       role: UserRole.Admin,
       permissions: [],
+      templatePermissions: [],
+      calendarPermissions: [],
     });
   });
 
@@ -295,6 +297,8 @@ describe("getViewerUser", () => {
           userId: user.id,
           role: user.role,
           permissions: [],
+          templatePermissions: [],
+          calendarPermissions: [],
         })
       )?.id,
     ).toBe(user.id);
@@ -443,7 +447,11 @@ describe("bootstrapAdmin", () => {
     const scopes = await fake.deps.apiKeyRepository.listScopes([
       result.apiKey.id,
     ]);
-    expect(scopes.get(result.apiKey.id)?.length).toBe(6);
+    // One scope per capability, so a fresh deployment's root key can reach
+    // mail, templates and calendars alike.
+    expect(scopes.get(result.apiKey.id)?.length).toBe(
+      Object.values(Capability).length,
+    );
     await expect(
       bootstrap("second@example.com", "Second"),
     ).rejects.toBeInstanceOf(ConflictError);

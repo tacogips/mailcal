@@ -76,6 +76,8 @@ describe("createLocalApp", () => {
       userId: user.id,
       role: user.role,
       permissions: [],
+      templatePermissions: [],
+      calendarPermissions: [],
     };
     const domain = await usecases.createDomain(viewer, "example.com", true);
     // Activate directly at the repository: verifyDomain now performs a

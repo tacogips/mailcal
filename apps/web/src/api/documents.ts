@@ -388,6 +388,21 @@ const USER_FIELDS = `
     createdAt
     domain { id name }
   }
+  templatePermissions {
+    id
+    capability
+    effect
+    createdByUserId
+    createdAt
+  }
+  calendarPermissions {
+    id
+    capability
+    effect
+    ownerUserId
+    createdByUserId
+    createdAt
+  }
 `;
 
 export const USERS_QUERY = `
@@ -448,5 +463,105 @@ export const UPCOMING_EVENTS_QUERY = `
       completedAt
       message { id subject }
     }
+  }
+`;
+
+const MAIL_TEMPLATE_FIELDS = `
+  id
+  name
+  description
+  subject
+  textBody
+  htmlBody
+  from
+  to
+  cc
+  bcc
+  variables { key label type required defaultValue description }
+  referencedVariableKeys
+  createdByUserId
+  createdAt
+  updatedAt
+`;
+
+export const MAIL_TEMPLATES_QUERY = `
+  query MailTemplates { mailTemplates { ${MAIL_TEMPLATE_FIELDS} } }
+`;
+
+export const CREATE_MAIL_TEMPLATE_MUTATION = `
+  mutation CreateMailTemplate($input: MailTemplateInput!) {
+    createMailTemplate(input: $input) { ${MAIL_TEMPLATE_FIELDS} }
+  }
+`;
+
+export const UPDATE_MAIL_TEMPLATE_MUTATION = `
+  mutation UpdateMailTemplate($id: ID!, $input: MailTemplateInput!) {
+    updateMailTemplate(id: $id, input: $input) { ${MAIL_TEMPLATE_FIELDS} }
+  }
+`;
+
+export const DELETE_MAIL_TEMPLATE_MUTATION = `
+  mutation DeleteMailTemplate($id: ID!) { deleteMailTemplate(id: $id) }
+`;
+
+export const MAIL_TEMPLATE_VALIDATION_QUERY = `
+  query MailTemplateValidation($id: ID!, $values: [TemplateValueInput!]!) {
+    mailTemplateValidation(id: $id, values: $values) {
+      valid
+      missing
+      invalid { key reason }
+      unknown
+    }
+  }
+`;
+
+export const PREVIEW_MAIL_TEMPLATE_QUERY = `
+  query PreviewMailTemplate($id: ID!, $values: [TemplateValueInput!]!) {
+    previewMailTemplate(id: $id, values: $values) {
+      subject
+      text
+      html
+      from
+      to
+      cc
+      bcc
+      validation { valid missing invalid { key reason } unknown }
+    }
+  }
+`;
+
+export const SEND_TEMPLATED_MESSAGE_MUTATION = `
+  mutation SendTemplatedMessage($input: SendTemplatedMessageInput!) {
+    sendTemplatedMessage(input: $input) { ${MESSAGE_SUMMARY_FIELDS} }
+  }
+`;
+
+export const ADD_USER_TEMPLATE_PERMISSION_MUTATION = `
+  mutation AddUserTemplatePermission(
+    $userId: ID!
+    $input: UserTemplatePermissionInput!
+  ) {
+    addUserTemplatePermission(userId: $userId, input: $input) { id }
+  }
+`;
+
+export const REMOVE_USER_TEMPLATE_PERMISSION_MUTATION = `
+  mutation RemoveUserTemplatePermission($id: ID!) {
+    removeUserTemplatePermission(id: $id)
+  }
+`;
+
+export const ADD_USER_CALENDAR_PERMISSION_MUTATION = `
+  mutation AddUserCalendarPermission(
+    $userId: ID!
+    $input: UserCalendarPermissionInput!
+  ) {
+    addUserCalendarPermission(userId: $userId, input: $input) { id }
+  }
+`;
+
+export const REMOVE_USER_CALENDAR_PERMISSION_MUTATION = `
+  mutation RemoveUserCalendarPermission($id: ID!) {
+    removeUserCalendarPermission(id: $id)
   }
 `;
