@@ -23,6 +23,7 @@ export type CalendarEventId = Brand<string, "CalendarEventId">;
 export type EventLinkId = Brand<string, "EventLinkId">;
 export type CaldavAccountId = Brand<string, "CaldavAccountId">;
 export type CaldavCalendarId = Brand<string, "CaldavCalendarId">;
+export type MailAddressId = Brand<string, "MailAddressId">;
 export type MailTemplateId = Brand<string, "MailTemplateId">;
 export type UserCalendarPermissionId = Brand<
   string,
@@ -154,4 +155,8 @@ export function createUserTemplatePermissionId(
     value,
     "userTemplatePermissionId",
   ) as UserTemplatePermissionId;
+}
+
+export function createMailAddressId(value: string): MailAddressId {
+  return requireNonEmptyId(value, "mailAddressId") as MailAddressId;
 }

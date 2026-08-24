@@ -565,3 +565,38 @@ export const REMOVE_USER_CALENDAR_PERMISSION_MUTATION = `
     removeUserCalendarPermission(id: $id)
   }
 `;
+
+const MAIL_ADDRESS_FIELDS = `
+  id
+  localPart
+  address
+  displayName
+  status
+  createdByUserId
+  createdAt
+  domain { id name }
+`;
+
+export const MAIL_ADDRESSES_QUERY = `
+  query MailAddresses($domainId: ID) {
+    mailAddresses(domainId: $domainId) { ${MAIL_ADDRESS_FIELDS} }
+  }
+`;
+
+export const CREATE_MAIL_ADDRESS_MUTATION = `
+  mutation CreateMailAddress($input: CreateMailAddressInput!) {
+    createMailAddress(input: $input) { ${MAIL_ADDRESS_FIELDS} }
+  }
+`;
+
+export const SET_MAIL_ADDRESS_STATUS_MUTATION = `
+  mutation SetMailAddressStatus($id: ID!, $status: MailAddressStatus!) {
+    setMailAddressStatus(id: $id, status: $status) { ${MAIL_ADDRESS_FIELDS} }
+  }
+`;
+
+export const DELETE_MAIL_ADDRESS_MUTATION = `
+  mutation DeleteMailAddress($id: ID!) {
+    deleteMailAddress(id: $id)
+  }
+`;

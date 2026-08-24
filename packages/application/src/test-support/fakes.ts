@@ -36,6 +36,7 @@ import {
   fakeApiKeyRepository,
   fakeEmailAuthChallengeRepository,
   fakeFileLinkRepository,
+  fakeMailAddressRepository,
   fakeMailDomainRepository,
   fakeSessionRepository,
   fakeTagRepository,
@@ -154,6 +155,7 @@ export function createFakeDependencies(
     }),
     templateRenderer: fakeTemplateRenderer(),
     mailDomainRepository: fakeMailDomainRepository(stores),
+    mailAddressRepository: fakeMailAddressRepository(stores),
     messageRepository: fakeMessageRepository(messageStores),
     messageEventRepository: createMessageEventRepositoryFake(
       eventStores,

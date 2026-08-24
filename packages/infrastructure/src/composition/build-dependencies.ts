@@ -31,6 +31,7 @@ import { createUserTemplatePermissionRepository } from "@mailcal/adapter/reposit
 import { createEtaTemplateRenderer } from "@mailcal/adapter/templates/eta-renderer";
 import { createFileLinkRepository } from "@mailcal/adapter/repositories/file-link-repository";
 import { createMessageEventRepository } from "@mailcal/adapter/repositories/message-event-repository";
+import { createMailAddressRepository } from "@mailcal/adapter/repositories/mail-address-repository";
 import { createMailDomainRepository } from "@mailcal/adapter/repositories/mail-domain-repository";
 import { createMessageRepository } from "@mailcal/adapter/repositories/message-repository";
 import { createTagRepository } from "@mailcal/adapter/repositories/tag-repository";
@@ -130,6 +131,7 @@ export function buildDependencies(
     credentialCipher: createCredentialCipher(config.credentialKey ?? null),
 
     mailDomainRepository: createMailDomainRepository(db),
+    mailAddressRepository: createMailAddressRepository(db),
     messageRepository: createMessageRepository(db),
     messageEventRepository: createMessageEventRepository(db),
     classificationRuleRepository: createClassificationRuleRepository(db),

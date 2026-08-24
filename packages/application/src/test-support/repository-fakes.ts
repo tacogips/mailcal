@@ -1,6 +1,7 @@
 import type { ApiKey, ApiKeyScope } from "@mailcal/domain/entities/api-key";
 import type { EmailAuthChallenge } from "@mailcal/domain/entities/email-auth-challenge";
 import type { FileLink } from "@mailcal/domain/entities/file-link";
+import type { MailAddress } from "@mailcal/domain/entities/mail-address";
 import type { MailDomain } from "@mailcal/domain/entities/mail-domain";
 import type { Session } from "@mailcal/domain/entities/session";
 import {
@@ -19,6 +20,7 @@ import type {
   UserRepository,
 } from "../ports/auth-repository";
 import type { FileLinkRepository } from "../ports/file-link-repository";
+import type { MailAddressRepository } from "../ports/mail-address-repository";
 import type { MailDomainRepository } from "../ports/mail-domain-repository";
 import type { TagRepository } from "../ports/tag-repository";
 import type { UserMailPermissionRepository } from "../ports/user-mail-permission-repository";
@@ -27,6 +29,7 @@ import type { UserMailPermissionRepository } from "../ports/user-mail-permission
  * driving every setup through use cases. */
 export interface FakeStores {
   readonly domains: Map<string, MailDomain>;
+  readonly mailAddresses: Map<string, MailAddress>;
   readonly tags: Map<string, Tag>;
   readonly apiKeys: Map<string, ApiKey>;
   readonly apiKeyScopes: Map<string, ApiKeyScope>;
@@ -44,6 +47,7 @@ export interface FakeStores {
 export function createFakeStores(): FakeStores {
   return {
     domains: new Map(),
+    mailAddresses: new Map(),
     tags: new Map(),
     apiKeys: new Map(),
     apiKeyScopes: new Map(),
@@ -76,6 +80,43 @@ export function seedSystemTags(
       }),
     );
   }
+}
+
+export function fakeMailAddressRepository(
+  stores: FakeStores,
+  messageCounts: ReadonlyMap<string, number> = new Map(),
+): MailAddressRepository {
+  return {
+    async findById(id) {
+      return stores.mailAddresses.get(id) ?? null;
+    },
+    async findByAddress(address) {
+      return (
+        [...stores.mailAddresses.values()].find(
+          (entry) => entry.address === address,
+        ) ?? null
+      );
+    },
+    async listByDomain(domainId) {
+      return [...stores.mailAddresses.values()]
+        .filter((entry) => entry.domainId === domainId)
+        .sort((a, b) => a.localPart.localeCompare(b.localPart));
+    },
+    async list() {
+      return [...stores.mailAddresses.values()].sort((a, b) =>
+        a.address.localeCompare(b.address),
+      );
+    },
+    async save(address) {
+      stores.mailAddresses.set(address.id, address);
+    },
+    async delete(id) {
+      stores.mailAddresses.delete(id);
+    },
+    async countMessages(id) {
+      return messageCounts.get(id) ?? 0;
+    },
+  };
 }
 
 export function fakeMailDomainRepository(

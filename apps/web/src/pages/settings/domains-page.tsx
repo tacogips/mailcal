@@ -1,11 +1,20 @@
 import { createSignal, For, type JSX, onMount, Show } from "solid-js";
 import {
   CREATE_DOMAIN_MUTATION,
+  CREATE_MAIL_ADDRESS_MUTATION,
+  DELETE_MAIL_ADDRESS_MUTATION,
+  MAIL_ADDRESSES_QUERY,
   SET_DOMAIN_STATUS_MUTATION,
+  SET_MAIL_ADDRESS_STATUS_MUTATION,
   VERIFY_DOMAIN_MUTATION,
 } from "../../api/documents";
 import { graphqlRequest } from "../../api/graphql-client";
-import type { DomainStatus, MailDomainView } from "../../api/schema-types";
+import type {
+  DomainStatus,
+  MailAddressStatus,
+  MailAddressView,
+  MailDomainView,
+} from "../../api/schema-types";
 import { describeErrors } from "../../lib/mutation-error";
 import { pushToast } from "../../lib/toast";
 import { useStore } from "../../store/store-context";
@@ -17,10 +26,79 @@ export default function DomainsPage(): JSX.Element {
   const [catchAll, setCatchAll] = createSignal(true);
   const [busy, setBusy] = createSignal(false);
   const [expanded, setExpanded] = createSignal<string | null>(null);
+  const [addresses, setAddresses] = createSignal<readonly MailAddressView[]>(
+    [],
+  );
+  const [newLocalPart, setNewLocalPart] = createSignal<
+    Readonly<Record<string, string>>
+  >({});
 
   onMount(() => {
     void store.loadReferenceData();
+    void reloadAddresses();
   });
+
+  /** Mailboxes are loaded once for every domain and grouped client-side:
+   * the list is small, and one request keeps each domain card from firing
+   * its own. */
+  async function reloadAddresses(): Promise<void> {
+    const result = await graphqlRequest<{
+      readonly mailAddresses: readonly MailAddressView[];
+    }>(MAIL_ADDRESSES_QUERY);
+    if (result.ok) {
+      setAddresses(result.data.mailAddresses);
+    }
+  }
+
+  const addressesFor = (domainId: string): readonly MailAddressView[] =>
+    addresses().filter((entry) => entry.domain.id === domainId);
+
+  async function addAddress(domainId: string): Promise<void> {
+    const localPart = (newLocalPart()[domainId] ?? "").trim();
+    if (localPart.length === 0) {
+      return;
+    }
+    const result = await graphqlRequest<
+      { readonly createMailAddress: MailAddressView },
+      Record<string, unknown>
+    >(CREATE_MAIL_ADDRESS_MUTATION, {
+      input: { domainId, localPart, displayName: null },
+    });
+    if (!result.ok) {
+      pushToast("error", describeErrors(result.errors));
+      return;
+    }
+    setNewLocalPart((current) => ({ ...current, [domainId]: "" }));
+    pushToast("success", `${result.data.createMailAddress.address} created`);
+    await reloadAddresses();
+  }
+
+  async function setAddressStatus(
+    id: string,
+    status: MailAddressStatus,
+  ): Promise<void> {
+    const result = await graphqlRequest<unknown, Record<string, unknown>>(
+      SET_MAIL_ADDRESS_STATUS_MUTATION,
+      { id, status },
+    );
+    if (!result.ok) {
+      pushToast("error", describeErrors(result.errors));
+      return;
+    }
+    await reloadAddresses();
+  }
+
+  async function removeAddress(address: MailAddressView): Promise<void> {
+    const result = await graphqlRequest<unknown, Record<string, unknown>>(
+      DELETE_MAIL_ADDRESS_MUTATION,
+      { id: address.id },
+    );
+    if (!result.ok) {
+      pushToast("error", describeErrors(result.errors));
+      return;
+    }
+    await reloadAddresses();
+  }
 
   async function addDomain(event: Event): Promise<void> {
     event.preventDefault();
@@ -146,6 +224,86 @@ export default function DomainsPage(): JSX.Element {
                 {expanded() === domain.id ? "Hide" : "Show"} DNS records
               </button>
             </div>
+
+            <h3>Mailboxes</h3>
+            <p class="muted">
+              A provisioned mailbox accepts mail even before its first message.
+              Disabling one rejects delivery even on a catch-all domain, and
+              keeps its history.
+            </p>
+            <Show
+              when={addressesFor(domain.id).length > 0}
+              fallback={
+                <p class="muted">
+                  {domain.catchAll
+                    ? "None yet. This domain is catch-all, so every address is accepted."
+                    : "None yet. Without a mailbox this domain only accepts addresses it has already seen."}
+                </p>
+              }
+            >
+              <ul class="scope-list permission-list">
+                <For each={addressesFor(domain.id)}>
+                  {(entry) => (
+                    <li class="permission-row">
+                      <span>
+                        <code>{entry.address}</code>
+                        <Show when={entry.displayName !== null}>
+                          {" "}
+                          <span class="muted">{entry.displayName}</span>
+                        </Show>
+                        <Show when={entry.status === "DISABLED"}>
+                          {" "}
+                          <span class="muted">(disabled)</span>
+                        </Show>
+                      </span>
+                      <span>
+                        <button
+                          type="button"
+                          onClick={() =>
+                            void setAddressStatus(
+                              entry.id,
+                              entry.status === "ACTIVE" ? "DISABLED" : "ACTIVE",
+                            )
+                          }
+                        >
+                          {entry.status === "ACTIVE" ? "Disable" : "Enable"}
+                        </button>
+                        <button
+                          type="button"
+                          class="danger"
+                          onClick={() => void removeAddress(entry)}
+                        >
+                          Delete
+                        </button>
+                      </span>
+                    </li>
+                  )}
+                </For>
+              </ul>
+            </Show>
+
+            <form
+              class="scope-row"
+              onSubmit={(event) => {
+                event.preventDefault();
+                void addAddress(domain.id);
+              }}
+            >
+              <input
+                type="text"
+                aria-label={`New mailbox on ${domain.name}`}
+                placeholder="support"
+                value={newLocalPart()[domain.id] ?? ""}
+                onInput={(event) =>
+                  setNewLocalPart((current) => ({
+                    ...current,
+                    [domain.id]: event.currentTarget.value,
+                  }))
+                }
+              />
+              <span class="muted">@{domain.name}</span>
+              <button type="submit">Add mailbox</button>
+            </form>
 
             <Show when={expanded() === domain.id}>
               <table class="dns-table">

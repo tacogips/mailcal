@@ -76,6 +76,23 @@ describe("createMigrationRunner", () => {
     expect(await tableNames(db)).toContain("a");
   });
 
+  /** The splitter in `runner.ts` has no awareness of comments or string
+   * literals, so a `;` written inside either silently cuts a statement in
+   * half -- and the resulting failure ("not an error") points nowhere near
+   * the real cause. Cheaper to forbid it outright than to debug it twice. */
+  test("no migration writes a statement terminator inside a comment", () => {
+    const offenders: string[] = [];
+    for (const migration of loadMigrationFiles()) {
+      migration.sql.split("\n").forEach((line, index) => {
+        const trimmed = line.trim();
+        if (trimmed.startsWith("--") && trimmed.includes(";")) {
+          offenders.push(`${migration.name}:${index + 1}`);
+        }
+      });
+    }
+    expect(offenders).toEqual([]);
+  });
+
   test("applies the real production migrations cleanly", async () => {
     const db = createInMemoryDatabase();
     const runner = createMigrationRunner(db);
@@ -89,6 +106,7 @@ describe("createMigrationRunner", () => {
       "0006_calendar.sql",
       "0007_mail_templates.sql",
       "0008_user_calendar_permissions.sql",
+      "0009_mail_addresses.sql",
     ]);
 
     const names = await tableNames(db);
