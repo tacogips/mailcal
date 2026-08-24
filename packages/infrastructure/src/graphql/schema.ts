@@ -3,6 +3,7 @@ import { createSchema, createYoga } from "graphql-yoga";
 import type { GraphQLContext } from "./context";
 import { useDepthLimit } from "./depth-limit";
 import { calendarTypeDefs } from "./schema-calendar.graphql";
+import { templateTypeDefs } from "./schema-templates.graphql";
 import { typeDefs } from "./schema.graphql";
 import { toGraphQLError } from "./errors";
 import { calendarMutationResolvers } from "./resolvers/calendar-mutation";
@@ -52,10 +53,11 @@ import { useSelectionLimit } from "./selection-limit";
  * loader-based, mirroring `ApiKey.scopes`. */
 export function buildGraphQLSchema(): GraphQLSchema {
   return createSchema<GraphQLContext>({
-    // Three SDL documents, merged by `createSchema`: the mail contract, and
-    // the calendar module that `extend`s Query/Mutation. Neither file has to
-    // carry the other feature's shapes.
-    typeDefs: [typeDefs, calendarTypeDefs],
+    // Three SDL documents, merged by `createSchema`: the mail and admin
+    // contract, which defines Query/Mutation, plus the calendar and template
+    // modules that `extend` them. No file has to carry another feature's
+    // shapes, and none of them approaches the size ceiling.
+    typeDefs: [typeDefs, calendarTypeDefs, templateTypeDefs],
     resolvers: {
       Query: {
         ...queryResolvers,

@@ -116,10 +116,13 @@ export function buildDependencies(
     tokenHasher: config.tokenHasher ?? createSha256TokenHasher(),
     mimeParser: createPostalMimeParser(),
     mimeBuilder: createMimeTextBuilder(),
+    // Gated on the binding alone. `mailFrom` is the *system* sender used for
+    // login links, not the sender for user mail -- a multi-address server
+    // must not funnel every send through one configured mailbox.
     mailSender:
-      config.email === undefined || config.mailFrom === undefined
+      config.email === undefined
         ? createUnavailableMailSender()
-        : createCloudflareMailSender(config.email, config.mailFrom),
+        : createCloudflareMailSender(config.email),
     // Parses Eta rather than compiling it: this same object runs inside a
     // Cloudflare Worker, where `new Function` is not available at all.
     templateRenderer: createEtaTemplateRenderer(),

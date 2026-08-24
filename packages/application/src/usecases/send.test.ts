@@ -4,10 +4,16 @@ import {
   verifyMailDomain,
 } from "@mailcal/domain/entities/mail-domain";
 import { DeliveryStatus } from "@mailcal/domain/entities/message";
+import {
+  createMailAddress,
+  MailAddressStatus,
+  setMailAddressStatus,
+} from "@mailcal/domain/entities/mail-address";
 import { createDomainName } from "@mailcal/domain/value-objects/domain-name";
 import {
   createAttachmentId,
   createDomainId,
+  createMailAddressId,
   createMessageId,
   createUserId,
 } from "@mailcal/domain/value-objects/ids";
@@ -381,6 +387,71 @@ describe("listSendableAddresses", () => {
         createdAt: NOW,
       }),
     );
+  });
+
+  /** Provisions a mailbox on the verified test domain. */
+  async function provision(localPart: string, active = true) {
+    const address = setMailAddressStatus(
+      createMailAddress({
+        id: createMailAddressId(`addr-${localPart}`),
+        domainId,
+        domainName: createDomainName("example.com"),
+        localPart,
+        createdByUserId: null,
+        createdAt: NOW,
+      }),
+      active ? MailAddressStatus.Active : MailAddressStatus.Disabled,
+      NOW,
+    );
+    await fake.deps.mailAddressRepository.save(address);
+    return address;
+  }
+
+  test("lists provisioned mailboxes concretely once they exist", async () => {
+    await provision("support");
+    await provision("billing");
+    const list = createListSendableAddressesUseCase(fake.deps);
+    // Concrete addresses, so a caller can pass one straight back as `from`.
+    // Ordered by address, which is the repository's stable listing order.
+    expect(await list(adminViewer())).toEqual([
+      "billing@example.com",
+      "support@example.com",
+    ]);
+  });
+
+  test("omits a disabled mailbox", async () => {
+    await provision("support");
+    await provision("closed", false);
+    const list = createListSendableAddressesUseCase(fake.deps);
+    expect(await list(adminViewer())).toEqual(["support@example.com"]);
+  });
+
+  test("a key sees only the provisioned mailboxes its scope covers", async () => {
+    await provision("support");
+    await provision("billing");
+    const list = createListSendableAddressesUseCase(fake.deps);
+    const scoped = mailboxAgentViewer(domainId, "support@example.com");
+    expect(await list(scoped)).toEqual(["support@example.com"]);
+  });
+
+  test("a key with no MAIL_SEND reach on the domain sees nothing", async () => {
+    await provision("support");
+    const list = createListSendableAddressesUseCase(fake.deps);
+    const elsewhere = apiKeyViewer([
+      {
+        capability: Capability.MailSend,
+        domainId: createDomainId("dom-other"),
+        addressPattern: "*",
+      },
+    ]);
+    expect(await list(elsewhere)).toEqual([]);
+  });
+
+  test("falls back to the pattern form for a domain with no usable mailbox", async () => {
+    // Every deployment predating mailbox provisioning looks like this, and
+    // emptying its sender picker would be a regression.
+    const list = createListSendableAddressesUseCase(fake.deps);
+    expect(await list(adminViewer())).toEqual(["*@example.com"]);
   });
 
   test("a user may send from every verified domain", async () => {

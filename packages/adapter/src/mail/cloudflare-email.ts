@@ -93,8 +93,26 @@ export class MailDeliveryError extends Error {
   }
 }
 
+/** Raised when a message's own sender is not a mailbox the binding will
+ * accept. Distinct from {@link MailDeliveryError} so the send use case can
+ * tell "the provider refused us" from "this From could never work". */
+export class InvalidSenderAddressError extends Error {
+  constructor(readonly address: string) {
+    super("Sender address is not a valid mailbox");
+    this.name = "InvalidSenderAddressError";
+  }
+}
+
 /** Cloudflare Email Service adapter for the native Workers `send_email`
  * binding.
+ *
+ * Every message is sent **as its own `from`**. mailcal is a multi-address,
+ * multi-domain server: which mailbox a message leaves as is decided by the
+ * send use case, from the caller's authorized sender, and this adapter must
+ * not override it. (It used to take one configured address and stamp it on
+ * every send, which silently made the stored message and the delivered
+ * message disagree about who sent it, and made per-address `MAIL_SEND`
+ * scopes meaningless on the wire.)
  *
  * The binding takes exactly one recipient per call, so a multi-recipient
  * `OutboundMail` is fanned out. Delivery is therefore not atomic across
@@ -103,10 +121,16 @@ export class MailDeliveryError extends Error {
  * operator decide whether to retry rather than silently re-sending. */
 export function createCloudflareMailSender(
   binding: CloudflareSendEmailBinding,
-  from: CloudflareSenderAddress,
 ): MailSender {
   return {
     async send(mail: OutboundMail): Promise<void> {
+      // Checked here rather than at the call site because it is a *provider*
+      // constraint: the binding rejects anything else, and finding out at
+      // send time would surface as an opaque failure.
+      const from = parseCloudflareSenderAddress(mail.from);
+      if (from === null) {
+        throw new InvalidSenderAddressError(mail.from);
+      }
       const recipients = [...mail.to, ...(mail.cc ?? []), ...(mail.bcc ?? [])];
       const headers =
         mail.headers === undefined

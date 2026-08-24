@@ -22,6 +22,11 @@ biome = "latest"
 node = "lts"
 gitleaks = "latest"
 pre-commit = "latest"
+# Pinned to the same version apps/api declares, so `mise exec -- wrangler`
+# and `bun run --cwd apps/api cf:deploy` can never drift onto different
+# Workers runtimes. Provided here as well as in package.json so deploying
+# does not depend on a global install that a fresh checkout would not have.
+"npm:wrangler" = "4.123.0"
 
 [tasks.default]
 description = "Show available tasks"
