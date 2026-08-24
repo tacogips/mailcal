@@ -397,3 +397,60 @@ wins attribution over the scorer; the score is stored either way.
 - **Agenda.** `MessageEvent.message` field plus the scoped
   `messageEvents` query back the web client's "Upcoming" sidebar section
   (open events due in 30 days, click-through to the mail).
+
+## MailAddress (mailbox provisioning)
+
+A domain used to be either catch-all or reliant on `hasKnownLocalPart`, which
+inferred that an address was real once it had *already* sent or received
+something. That inference has no way to express a mailbox before its first
+message, no way to list which mailboxes exist, and no way to close one.
+
+`MailAddress` makes the set of real addresses something the operator states:
+
+```typescript
+enum MailAddressStatus { Active = "ACTIVE", Disabled = "DISABLED" }
+
+interface MailAddress {
+  readonly id: MailAddressId;
+  readonly domainId: DomainId;
+  readonly localPart: string;        // lower-cased, unique per domain
+  readonly address: EmailAddress;    // denormalized localPart@domain
+  readonly displayName: string | null;
+  readonly status: MailAddressStatus;
+  readonly createdByUserId: UserId | null;
+  readonly createdAt: string;
+  readonly updatedAt: string;
+}
+```
+
+The mint-time local-part grammar is deliberately narrower than what
+`EmailAddress` parses inbound: mail from the outside world may carry
+exotic-but-legal local parts and must still be delivered, whereas an address
+an operator creates should need no quoting anywhere.
+
+The local part is immutable. Changing it would silently redirect mail already
+addressed to the old one; the honest expression of that intent is a new
+address plus a disabled old one.
+
+### Delivery precedence
+
+Evaluated in `resolveRecipient` on the ingest path:
+
+1. An `ACTIVE` row accepts.
+2. A `DISABLED` row rejects -- **even on a catch-all domain**, which is the
+   only way to close a single mailbox without closing the domain. It is
+   reported distinctly from "never existed", because the sender's mistake is
+   a different one.
+3. No row at all falls back to the previous catch-all / `hasKnownLocalPart`
+   behaviour, so a domain that predates the feature delivers exactly as before.
+
+### Administration
+
+Managing mailboxes requires `DOMAIN_ADMIN` -- the credential that may add a
+domain is the one that may say which mailboxes exist on it. No separate
+capability: there is no distinct threat model to justify the extra knob.
+
+Deleting is refused once the mailbox has carried mail, mirroring
+`deleteDomain`; disabling is the reversible way to close an address with
+history.
+

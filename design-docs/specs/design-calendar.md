@@ -371,8 +371,15 @@ Local dev without the secret simply has CalDAV disabled.
   `SyncCalendarResult`.
 - Attachment download: `GET /api/attachments/:id` authorization gains an
   event branch: attachment claimed by an event -> viewer must be able to
-  read that event (owner/admin/mentioned/scoped key). File links
-  (`FILE_LINK` capability) work unchanged since they target attachments.
+  read that event (owner/admin/mentioned/scoped key). File links gain the
+  same branch on the *mint* and *revoke* sides: an event attachment carries
+  no `messageId`, so `createAttachmentLink` authorizes through a claiming
+  event the viewer can read, plus `FILE_LINK`. Because there is no address
+  to scope it against, `FILE_LINK` is required at its coarsest form (held on
+  any scope; a user viewer holds it unconditionally). An attachment no event
+  has claimed stays unlinkable -- it is a staged upload belonging to
+  nothing. Resolution of an already-minted token is unchanged: the token is
+  the credential and never consults a viewer.
 
 ## Test strategy
 

@@ -26,6 +26,10 @@ import type {
   UserMailPermissionId,
 } from "@mailcal/domain/value-objects/ids";
 import type {
+  MailAddress,
+  MailAddressStatus,
+} from "@mailcal/domain/entities/mail-address";
+import type {
   MailTemplate,
   MailTemplateContentInput,
 } from "@mailcal/domain/entities/mail-template";
@@ -33,6 +37,7 @@ export type { MailTemplateContentInput };
 import type { UserCalendarPermission } from "@mailcal/domain/entities/user-calendar-permission";
 import type { UserTemplatePermission } from "@mailcal/domain/entities/user-template-permission";
 import type {
+  MailAddressId,
   MailTemplateId,
   UserCalendarPermissionId,
   UserTemplatePermissionId,
@@ -46,6 +51,14 @@ import {
   type CalendarUseCases,
   createCalendarUseCases,
 } from "./usecases/calendar-usecases";
+import {
+  type CreateMailAddressUseCaseInput,
+  createCreateMailAddressUseCase,
+  createDeleteMailAddressUseCase,
+  createListMailAddressesUseCase,
+  createRenameMailAddressUseCase,
+  createSetMailAddressStatusUseCase,
+} from "./usecases/mail-addresses";
 import {
   createCreateMailTemplateUseCase,
   createDeleteMailTemplateUseCase,
@@ -370,6 +383,30 @@ export interface UseCases {
   readonly deleteDomain: (viewer: Viewer, id: DomainId) => Promise<boolean>;
   readonly domainDnsRecords: (domain: MailDomain) => readonly DnsRecord[];
 
+  // --- mail addresses (mailbox provisioning) ---
+  readonly listMailAddresses: (
+    viewer: Viewer,
+    domainId: DomainId | null,
+  ) => Promise<readonly MailAddress[]>;
+  readonly createMailAddress: (
+    viewer: Viewer,
+    input: CreateMailAddressUseCaseInput,
+  ) => Promise<MailAddress>;
+  readonly renameMailAddress: (
+    viewer: Viewer,
+    id: MailAddressId,
+    displayName: string | null,
+  ) => Promise<MailAddress>;
+  readonly setMailAddressStatus: (
+    viewer: Viewer,
+    id: MailAddressId,
+    status: MailAddressStatus,
+  ) => Promise<MailAddress>;
+  readonly deleteMailAddress: (
+    viewer: Viewer,
+    id: MailAddressId,
+  ) => Promise<boolean>;
+
   // --- api keys ---
   readonly listApiKeys: (viewer: Viewer) => Promise<readonly ApiKey[]>;
   readonly listApiKeyScopes: (
@@ -596,6 +633,12 @@ export function createUseCases(deps: AppDependencies): UseCases {
     deleteDomain: createDeleteDomainUseCase(deps),
     domainDnsRecords: buildDomainDnsRecords,
 
+    listMailAddresses: createListMailAddressesUseCase(deps),
+    createMailAddress: createCreateMailAddressUseCase(deps),
+    renameMailAddress: createRenameMailAddressUseCase(deps),
+    setMailAddressStatus: createSetMailAddressStatusUseCase(deps),
+    deleteMailAddress: createDeleteMailAddressUseCase(deps),
+
     listApiKeys: createListApiKeysUseCase(deps),
     listApiKeyScopes: createListApiKeyScopesUseCase(deps),
     createApiKey: createCreateApiKeyUseCase(deps),
@@ -622,6 +665,7 @@ export function createUseCases(deps: AppDependencies): UseCases {
 
 export type {
   ApiKeyScopeInput,
+  CreateMailAddressUseCaseInput,
   BootstrapResult,
   ApiKeyWithSecret,
   CreateApiKeyUseCaseInput,

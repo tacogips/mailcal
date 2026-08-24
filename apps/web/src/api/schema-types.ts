@@ -18,6 +18,7 @@ export type MessageEventKind = "DEADLINE" | "REMINDER" | "FOLLOW_UP" | "OTHER";
 export type SpamMarkedBy = "SYSTEM" | "USER" | "RULE";
 export type DomainStatus = "PENDING" | "ACTIVE" | "DISABLED";
 export type UserRole = "ADMIN" | "MEMBER" | "VIEWER";
+export type MailAddressStatus = "ACTIVE" | "DISABLED";
 export type UserPermissionEffect = "ALLOW" | "DENY";
 export type AttachmentKind =
   | "IMAGE"
@@ -391,4 +392,15 @@ export interface ClassificationRuleView {
   readonly enabled: boolean;
   readonly description: string | null;
   readonly createdAt: string;
+}
+
+export interface MailAddressView {
+  readonly id: string;
+  readonly localPart: string;
+  readonly address: string;
+  readonly displayName: string | null;
+  readonly status: MailAddressStatus;
+  readonly createdByUserId: string | null;
+  readonly createdAt: string;
+  readonly domain: { readonly id: string; readonly name: string };
 }

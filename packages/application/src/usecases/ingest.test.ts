@@ -22,12 +22,18 @@ import {
 } from "../test-support/viewer-fixtures";
 import { createApplyClassificationRuleUseCase } from "./rules";
 import { createUserTag } from "@mailcal/domain/entities/tag";
+import {
+  createMailAddress,
+  MailAddressStatus,
+  setMailAddressStatus,
+} from "@mailcal/domain/entities/mail-address";
 import { createDomainName } from "@mailcal/domain/value-objects/domain-name";
 import { createEmailAddress } from "@mailcal/domain/value-objects/email-address";
 import {
   createClassificationRuleId,
   createTagId,
   createDomainId,
+  createMailAddressId,
   createMessageId,
   createThreadId,
 } from "@mailcal/domain/value-objects/ids";
@@ -93,6 +99,28 @@ function baseInput(
 
 describe("receiveMessage", () => {
   let fake: FakeDependencies;
+
+  /** Provisions a mailbox on the test domain, bypassing the use case so a
+   * delivery test does not depend on the authorization surface. */
+  async function provision(
+    localPart: string,
+    status: MailAddressStatus = MailAddressStatus.Active,
+  ) {
+    const address = setMailAddressStatus(
+      createMailAddress({
+        id: createMailAddressId(`addr-${localPart}`),
+        domainId,
+        domainName: createDomainName("example.com"),
+        localPart,
+        createdByUserId: null,
+        createdAt: NOW,
+      }),
+      status,
+      NOW,
+    );
+    await fake.deps.mailAddressRepository.save(address);
+    return address;
+  }
 
   beforeEach(async () => {
     fake = createFakeDependencies({ now: NOW });
@@ -207,6 +235,64 @@ describe("receiveMessage", () => {
       const receive = createReceiveMessageUseCase(fake.deps);
       const result = await receive(baseInput());
       expect(result.kind).toBe("STORED");
+    });
+
+    test("accepts a provisioned address that has never received mail", async () => {
+      // The whole point of provisioning: a mailbox is deliverable because
+      // an operator said so, not because traffic already happened to it.
+      await provision("support");
+      const receive = createReceiveMessageUseCase(fake.deps);
+      expect((await receive(baseInput())).kind).toBe("STORED");
+    });
+
+    test("still rejects a local part nobody provisioned", async () => {
+      await provision("support");
+      const receive = createReceiveMessageUseCase(fake.deps);
+      const result = await receive(
+        baseInput({ envelopeTo: "nobody@example.com" }),
+      );
+      expect(result.kind).toBe("REJECTED");
+    });
+  });
+
+  describe("provisioned addresses", () => {
+    test("a disabled address is refused even on a catch-all domain", async () => {
+      // The only way to close one mailbox without closing the domain.
+      await fake.deps.mailDomainRepository.save(activeDomain(true));
+      await provision("support", MailAddressStatus.Disabled);
+      const receive = createReceiveMessageUseCase(fake.deps);
+      const result = await receive(baseInput());
+      expect(result).toMatchObject({
+        kind: "REJECTED",
+        reason: "Recipient address is not accepting mail",
+      });
+    });
+
+    test("a disabled address reports differently from an unknown one", async () => {
+      await fake.deps.mailDomainRepository.save(activeDomain(false));
+      await provision("support", MailAddressStatus.Disabled);
+      const receive = createReceiveMessageUseCase(fake.deps);
+      const disabled = await receive(baseInput());
+      const unknown = await receive(
+        baseInput({ envelopeTo: "nobody@example.com" }),
+      );
+      expect(disabled.kind).toBe("REJECTED");
+      expect(unknown.kind).toBe("REJECTED");
+      expect(disabled.kind === "REJECTED" ? disabled.reason : "").not.toBe(
+        unknown.kind === "REJECTED" ? unknown.reason : "",
+      );
+    });
+
+    test("re-enabling restores delivery", async () => {
+      await fake.deps.mailDomainRepository.save(activeDomain(false));
+      const address = await provision("support", MailAddressStatus.Disabled);
+      const receive = createReceiveMessageUseCase(fake.deps);
+      expect((await receive(baseInput())).kind).toBe("REJECTED");
+
+      await fake.deps.mailAddressRepository.save(
+        setMailAddressStatus(address, MailAddressStatus.Active, NOW),
+      );
+      expect((await receive(baseInput())).kind).toBe("STORED");
     });
   });
 

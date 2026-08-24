@@ -219,3 +219,34 @@ have raised SQLITE_CONSTRAINT against a legacy row rather than self-healing
 (L-004). Tests: 6 override delete/edit cases, a CalDAV follow-through case
 asserting the resource is re-PUT with one VEVENT and no DELETE, and a
 legacy-state-row case.
+
+### Session: 2026-08-24 (opus-implementation, review round 4)
+**Notes**: Verified all five carried-over review findings against HEAD
+(commit `0fc9221`): the attachment download event branch, CalDAV resource
+grouping for overrides, pre-transmission server-URL validation plus the
+redirect scheme/host guard, the template/calendar permission UI and
+capability/id test coverage, and the plan status bookkeeping are all present
+and green. Closed the one gap the round-3 report left open: file links on
+event attachments. `usecases/file-links.ts` previously rejected every
+attachment with `messageId === null`, which is exactly the shape an event
+attachment has, so the design's claim that "file links work unchanged"
+(design-calendar.md#request-flows) was false in practice.
+`createCreateAttachmentLinkUseCase` now branches: an attachment with no
+message authorizes through a claiming event the viewer can read plus the
+`FILE_LINK` capability at its coarsest form (`requireFileLinkCapability`,
+since an event exposes no address to scope against), and an attachment no
+event has claimed still reports as absent. `createRevokeFileLinkUseCase`
+takes the same branch and re-labels a denied event lookup as
+`NotFound("FileLink")` so the caller cannot use revoke to probe for
+attachment ids. Resolution of a minted token was already message-agnostic
+and is unchanged. Tests: 7 cases in `file-links.test.ts` covering mint by the
+event owner end-to-end through `resolveFileLink`, denial for a bystander and
+for a mail-only key, `FORBIDDEN` for a calendar key with read but no
+`FILE_LINK`, success for one holding both, the still-unlinkable orphan
+upload, and revoke authorization.
+
+**Completion Criteria**:
+- [x] Event attachments are linkable through their claiming event
+- [x] `FILE_LINK` remains required, and an unclaimed upload stays unlinkable
+- [x] Revoke authorizes identically and leaks no attachment existence
+- [x] design-calendar.md#request-flows states the actual rule

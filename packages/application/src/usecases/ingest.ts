@@ -3,6 +3,7 @@ import {
   buildRawMessageBlobKey,
   createAttachment,
 } from "@mailcal/domain/entities/attachment";
+import { isMailAddressActive } from "@mailcal/domain/entities/mail-address";
 import {
   canReceiveMail,
   type MailDomain,
@@ -56,6 +57,7 @@ export const MAX_STORED_BODY_LENGTH = 256 * 1024;
  * "unknown domain" and "disabled domain": a sender must not be able to probe
  * which domains this deployment manages. */
 const REJECT_UNKNOWN_RECIPIENT = "Recipient address is not served here";
+const REJECT_DISABLED_RECIPIENT = "Recipient address is not accepting mail";
 const REJECT_MALFORMED_RECIPIENT = "Recipient address is malformed";
 const REJECT_TOO_LARGE = "Message exceeds the maximum accepted size";
 
@@ -99,7 +101,22 @@ async function resolveRecipient(
   if (domain === null || !canReceiveMail(domain)) {
     return { reason: REJECT_UNKNOWN_RECIPIENT };
   }
+
+  // An explicitly provisioned mailbox is the operator's stated intent, so
+  // it decides on its own -- in both directions. A DISABLED address is
+  // refused even on a catch-all domain, which is the only way to close one
+  // mailbox without closing the domain, and it is reported distinctly from
+  // "never existed" because the sender's mistake is a different one.
+  const provisioned = await deps.mailAddressRepository.findByAddress(address);
+  if (provisioned !== null) {
+    return isMailAddressActive(provisioned)
+      ? { address, domain }
+      : { reason: REJECT_DISABLED_RECIPIENT };
+  }
+
   if (!domain.catchAll) {
+    // No explicit row: fall back to the historical heuristic, so a domain
+    // that predates mailbox provisioning keeps delivering exactly as before.
     const known = await deps.mailDomainRepository.hasKnownLocalPart(
       domain.id,
       address,

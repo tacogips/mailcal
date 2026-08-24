@@ -6,6 +6,7 @@ import type {
 } from "./ports/auth-repository";
 import type { BlobStore } from "./ports/blob-store";
 import type { FileLinkRepository } from "./ports/file-link-repository";
+import type { MailAddressRepository } from "./ports/mail-address-repository";
 import type { MailDomainRepository } from "./ports/mail-domain-repository";
 import type { MailSender } from "./ports/mail-sender";
 import type { ClassificationRuleRepository } from "./ports/classification-rule-repository";
@@ -78,6 +79,7 @@ export interface AppDependencies {
   readonly credentialCipher: CredentialCipher;
 
   readonly mailDomainRepository: MailDomainRepository;
+  readonly mailAddressRepository: MailAddressRepository;
   readonly messageRepository: MessageRepository;
   readonly messageEventRepository: MessageEventRepository;
   readonly classificationRuleRepository: ClassificationRuleRepository;

@@ -64,6 +64,16 @@ export const typeDefs = /* GraphQL */ `
     DISABLED
   }
 
+  """
+  Whether a provisioned mailbox accepts mail. DISABLED rejects even on a
+  catch-all domain, which is the only way to close one address without
+  closing the domain, and it keeps the mailbox's history and grants.
+  """
+  enum MailAddressStatus {
+    ACTIVE
+    DISABLED
+  }
+
   enum Capability {
     MAIL_READ
     MAIL_SEND
@@ -222,6 +232,39 @@ export const typeDefs = /* GraphQL */ `
     messageCount: Int!
     createdAt: DateTime!
     updatedAt: DateTime!
+  }
+
+  """
+  An explicitly provisioned mailbox on a managed domain.
+
+  Without one, a domain either accepts every local part (catch-all) or only
+  the ones it can infer from message history -- so a mailbox could not be
+  created ahead of its first message, listed, or closed. Managing these
+  requires DOMAIN_ADMIN, the same credential that adds the domain.
+  """
+  type MailAddress {
+    id: ID!
+    domain: MailDomain!
+    "Normalized to lower case, unique within the domain."
+    localPart: String!
+    "The full localPart@domain form."
+    address: String!
+    displayName: String
+    status: MailAddressStatus!
+    "Null when the mailbox was created by an API key rather than a user."
+    createdByUserId: ID
+    createdAt: DateTime!
+    updatedAt: DateTime!
+  }
+
+  input CreateMailAddressInput {
+    domainId: ID!
+    """
+    Letters, digits and . _ + - starting and ending with a letter or digit.
+    Deliberately narrower than what inbound mail may carry.
+    """
+    localPart: String!
+    displayName: String
   }
 
   type MailboxAddress {
@@ -798,6 +841,12 @@ export const typeDefs = /* GraphQL */ `
     message(id: ID!): Message
     thread(id: ID!): Thread
 
+    """
+    Provisioned mailboxes. Null domainId lists every domain's. Requires
+    DOMAIN_ADMIN.
+    """
+    mailAddresses(domainId: ID): [MailAddress!]!
+
     tags: [Tag!]!
     apiKeys: [ApiKey!]!
     fileLinks(messageId: ID!): [FileLink!]!
@@ -840,6 +889,17 @@ export const typeDefs = /* GraphQL */ `
     verifyDomain(id: ID!): MailDomain!
     setDomainStatus(id: ID!, status: DomainStatus!): MailDomain!
     deleteDomain(id: ID!): Boolean!
+
+    "Requires DOMAIN_ADMIN."
+    createMailAddress(input: CreateMailAddressInput!): MailAddress!
+    "Changes the label only. The local part is immutable."
+    renameMailAddress(id: ID!, displayName: String): MailAddress!
+    setMailAddressStatus(id: ID!, status: MailAddressStatus!): MailAddress!
+    """
+    Refused once the mailbox has carried mail -- disable it instead, so
+    stored messages are never orphaned.
+    """
+    deleteMailAddress(id: ID!): Boolean!
 
     createApiKey(input: CreateApiKeyInput!): ApiKeyWithSecret!
     revokeApiKey(id: ID!): ApiKey!

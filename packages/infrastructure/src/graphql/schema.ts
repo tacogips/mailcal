@@ -30,6 +30,11 @@ import {
   viewerResolvers,
 } from "./resolvers/types";
 import {
+  mailAddressMutationResolvers,
+  mailAddressQueryResolvers,
+  mailAddressResolvers,
+} from "./resolvers/mail-addresses";
+import {
   mailTemplateResolvers,
   templateMutationResolvers,
   templateQueryResolvers,
@@ -54,14 +59,17 @@ export function buildGraphQLSchema(): GraphQLSchema {
     resolvers: {
       Query: {
         ...queryResolvers,
+        ...mailAddressQueryResolvers,
         ...templateQueryResolvers,
         ...calendarQueryResolvers,
       },
       Mutation: {
         ...mutationResolvers,
+        ...mailAddressMutationResolvers,
         ...templateMutationResolvers,
         ...calendarMutationResolvers,
       },
+      MailAddress: mailAddressResolvers,
       MailTemplate: mailTemplateResolvers,
       CalendarEvent: calendarEventResolvers,
       EventOccurrence: eventOccurrenceResolvers,
