@@ -1,9 +1,17 @@
 /**
- * The mailcal GraphQL schema, mirroring
- * `design-docs/specs/design-graphql-api.md#schema`. Kept as a single SDL
- * string rather than split files so the whole contract is readable in one
- * place, and so `schema.graphql.test.ts` can assert it against the design
- * doc's field list without stitching.
+ * The mail and admin half of the mailcal GraphQL schema, mirroring
+ * `design-docs/specs/design-graphql-api.md#schema`.
+ *
+ * This document owns `Query` and `Mutation`; the feature modules
+ * (`schema-calendar.graphql.ts`, `schema-templates.graphql.ts`) `extend`
+ * them, and `schema.ts` merges all three through `createSchema`. The split
+ * exists because a single document had reached the repository's 1000-line
+ * ceiling -- see `.agents/skills/ts-coding-standards`.
+ *
+ * The admin user-management surface stays here in full, feature capabilities
+ * included: `Capability`, `CalendarCapability`, `TemplateCapability`, the
+ * three `User*Permission` types and their mutations belong to user
+ * administration rather than to the features they name.
  */
 export const typeDefs = /* GraphQL */ `
   """
@@ -105,15 +113,6 @@ export const typeDefs = /* GraphQL */ `
     TEMPLATE_CREATE
     TEMPLATE_UPDATE
     TEMPLATE_DELETE
-  }
-
-  enum TemplateVariableType {
-    TEXT
-    MULTILINE_TEXT
-    NUMBER
-    BOOLEAN
-    DATE
-    EMAIL
   }
 
   """
@@ -531,103 +530,6 @@ export const typeDefs = /* GraphQL */ `
     ownerUserId: ID
   }
 
-  type TemplateVariable {
-    key: String!
-    label: String!
-    type: TemplateVariableType!
-    required: Boolean!
-    defaultValue: String
-    description: String
-  }
-
-  input TemplateVariableInput {
-    key: String!
-    label: String
-    type: TemplateVariableType!
-    required: Boolean
-    defaultValue: String
-    description: String
-  }
-
-  """
-  A reusable mail body with declared variables. Rendering is parse-only (no
-  runtime code generation), so a template can never execute anything.
-  """
-  type MailTemplate {
-    id: ID!
-    name: String!
-    description: String
-    subject: String!
-    textBody: String
-    htmlBody: String
-    from: String
-    to: [String!]!
-    cc: [String!]!
-    bcc: [String!]!
-    variables: [TemplateVariable!]!
-    "The variable keys the template body actually references."
-    referencedVariableKeys: [String!]!
-    createdByUserId: ID
-    createdAt: DateTime!
-    updatedAt: DateTime!
-  }
-
-  input MailTemplateInput {
-    name: String!
-    description: String
-    subject: String!
-    textBody: String
-    htmlBody: String
-    from: String
-    to: [String!]
-    cc: [String!]
-    bcc: [String!]
-    variables: [TemplateVariableInput!]!
-  }
-
-  input TemplateValueInput {
-    key: String!
-    value: String!
-  }
-
-  type TemplateValueProblem {
-    key: String!
-    reason: String!
-  }
-
-  type TemplateValidation {
-    valid: Boolean!
-    missing: [String!]!
-    invalid: [TemplateValueProblem!]!
-    unknown: [String!]!
-  }
-
-  "The review step: rendered but not sent."
-  type RenderedTemplate {
-    subject: String!
-    text: String
-    html: String
-    from: String
-    to: [String!]!
-    cc: [String!]!
-    bcc: [String!]!
-    validation: TemplateValidation!
-  }
-
-  input SendTemplatedMessageInput {
-    templateId: ID!
-    values: [TemplateValueInput!]!
-    "Overrides the template's own recipients and sender when supplied."
-    from: String
-    to: [String!]
-    cc: [String!]
-    bcc: [String!]
-    inReplyToMessageId: ID
-    attachmentIds: [ID!]
-    headers: [HeaderInput!]
-    tagIds: [ID!]
-  }
-
   type User {
     id: ID!
     email: String!
@@ -865,19 +767,6 @@ export const typeDefs = /* GraphQL */ `
     "Requires DOMAIN_ADMIN."
     classificationRules: [ClassificationRule!]!
 
-    mailTemplates: [MailTemplate!]!
-    mailTemplate(id: ID!): MailTemplate
-    "Checks a value set against a template's declared variables."
-    mailTemplateValidation(
-      id: ID!
-      values: [TemplateValueInput!]!
-    ): TemplateValidation!
-    "Renders without sending."
-    previewMailTemplate(
-      id: ID!
-      values: [TemplateValueInput!]!
-    ): RenderedTemplate!
-
     "Admin only."
     users: [User!]!
     "Admin only."
@@ -985,11 +874,6 @@ export const typeDefs = /* GraphQL */ `
     "Admin only."
     removeUserMailPermission(id: ID!): Boolean!
 
-    createMailTemplate(input: MailTemplateInput!): MailTemplate!
-    updateMailTemplate(id: ID!, input: MailTemplateInput!): MailTemplate!
-    deleteMailTemplate(id: ID!): Boolean!
-    "Renders the template with these values and sends the result."
-    sendTemplatedMessage(input: SendTemplatedMessageInput!): Message!
     "Admin only."
     addUserTemplatePermission(
       userId: ID!

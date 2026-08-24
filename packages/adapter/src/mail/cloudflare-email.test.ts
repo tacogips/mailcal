@@ -5,6 +5,7 @@ import {
   type CloudflareSendEmailBinding,
   createCloudflareMailSender,
   createUnavailableMailSender,
+  InvalidSenderAddressError,
   MailDeliveryError,
   parseCloudflareSenderAddress,
 } from "./cloudflare-email";
@@ -68,32 +69,68 @@ describe("parseCloudflareSenderAddress", () => {
 describe("createCloudflareMailSender", () => {
   test("fans out one binding call per recipient", async () => {
     const { binding, sent } = recordingBinding();
-    await createCloudflareMailSender(binding, from).send(mail);
+    await createCloudflareMailSender(binding).send(mail);
 
     expect(sent.map((message) => message.to)).toEqual([
       "a@other.com",
       "b@other.com",
       "c@other.com",
     ]);
-    expect(
-      sent.every((message) => message.from === "noreply@example.com"),
-    ).toBe(true);
   });
 
-  test("uses the configured sender, ignoring the mail's own from", async () => {
+  test("sends as the message's own from, not one configured address", async () => {
+    // mailcal is a multi-address, multi-domain server. The sender is decided
+    // by the send use case from the caller's authorized mailbox -- it has
+    // already checked the managed domain and the per-address MAIL_SEND
+    // scope -- so the adapter must carry it through rather than override it.
+    // Overriding made the stored message and the delivered message disagree
+    // about who sent it.
     const { binding, sent } = recordingBinding();
-    await createCloudflareMailSender(binding, from).send({
+    const sender = createCloudflareMailSender(binding);
+    await sender.send({
       ...mail,
-      from: "spoofed@evil.com",
+      from: "support@example.com",
       to: ["a@other.com"],
       cc: [],
     });
-    expect(sent[0]?.from).toBe("noreply@example.com");
+    await sender.send({
+      ...mail,
+      from: "billing@other-domain.test",
+      to: ["a@other.com"],
+      cc: [],
+    });
+
+    expect(sent.map((message) => message.from)).toEqual([
+      "support@example.com",
+      "billing@other-domain.test",
+    ]);
+  });
+
+  test("normalizes the sender's case", async () => {
+    const { binding, sent } = recordingBinding();
+    await createCloudflareMailSender(binding).send({
+      ...mail,
+      from: "Support@Example.COM",
+      to: ["a@other.com"],
+      cc: [],
+    });
+    expect(sent[0]?.from).toBe("support@example.com");
+  });
+
+  test("refuses a from the binding could never accept, before sending anything", async () => {
+    const { binding, sent } = recordingBinding();
+    await expect(
+      createCloudflareMailSender(binding).send({
+        ...mail,
+        from: "Name <a@example.com>",
+      }),
+    ).rejects.toBeInstanceOf(InvalidSenderAddressError);
+    expect(sent).toEqual([]);
   });
 
   test("passes custom headers through", async () => {
     const { binding, sent } = recordingBinding();
-    await createCloudflareMailSender(binding, from).send({
+    await createCloudflareMailSender(binding).send({
       ...mail,
       to: ["a@other.com"],
       cc: [],
@@ -104,7 +141,7 @@ describe("createCloudflareMailSender", () => {
 
   test("masks a provider failure, leaking no recipient or subject", async () => {
     const { binding } = recordingBinding({ failOn: "b@other.com" });
-    const sender = createCloudflareMailSender(binding, from);
+    const sender = createCloudflareMailSender(binding);
 
     await expect(sender.send(mail)).rejects.toBeInstanceOf(MailDeliveryError);
     try {

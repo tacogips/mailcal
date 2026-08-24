@@ -40,10 +40,14 @@ export interface InstanceConfig {
    * login is disabled rather than mailing broken links, and file-link URLs
    * are returned as relative paths. */
   readonly publicOrigin: string | null;
-  /** Verified sender mailbox used for system mail (login links), or `null`
-   * when outbound mail is not configured -- in which case passwordless
-   * login fails with a clear `SERVICE_UNAVAILABLE` rather than attempting a
-   * send that the provider would reject. */
+  /** Verified sender mailbox used for **system** mail only -- the
+   * passwordless login link, which has no user-chosen sender to use. `null`
+   * disables passwordless login with a clear `SERVICE_UNAVAILABLE` rather
+   * than mailing from an address the provider would reject.
+   *
+   * Deliberately *not* the sender for user mail: mailcal runs many
+   * addresses across many domains, and each message leaves as the mailbox
+   * its sender was authorized for. */
   readonly mailFrom: string | null;
   /** Spam score at or above which the `SPAM` system tag is applied. */
   readonly spamThreshold: number;

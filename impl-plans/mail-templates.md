@@ -1,5 +1,6 @@
 # Mail Templates Implementation Plan
 
+**Status**: Completed
 **Design Reference**: design-docs/specs/design-mail-templates.md
 **Created**: 2026-08-24
 **Last Updated**: 2026-08-24
@@ -297,3 +298,34 @@ These are tracked here so the tree does not silently claim to be finished.
 Anyone picking this up should treat the reconstructed shared files above as
 re-derivation, not as the original author's work, and diff them against
 intent before relying on their wording.
+
+### Session: 2026-08-24 (follow-up: SDL size ceiling)
+
+`packages/infrastructure/src/graphql/schema.graphql.ts` had grown past the
+repository's 1000-line policy ceiling (730 -> 952 with the template and
+calendar surfaces, then 1012 with the explicit mail-address surface). Split
+along the same seam `schema-calendar.graphql.ts` already established:
+
+- **Added** `packages/infrastructure/src/graphql/schema-templates.graphql.ts`
+  (144 lines): `TemplateVariableType`, `TemplateVariable(Input)`,
+  `MailTemplate(Input)`, `TemplateValueInput`, `TemplateValueProblem`,
+  `TemplateValidation`, `RenderedTemplate`, `SendTemplatedMessageInput`, and
+  `extend type Query` / `extend type Mutation` carrying the four template
+  queries and four template mutations. SDL text moved verbatim.
+- **Kept** in `schema.graphql.ts`: `TemplateCapability`,
+  `UserTemplatePermission(Input)`, `User.templatePermissions` and the two
+  permission mutations -- the admin user-management surface, matching the
+  convention `schema-calendar.graphql.ts` documents.
+- **Updated** `schema.ts` to merge three documents
+  (`[typeDefs, calendarTypeDefs, templateTypeDefs]`) and `schema.graphql.ts`'s
+  header, which still claimed the contract was a single unsplit SDL string.
+
+`schema.graphql.ts` is now 896 lines; no source file in the repository is at
+or above 1000. The change is behaviour-preserving and already covered:
+`schema-templates.test.ts` and `schema.test.ts` execute against
+`buildGraphQLSchema()`, so a failed `extend` merge would fail them.
+
+**Verification**: `bun run typecheck` (7/7 workspaces, exit 0),
+`bun run lint:biome` (326 files, no diagnostics), `bun run test`
+(1480 package tests + 183 web tests pass), `bun run --cwd apps/web build`
+(exit 0).

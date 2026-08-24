@@ -4,6 +4,7 @@ import {
   attachToMessage,
   buildRawMessageBlobKey,
 } from "@mailcal/domain/entities/attachment";
+import { isMailAddressActive } from "@mailcal/domain/entities/mail-address";
 import { assertCanSendMail } from "@mailcal/domain/entities/mail-domain";
 import {
   createOutboundMessage,
@@ -22,6 +23,7 @@ import {
 } from "@mailcal/domain/value-objects/email-address";
 import {
   type AttachmentId,
+  type DomainId,
   createMessageId,
   createThreadId,
   type MessageId,
@@ -29,7 +31,10 @@ import {
 } from "@mailcal/domain/value-objects/ids";
 import type { AppDependencies } from "../dependencies";
 import { BadUserInputError, NotFoundError } from "../errors";
-import { requireAddressCapability } from "../policies/authorization";
+import {
+  authorizesAnyAddress,
+  requireAddressCapability,
+} from "../policies/authorization";
 import type { Viewer } from "../policies/viewer";
 import type { BuildMimeAttachment } from "../ports/mime";
 import { withAsyncDomainErrorTranslation } from "./translate-domain-error";
@@ -407,10 +412,18 @@ export function createRetrySendUseCase(
     });
 }
 
-/** Convenience for the CLI and web client: the addresses a viewer may send
- * as, derived from its `MAIL_SEND` scopes intersected with the managed,
- * sendable domains. Prevents the UI from offering a `from` the server will
- * reject. */
+/** The mailboxes this credential may actually send as.
+ *
+ * Provisioned addresses come first and are reported concretely, one entry
+ * per real mailbox, each checked against the viewer's own `MAIL_SEND`
+ * authorization -- so an agent can list what it may use and pass one
+ * straight back as `SendMessageInput.from`.
+ *
+ * A sendable domain with no provisioned mailbox the viewer may use falls
+ * back to the pattern form (`*@example.com`, or the scope's own pattern).
+ * Dropping that would silently empty the picker on a catch-all deployment
+ * that has never provisioned anything, which is every deployment predating
+ * mailbox provisioning. */
 export function createListSendableAddressesUseCase(
   deps: AppDependencies,
 ): (viewer: Viewer) => Promise<readonly string[]> {
@@ -424,26 +437,66 @@ export function createListSendableAddressesUseCase(
         return false;
       }
     });
-    if (viewer.kind === "USER") {
-      return sendable.map((domain) => `*@${domain.name}`);
+    if (sendable.length === 0) {
+      return [];
     }
-    const patterns: string[] = [];
-    for (const scope of viewer.scopes) {
-      if (scope.capability !== Capability.MailSend) {
+
+    const provisioned = await deps.mailAddressRepository.list();
+    const results: string[] = [];
+    const push = (value: string): void => {
+      if (!results.includes(value)) {
+        results.push(value);
+      }
+    };
+
+    for (const domain of sendable) {
+      const usable = provisioned.filter(
+        (entry) =>
+          entry.domainId === domain.id &&
+          isMailAddressActive(entry) &&
+          authorizesAnyAddress(viewer, Capability.MailSend, domain.id, [
+            entry.address,
+          ]),
+      );
+      if (usable.length > 0) {
+        for (const entry of usable) {
+          push(entry.address);
+        }
         continue;
       }
-      for (const domain of sendable) {
-        if (scope.domainId !== null && scope.domainId !== domain.id) {
-          continue;
-        }
-        const pattern = scope.addressPattern;
-        const rendered =
-          pattern === "*" ? `*@${domain.name}` : (pattern as string);
-        if (!patterns.includes(rendered)) {
-          patterns.push(rendered);
-        }
+      for (const pattern of fallbackPatterns(viewer, domain)) {
+        push(pattern);
       }
     }
-    return patterns;
+    return results;
   };
+}
+
+/** The pre-provisioning behaviour, kept for domains with no usable mailbox:
+ * a user sees the whole domain, a key sees each of its `MAIL_SEND` scope
+ * patterns. */
+function fallbackPatterns(
+  viewer: Viewer,
+  domain: { readonly id: DomainId; readonly name: string },
+): readonly string[] {
+  if (viewer.kind === "USER") {
+    return [`*@${domain.name}`];
+  }
+  const patterns: string[] = [];
+  for (const scope of viewer.scopes) {
+    if (scope.capability !== Capability.MailSend) {
+      continue;
+    }
+    if (scope.domainId !== null && scope.domainId !== domain.id) {
+      continue;
+    }
+    const rendered =
+      scope.addressPattern === "*"
+        ? `*@${domain.name}`
+        : (scope.addressPattern as string);
+    if (!patterns.includes(rendered)) {
+      patterns.push(rendered);
+    }
+  }
+  return patterns;
 }
