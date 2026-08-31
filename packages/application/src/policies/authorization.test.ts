@@ -2,6 +2,7 @@ import { Capability } from "@mailcal/domain/entities/api-key";
 import { createEmailAddress } from "@mailcal/domain/value-objects/email-address";
 import {
   createDomainId,
+  createMailAddressId,
   createUserId,
 } from "@mailcal/domain/value-objects/ids";
 import { describe, expect, test } from "vitest";
@@ -15,11 +16,17 @@ import {
 } from "../test-support/viewer-fixtures";
 import {
   authorizesAnyAddress,
+  authorizesContactRead,
+  authorizesContactWrite,
   authorizesGlobal,
+  type ContactBookOwnerRef,
+  contactPermissionListFilter,
   mailAuthorizationRules,
+  mailCapabilityForContact,
   mailPermissionListFilter,
   readableAddressPatterns,
   requireAddressCapability,
+  requireContactWrite,
   requireGlobalCapability,
   requireViewer,
   scopedDomainIds,
@@ -425,5 +432,165 @@ describe("scopedDomainIds", () => {
   test("is an empty array when the key holds no such scope", () => {
     const viewer = apiKeyViewer([{ capability: Capability.MailSend }]);
     expect(scopedDomainIds(viewer, Capability.MailRead)).toEqual([]);
+  });
+});
+
+describe("contact capabilities: derived from mail, no second permission table", () => {
+  const userId = createUserId("usr-1");
+  const owner: ContactBookOwnerRef = {
+    mailAddressId: createMailAddressId("addr-support"),
+    address: support,
+    domainId: domainA,
+  };
+
+  test("mailCapabilityForContact maps READ -> MAIL_READ and WRITE -> MAIL_MANAGE", () => {
+    expect(mailCapabilityForContact(Capability.ContactRead)).toBe(
+      Capability.MailRead,
+    );
+    expect(mailCapabilityForContact(Capability.ContactWrite)).toBe(
+      Capability.MailManage,
+    );
+  });
+
+  test("ADMIN reads and writes every book by baseline, minus a matching mail DENY", () => {
+    const denied = adminViewer(
+      "usr-1",
+      buildMailPermissions(userId, [
+        {
+          effect: "DENY",
+          domainId: domainA,
+          addressPattern: "support@example.com",
+        },
+      ]),
+    );
+    expect(authorizesContactRead(denied, owner)).toBe(false);
+    expect(authorizesContactWrite(denied, owner)).toBe(false);
+
+    const undenied = adminViewer("usr-1", []);
+    expect(authorizesContactRead(undenied, owner)).toBe(true);
+    expect(authorizesContactWrite(undenied, owner)).toBe(true);
+  });
+
+  test("MEMBER with a matching ALLOW gets both read and write", () => {
+    const permissions = buildMailPermissions(userId, [
+      {
+        effect: "ALLOW",
+        domainId: domainA,
+        addressPattern: "support@example.com",
+      },
+    ]);
+    const viewer = memberViewer("usr-1", permissions);
+    expect(authorizesContactRead(viewer, owner)).toBe(true);
+    expect(authorizesContactWrite(viewer, owner)).toBe(true);
+  });
+
+  test("MEMBER with no matching rule gets neither", () => {
+    const viewer = memberViewer("usr-1", []);
+    expect(authorizesContactRead(viewer, owner)).toBe(false);
+    expect(authorizesContactWrite(viewer, owner)).toBe(false);
+  });
+
+  test("VIEWER with a matching ALLOW gets read only, never write", () => {
+    const permissions = buildMailPermissions(userId, [
+      {
+        effect: "ALLOW",
+        domainId: domainA,
+        addressPattern: "support@example.com",
+      },
+    ]);
+    const viewer = viewerViewer("usr-1", permissions);
+    expect(authorizesContactRead(viewer, owner)).toBe(true);
+    expect(authorizesContactWrite(viewer, owner)).toBe(false);
+    expect(() => requireContactWrite(viewer, owner)).toThrow(ForbiddenError);
+  });
+
+  test("a mail DENY beats an overlapping mail ALLOW for contacts too", () => {
+    const permissions = buildMailPermissions(userId, [
+      { effect: "ALLOW", domainId: domainA, addressPattern: "*" },
+      {
+        effect: "DENY",
+        domainId: domainA,
+        addressPattern: "support@example.com",
+      },
+    ]);
+    const viewer = memberViewer("usr-1", permissions);
+    expect(authorizesContactRead(viewer, owner)).toBe(false);
+  });
+
+  test("an API key needs an explicit CONTACT_READ scope, matched by address", () => {
+    const readOnly = apiKeyViewer([
+      {
+        capability: Capability.ContactRead,
+        domainId: domainA,
+        addressPattern: "support@example.com",
+      },
+    ]);
+    expect(authorizesContactRead(readOnly, owner)).toBe(true);
+    expect(authorizesContactWrite(readOnly, owner)).toBe(false);
+
+    const wrongAddress = apiKeyViewer([
+      {
+        capability: Capability.ContactRead,
+        domainId: domainA,
+        addressPattern: "billing@example.com",
+      },
+    ]);
+    expect(authorizesContactRead(wrongAddress, owner)).toBe(false);
+  });
+
+  test("an API key needs CONTACT_WRITE specifically -- CONTACT_READ does not imply it", () => {
+    const writeScoped = apiKeyViewer([
+      {
+        capability: Capability.ContactWrite,
+        domainId: domainA,
+        addressPattern: "support@example.com",
+      },
+    ]);
+    expect(authorizesContactWrite(writeScoped, owner)).toBe(true);
+    expect(authorizesContactRead(writeScoped, owner)).toBe(false);
+  });
+
+  test("a mail-only API key (no CONTACT_* scope) has no contact access at all", () => {
+    const mailOnly = apiKeyViewer([
+      {
+        capability: Capability.MailRead,
+        domainId: domainA,
+        addressPattern: "support@example.com",
+      },
+      {
+        capability: Capability.MailManage,
+        domainId: domainA,
+        addressPattern: "support@example.com",
+      },
+    ]);
+    expect(authorizesContactRead(mailOnly, owner)).toBe(false);
+    expect(authorizesContactWrite(mailOnly, owner)).toBe(false);
+  });
+
+  test("contactPermissionListFilter mirrors mailPermissionListFilter under the mapped capability", () => {
+    const permissions = buildMailPermissions(userId, [
+      {
+        effect: "DENY",
+        domainId: domainA,
+        addressPattern: "support@example.com",
+      },
+    ]);
+    expect(
+      contactPermissionListFilter(
+        adminViewer("usr-1", permissions),
+        Capability.ContactRead,
+      ),
+    ).toEqual(
+      mailPermissionListFilter(
+        adminViewer("usr-1", permissions),
+        Capability.MailRead,
+      ),
+    );
+    expect(
+      contactPermissionListFilter(
+        apiKeyViewer([{ capability: Capability.ContactRead }]),
+        Capability.ContactRead,
+      ),
+    ).toBeNull();
   });
 });

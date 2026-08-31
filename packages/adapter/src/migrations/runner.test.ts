@@ -107,6 +107,8 @@ describe("createMigrationRunner", () => {
       "0007_mail_templates.sql",
       "0008_user_calendar_permissions.sql",
       "0009_mail_addresses.sql",
+      "0010_contacts.sql",
+      "0011_external_mail.sql",
     ]);
 
     const names = await tableNames(db);

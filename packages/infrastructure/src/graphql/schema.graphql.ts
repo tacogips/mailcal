@@ -95,6 +95,8 @@ export const typeDefs = /* GraphQL */ `
     TEMPLATE_DELETE
     CALENDAR_READ
     CALENDAR_WRITE
+    CONTACT_READ
+    CONTACT_WRITE
   }
 
   """

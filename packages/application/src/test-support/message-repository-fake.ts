@@ -18,10 +18,12 @@ import {
 } from "@mailcal/domain/value-objects/ids";
 import { mailPermissionFilterAuthorizesAnyAddress } from "../policies/authorization";
 import type {
+  InsertMessageInput,
   MessageListFilter,
   MessagePage,
   MessageRepository,
 } from "../ports/message-repository";
+import type { SqlStatement } from "../ports/sql-database";
 
 export interface FakeMessageStores {
   readonly messages: Map<string, Message>;
@@ -32,6 +34,10 @@ export interface FakeMessageStores {
   readonly fetchStates: Map<string, MessageFetchState>;
   /** Keyed by message id. Presence of a mark is the spam verdict. */
   readonly spamMarks: Map<string, SpamMark>;
+  /** Every `insertWithRelations` call, in order -- so a test can assert what
+   * `extraStatements` rode a given `STORED` insert rather than inferring it
+   * indirectly. */
+  readonly insertCalls: InsertMessageInput[];
 }
 
 export function createFakeMessageStores(): FakeMessageStores {
@@ -42,7 +48,30 @@ export function createFakeMessageStores(): FakeMessageStores {
     messageTags: new Map(),
     fetchStates: new Map(),
     spamMarks: new Map(),
+    insertCalls: [],
   };
+}
+
+/** A fake's `insertWithRelations` has no real `db.batch()` to run
+ * `extraStatements` through. A statement built by a fake port's own
+ * `buildSaveStatement` (the external-mail ledger, so far) carries this
+ * `apply` callback, which reproduces -- for tests only -- what executing the
+ * statement inside this same batch would do. A real adapter's plain
+ * `{ sql, params }` statement has no such property and is silently skipped
+ * here, exactly as every other SQL string is. */
+interface BatchableFakeStatement extends SqlStatement {
+  readonly apply?: () => void;
+}
+
+function applyBatchedFakeStatements(
+  statements: readonly SqlStatement[] | undefined,
+): void {
+  for (const statement of statements ?? []) {
+    const apply = (statement as BatchableFakeStatement).apply;
+    if (typeof apply === "function") {
+      apply();
+    }
+  }
 }
 
 function fetchStateKey(apiKeyId: string, messageId: string): string {
@@ -400,6 +429,8 @@ export function fakeMessageRepository(
       if (input.spam !== undefined) {
         stores.spamMarks.set(input.message.id, input.spam);
       }
+      stores.insertCalls.push(input);
+      applyBatchedFakeStatements(input.extraStatements);
     },
 
     async setSpamMarks(marks) {

@@ -12,12 +12,14 @@ import {
 } from "../value-objects/ids";
 import {
   CALENDAR_CAPABILITIES,
+  CONTACT_CAPABILITIES,
   Capability,
   TEMPLATE_CAPABILITIES,
   createApiKey,
   createApiKeyScope,
   isApiKeyUsable,
   isCalendarCapability,
+  isContactCapability,
   isGlobalCapability,
   isTemplateCapability,
   recordApiKeyUsage,
@@ -266,6 +268,8 @@ describe("calendar and template capabilities", () => {
         "TEMPLATE_DELETE",
         "CALENDAR_READ",
         "CALENDAR_WRITE",
+        "CONTACT_READ",
+        "CONTACT_WRITE",
       ]),
     );
   });
@@ -295,5 +299,26 @@ describe("calendar and template capabilities", () => {
     for (const capability of TEMPLATE_CAPABILITIES) {
       expect(isGlobalCapability(capability)).toBe(true);
     }
+  });
+});
+
+describe("contact capabilities", () => {
+  test("the enum grows to exactly 14 members", () => {
+    expect(Object.values(Capability)).toHaveLength(14);
+  });
+
+  test("narrows the contact capabilities and nothing else", () => {
+    expect(isContactCapability(Capability.ContactRead)).toBe(true);
+    expect(isContactCapability(Capability.ContactWrite)).toBe(true);
+    expect(isContactCapability(Capability.MailRead)).toBe(false);
+    expect(isContactCapability(Capability.CalendarRead)).toBe(false);
+    expect(CONTACT_CAPABILITIES).toHaveLength(2);
+  });
+
+  test("contact capabilities are per-address, not instance-wide", () => {
+    // A contact scope is matched against the owning address book's mail
+    // address, like a calendar scope, so it must not be global.
+    expect(isGlobalCapability(Capability.ContactRead)).toBe(false);
+    expect(isGlobalCapability(Capability.ContactWrite)).toBe(false);
   });
 });

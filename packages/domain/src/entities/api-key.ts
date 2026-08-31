@@ -27,6 +27,8 @@ export enum Capability {
   TemplateDelete = "TEMPLATE_DELETE",
   CalendarRead = "CALENDAR_READ",
   CalendarWrite = "CALENDAR_WRITE",
+  ContactRead = "CONTACT_READ",
+  ContactWrite = "CONTACT_WRITE",
 }
 
 /** The two calendar capabilities, as a narrowed type: a per-user calendar
@@ -45,6 +47,25 @@ export function isCalendarCapability(
   capability: Capability,
 ): capability is CalendarCapability {
   return (CALENDAR_CAPABILITIES as readonly Capability[]).includes(capability);
+}
+
+/** The two contact capabilities, narrowed the same way as
+ * {@link CalendarCapability}. Like mail capabilities (and unlike templates),
+ * these are per-address rather than instance-wide -- see
+ * `GLOBAL_CAPABILITIES` below. */
+export type ContactCapability =
+  | Capability.ContactRead
+  | Capability.ContactWrite;
+
+export const CONTACT_CAPABILITIES: readonly ContactCapability[] = [
+  Capability.ContactRead,
+  Capability.ContactWrite,
+];
+
+export function isContactCapability(
+  capability: Capability,
+): capability is ContactCapability {
+  return (CONTACT_CAPABILITIES as readonly Capability[]).includes(capability);
 }
 
 /** The mail-template capabilities, narrowed the same way. */

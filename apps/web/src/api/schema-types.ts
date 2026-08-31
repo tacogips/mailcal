@@ -44,7 +44,9 @@ export type Capability =
   | "TEMPLATE_UPDATE"
   | "TEMPLATE_DELETE"
   | "CALENDAR_READ"
-  | "CALENDAR_WRITE";
+  | "CALENDAR_WRITE"
+  | "CONTACT_READ"
+  | "CONTACT_WRITE";
 
 export type TemplateCapability =
   | "TEMPLATE_READ"
@@ -181,6 +183,7 @@ export interface AttachmentView {
   readonly size: number;
   readonly inline: boolean;
   readonly kind: AttachmentKind;
+  readonly contentId: string | null;
   readonly url: string;
 }
 

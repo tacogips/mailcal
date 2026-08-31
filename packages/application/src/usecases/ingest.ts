@@ -25,6 +25,7 @@ import {
   createAttachmentId,
   createMessageId,
   createThreadId,
+  type MessageId,
   type TagId,
   type ThreadId,
 } from "@mailcal/domain/value-objects/ids";
@@ -34,6 +35,7 @@ import type {
   ParsedMimeAddress,
   ParsedMimeAttachment,
 } from "../ports/mime";
+import type { SqlStatement } from "../ports/sql-database";
 import {
   RuleAction,
   type RuleMatchInput,
@@ -67,6 +69,19 @@ export interface ReceiveMessageInput {
   readonly raw: ReadableStream | Uint8Array;
   readonly rawSize: number;
   readonly headers: ReadonlyMap<string, string>;
+  /** Overrides the self-generated id for a `STORED` message. Lets a caller
+   * that must build a `SqlStatement` referencing the message *before*
+   * calling `receiveMessage` -- external-mail fetch orchestration's dedupe
+   * ledger row, via `extraStatements` below -- name the exact id this call
+   * will assign. Omitted by every other caller, which keeps today's
+   * self-generated id. */
+  readonly messageId?: MessageId;
+  /** Threaded unchanged into `insertWithRelations`'s own `extraStatements`,
+   * so it rides the same `db.batch()` call as the message insert. Only
+   * applied on a `STORED` result: a `DUPLICATE` never calls
+   * `insertWithRelations` at all, so there is no batch for these to join.
+   * Empty by default; no behavior change for a caller that omits it. */
+  readonly extraStatements?: readonly SqlStatement[];
 }
 
 export type ReceiveMessageResult =
@@ -358,7 +373,7 @@ export function createReceiveMessageUseCase(
     }
 
     const now = deps.clock.now().toISOString();
-    const messageId = createMessageId(deps.random.uuid());
+    const messageId = input.messageId ?? createMessageId(deps.random.uuid());
     const rawKey = buildRawMessageBlobKey(messageId);
 
     // Store first, then re-read for parsing. `input.raw` is typically a
@@ -483,6 +498,9 @@ export function createReceiveMessageUseCase(
       tagIds: ruleOutcome.tagIds,
       taggedAt: now,
       ...(spamMark === undefined ? {} : { spam: spamMark }),
+      ...(input.extraStatements === undefined
+        ? {}
+        : { extraStatements: input.extraStatements }),
     });
 
     return { kind: "STORED", message };

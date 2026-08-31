@@ -52,6 +52,14 @@ import {
   createCalendarUseCases,
 } from "./usecases/calendar-usecases";
 import {
+  type ContactUseCases,
+  createContactUseCases,
+} from "./usecases/contact-usecases";
+import {
+  type ExternalMailUseCases,
+  createExternalMailUseCases,
+} from "./usecases/external-mail-usecases";
+import {
   type CreateMailAddressUseCaseInput,
   createCreateMailAddressUseCase,
   createDeleteMailAddressUseCase,
@@ -550,14 +558,21 @@ export interface UseCases {
   ) => Promise<boolean>;
 }
 
-/** The calendar half is declared in its own module and spread in, so this
- * file does not grow a second feature's worth of entries. */
-export interface UseCases extends CalendarUseCases {}
+/** The calendar, contact and external-mail halves are declared in their own
+ * modules and spread in, so this file does not grow another feature's worth
+ * of entries. */
+export interface UseCases
+  extends CalendarUseCases,
+    ContactUseCases,
+    ExternalMailUseCases {}
 
 export function createUseCases(deps: AppDependencies): UseCases {
   const sendMessage = createSendMessageUseCase(deps);
+  const receiveMessage = createReceiveMessageUseCase(deps);
   return {
     ...createCalendarUseCases(deps),
+    ...createContactUseCases(deps),
+    ...createExternalMailUseCases(deps, receiveMessage),
 
     listMailTemplates: createListMailTemplatesUseCase(deps),
     getMailTemplate: createGetMailTemplateUseCase(deps),
@@ -586,7 +601,7 @@ export function createUseCases(deps: AppDependencies): UseCases {
     bootstrapAdmin: createBootstrapAdminUseCase(deps),
     sweepExpiredAuth: createSweepExpiredAuthUseCase(deps),
 
-    receiveMessage: createReceiveMessageUseCase(deps),
+    receiveMessage,
 
     sendMessage,
     saveDraft: createSaveDraftUseCase(deps),

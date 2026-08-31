@@ -17,6 +17,7 @@ const RulesPage = lazy(() => import("./pages/settings/rules-page"));
 const UsersPage = lazy(() => import("./pages/settings/users-page"));
 const TemplatesPage = lazy(() => import("./pages/settings/templates-page"));
 const CalendarPage = lazy(() => import("./pages/calendar-page"));
+const ContactsPage = lazy(() => import("./pages/contacts-page"));
 
 export function App(): JSX.Element {
   const store = createAppStore();
@@ -52,6 +53,14 @@ export function App(): JSX.Element {
           component={() => (
             <AuthGuard ready={ready()}>
               <CalendarPage />
+            </AuthGuard>
+          )}
+        />
+        <Route
+          path="/contacts"
+          component={() => (
+            <AuthGuard ready={ready()}>
+              <ContactsPage />
             </AuthGuard>
           )}
         />

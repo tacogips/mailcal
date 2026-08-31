@@ -13,7 +13,7 @@ const MESSAGE_SUMMARY_FIELDS = `
   from { address name kind }
   recipients { address name kind }
   tags { id name color kind systemSlug messageCount }
-  attachments { id fileName contentType size inline kind url }
+  attachments { id fileName contentType size inline kind contentId url }
   isSpam
   spam { score markedBy markedAt }
   spamScore

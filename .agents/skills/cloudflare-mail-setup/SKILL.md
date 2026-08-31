@@ -50,6 +50,40 @@ fail with `Unauthorized [code: 2036]`, run `mise exec -- wrangler login`, or
 use an API token whose permissions include the product you are touching —
 `whoami` scopes for Workers do **not** imply Email Sending access.
 
+## Browserless DNS changes
+
+`wrangler email routing enable` can publish Email Routing's own MX, SPF and
+DKIM records, but Wrangler's OAuth session normally has only `zone:read`; it
+cannot publish mailcal's `_mailcal` ownership TXT record. A `403` from
+`/zones/<zone-id>/dns_records` means DNS edit permission is missing, not that
+the zone is unavailable.
+
+For browserless DNS changes, create a least-privilege Cloudflare API token
+with `Zone / DNS / Edit` and zone-read access, restricted to the mail zones,
+then store it as `CLOUDFLARE_API_TOKEN` in the mailcal project scope:
+
+```bash
+kinko --path "$PWD" set
+```
+
+Cloudflare requires the initial API-token-management credential to be created
+in the dashboard; an ordinary Wrangler OAuth session cannot bootstrap it.
+Once a DNS-edit token is in kinko, no further browser work is required. Do
+not reveal or copy the token into a shell command. Run the included
+idempotent helper through `kinko exec`; it creates the named record or updates
+the single existing record and prints metadata without its content:
+
+```bash
+kinko --path "$PWD" exec --env CLOUDFLARE_API_TOKEN -- \
+  python3 .agents/skills/cloudflare-mail-setup/scripts/upsert_cloudflare_dns.py \
+  example.com TXT _mailcal.example.com \
+  'mailcal-verification=<value-returned-by-createDomain>' --ttl 60
+```
+
+The helper deliberately refuses ambiguous zones or duplicate matching DNS
+records. Never fall back to a broader account token merely to avoid fixing
+the target-zone scope.
+
 ## Receiving, and sending to your own operators (free)
 
 ```bash
@@ -103,8 +137,9 @@ surface it to the operator rather than enabling it for them.
 Cloudflare-side wiring is not enough; mailcal needs its own registration:
 
 1. `createDomain(name:)` — returns a `_mailcal` TXT record.
-2. Publish that record, then `verifyDomain(id:)`. It does a real DoH lookup;
-   an unverified domain can neither send nor receive.
+2. Publish that record, using the browserless DNS helper above when a
+   DNS-edit token is available, then `verifyDomain(id:)`. It does a real DoH
+   lookup; an unverified domain can neither send nor receive.
 3. `createMailAddress(input: { domainId, localPart })` — provisions a
    mailbox. Without one, a non-catch-all domain only accepts addresses it
    has already seen.

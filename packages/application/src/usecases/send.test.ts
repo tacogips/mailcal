@@ -1,4 +1,5 @@
 import { Capability } from "@mailcal/domain/entities/api-key";
+import { ExternalAccountStatus } from "@mailcal/domain/entities/external-mail-account";
 import {
   createMailDomain,
   verifyMailDomain,
@@ -37,10 +38,15 @@ import {
   viewerViewer,
 } from "../test-support/viewer-fixtures";
 import {
+  createCreateExternalAccountUseCase,
+  createUpdateExternalAccountUseCase,
+} from "./external-accounts";
+import {
   createListSendableAddressesUseCase,
   createRetrySendUseCase,
   createSendMessageUseCase,
   MAX_RECIPIENTS_PER_MESSAGE,
+  resolveExternalSmtpAccount,
   type SendMessageInput,
   validateCustomHeaders,
 } from "./send";
@@ -471,5 +477,174 @@ describe("listSendableAddresses", () => {
       { capability: Capability.MailRead, domainId },
     ]);
     expect(await list(viewer)).toEqual([]);
+  });
+});
+
+describe("external SMTP relay branch", () => {
+  let fake: FakeDependencies;
+  const supportMailAddressId = createMailAddressId("addr-support");
+
+  async function setup(
+    options: Parameters<typeof createFakeDependencies>[0] = {},
+  ): Promise<void> {
+    fake = createFakeDependencies({ now: NOW, ...options });
+    await fake.deps.mailDomainRepository.save(
+      verifyMailDomain(
+        createMailDomain({
+          id: domainId,
+          name: createDomainName("example.com"),
+          catchAll: true,
+          verificationToken: "tok",
+          createdAt: NOW,
+        }),
+        NOW,
+      ),
+    );
+    await fake.deps.mailAddressRepository.save(
+      createMailAddress({
+        id: supportMailAddressId,
+        domainId,
+        domainName: createDomainName("example.com"),
+        localPart: "support",
+        createdByUserId: null,
+        createdAt: NOW,
+      }),
+    );
+  }
+
+  async function connectExternalAccount(
+    overrides: Partial<
+      Parameters<ReturnType<typeof createCreateExternalAccountUseCase>>[1]
+    > = {},
+  ) {
+    const create = createCreateExternalAccountUseCase(fake.deps);
+    return create(adminViewer(), {
+      mailAddressId: supportMailAddressId,
+      externalAddress: "support@gmail.com",
+      fetch: {
+        kind: "JMAP",
+        sessionUrl: "https://api.fastmail.com/jmap/session",
+        username: "support@gmail.com",
+        password: "fetch-password",
+      },
+      smtp: {
+        host: "smtp.fastmail.com",
+        port: 587,
+        security: "STARTTLS",
+        username: "support@gmail.com",
+        password: "smtp-password",
+      },
+      ...overrides,
+    });
+  }
+
+  beforeEach(async () => {
+    await setup();
+  });
+
+  test("routes through SmtpSubmissionClient, never MailSender, for an ACTIVE account with SMTP configured", async () => {
+    await connectExternalAccount();
+    const send = createSendMessageUseCase(fake.deps);
+    const message = await send(adminViewer(), baseSend());
+
+    expect(message.deliveryStatus).toBe(DeliveryStatus.Sent);
+    expect(fake.mailSender.sent).toHaveLength(0);
+    expect(fake.smtpSubmissionClient.sendCalls).toHaveLength(1);
+    expect(fake.smtpSubmissionClient.sendCalls[0]?.envelope.from).toBe(
+      "support@gmail.com",
+    );
+    expect(fake.smtpSubmissionClient.sendCalls[0]?.credentials.host).toBe(
+      "smtp.fastmail.com",
+    );
+  });
+
+  test("falls back to mailSender when the account has no SMTP configured", async () => {
+    await connectExternalAccount({ smtp: null });
+    const send = createSendMessageUseCase(fake.deps);
+    const message = await send(adminViewer(), baseSend());
+
+    expect(message.deliveryStatus).toBe(DeliveryStatus.Sent);
+    expect(fake.mailSender.sent).toHaveLength(1);
+    expect(fake.smtpSubmissionClient.sendCalls).toHaveLength(0);
+  });
+
+  test("falls back to mailSender when the account is DISABLED", async () => {
+    const account = await connectExternalAccount();
+    const update = createUpdateExternalAccountUseCase(fake.deps);
+    await update(adminViewer(), account.id, {
+      status: ExternalAccountStatus.Disabled,
+    });
+    const send = createSendMessageUseCase(fake.deps);
+    const message = await send(adminViewer(), baseSend());
+
+    expect(message.deliveryStatus).toBe(DeliveryStatus.Sent);
+    expect(fake.mailSender.sent).toHaveLength(1);
+    expect(fake.smtpSubmissionClient.sendCalls).toHaveLength(0);
+  });
+
+  test("falls back to mailSender when the from address has no external account at all", async () => {
+    const send = createSendMessageUseCase(fake.deps);
+    const message = await send(adminViewer(), baseSend());
+
+    expect(message.deliveryStatus).toBe(DeliveryStatus.Sent);
+    expect(fake.mailSender.sent).toHaveLength(1);
+    expect(fake.smtpSubmissionClient.sendCalls).toHaveLength(0);
+  });
+
+  test("an SMTP failure marks the message FAILED, exactly as a MailSender failure does", async () => {
+    await setup({ smtp: { sendError: new Error("MailDeliveryError") } });
+    await connectExternalAccount();
+    const send = createSendMessageUseCase(fake.deps);
+    const message = await send(adminViewer(), baseSend());
+
+    expect(message.deliveryStatus).toBe(DeliveryStatus.Failed);
+    expect(message.deliveryError).toBe("Error");
+    expect(fake.mailSender.sent).toHaveLength(0);
+  });
+
+  test("retrySend picks the same branch a fresh send would", async () => {
+    await setup({ smtp: { sendError: new Error("MailDeliveryError") } });
+    await connectExternalAccount();
+    const send = createSendMessageUseCase(fake.deps);
+    const failed = await send(adminViewer(), baseSend());
+    expect(failed.deliveryStatus).toBe(DeliveryStatus.Failed);
+    expect(fake.smtpSubmissionClient.sendCalls).toHaveLength(1);
+
+    // The scripted client keeps failing every call, so the retry fails too
+    // -- what matters here is *which* transport it failed through.
+    const retry = createRetrySendUseCase(fake.deps);
+    const retried = await retry(adminViewer(), failed.id);
+    expect(retried.deliveryStatus).toBe(DeliveryStatus.Failed);
+    expect(fake.smtpSubmissionClient.sendCalls).toHaveLength(2);
+    expect(fake.mailSender.sent).toHaveLength(0);
+  });
+
+  test("resolveExternalSmtpAccount is non-null only for an ACTIVE account with SMTP configured", async () => {
+    await connectExternalAccount();
+    expect(
+      await resolveExternalSmtpAccount(fake.deps, supportMailAddressId),
+    ).not.toBeNull();
+
+    await fake.deps.mailAddressRepository.save(
+      createMailAddress({
+        id: createMailAddressId("addr-other"),
+        domainId,
+        domainName: createDomainName("example.com"),
+        localPart: "other",
+        createdByUserId: null,
+        createdAt: NOW,
+      }),
+    );
+    await connectExternalAccount({
+      mailAddressId: createMailAddressId("addr-other"),
+      externalAddress: "other@gmail.com",
+      smtp: null,
+    });
+    expect(
+      await resolveExternalSmtpAccount(
+        fake.deps,
+        createMailAddressId("addr-other"),
+      ),
+    ).toBeNull();
   });
 });

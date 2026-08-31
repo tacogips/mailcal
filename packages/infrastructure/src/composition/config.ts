@@ -16,6 +16,10 @@ import type {
 
 export type BlobBackend = "r2" | "s3" | "memory";
 export type SqlBackend = "d1" | "sqlite";
+/** Which `TcpDialer` implementation external mail's POP3/SMTP clients dial
+ * through. Explicit only when a caller needs to force one -- the default is
+ * feature detection, see `build-dependencies.ts`'s `resolveTcpDialer`. */
+export type ExternalMailRuntime = "cloudflare" | "node";
 
 export const DEFAULT_SQLITE_URL = "file:./data/mailcal.db";
 export const DEFAULT_SPAM_THRESHOLD = 0.6;
@@ -46,6 +50,11 @@ export interface BuildDependenciesConfig {
    * means CalDAV is simply disabled; the rest of the calendar feature works
    * without it. */
   readonly credentialKey?: string;
+  /** Selects the `TcpDialer` external mail's POP3/SMTP clients use. Absent
+   * means feature-detect the runtime instead -- see `resolveTcpDialer` in
+   * `build-dependencies.ts` -- so neither `wrangler dev`/Miniflare nor a
+   * plain `bun run` needs this set to get a working dialer. */
+  readonly runtime?: ExternalMailRuntime;
   readonly clock?: Clock;
   readonly dns?: DnsResolver;
   readonly random?: RandomSource;

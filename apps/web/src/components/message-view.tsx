@@ -1,12 +1,14 @@
-import { createSignal, For, type JSX, Show } from "solid-js";
+import { createEffect, createSignal, For, type JSX, on, Show } from "solid-js";
 import { CREATE_RAW_MESSAGE_LINK_MUTATION } from "../api/documents";
 import { graphqlRequest } from "../api/graphql-client";
 import type {
   CreatedFileLinkView,
   MessageDetailView,
 } from "../api/schema-types";
+import type { ContactView } from "../api/contact-types";
 import { formatMailbox, formatRecipients } from "../lib/address-format";
 import { avatarClass, avatarInitial } from "../lib/avatar";
+import { lookupContactByEmail } from "../lib/contact-lookup";
 import { describeErrors } from "../lib/mutation-error";
 import { formatAbsoluteTime, formatBytes } from "../lib/relative-time";
 import { pushToast } from "../lib/toast";
@@ -77,6 +79,47 @@ export function MessageView(props: {
     );
   const ccRecipients = () =>
     props.message.recipients.filter((recipient) => recipient.kind === "CC");
+
+  // "Who is this?" lookup hook: resolves the sender and recipient addresses
+  // through contactsByEmail (via `contact-lookup.ts`'s short-lived cache),
+  // entirely after the initial paint. A miss leaves these signals at their
+  // initial empty values, so the render below is byte-for-byte what it was
+  // before contacts existed.
+  const [fromContact, setFromContact] = createSignal<ContactView | null>(null);
+  const [recipientContacts, setRecipientContacts] = createSignal<
+    readonly ContactView[]
+  >([]);
+
+  createEffect(
+    on(
+      () => props.message.id,
+      () => {
+        setFromContact(null);
+        setRecipientContacts([]);
+
+        void lookupContactByEmail(props.message.from.address).then((contact) =>
+          setFromContact(contact),
+        );
+
+        const addresses = [
+          ...new Set(
+            [...toRecipients(), ...ccRecipients()].map(
+              (recipient) => recipient.address,
+            ),
+          ),
+        ];
+        void Promise.all(
+          addresses.map((address) => lookupContactByEmail(address)),
+        ).then((contacts) =>
+          setRecipientContacts(
+            contacts.filter(
+              (contact): contact is ContactView => contact !== null,
+            ),
+          ),
+        );
+      },
+    ),
+  );
 
   return (
     <article class="message-view">
@@ -182,7 +225,18 @@ export function MessageView(props: {
             )}
           </span>
           <div class="message-view-sender-col">
-            <strong>{formatMailbox(props.message.from)}</strong>
+            <strong>
+              {formatMailbox(props.message.from)}
+              <Show when={fromContact() !== null}>
+                {" "}
+                <a
+                  class="message-view-contact-hint"
+                  href={`/contacts?contactId=${fromContact()?.id}`}
+                >
+                  ({fromContact()?.displayName})
+                </a>
+              </Show>
+            </strong>
             <span class="muted message-view-recipients">
               To: {formatRecipients(toRecipients())}
               <Show when={ccRecipients().length > 0}>
@@ -190,6 +244,18 @@ export function MessageView(props: {
                 Cc: {formatRecipients(ccRecipients())}
               </Show>
             </span>
+            <Show when={recipientContacts().length > 0}>
+              <span class="muted message-view-contact-hints">
+                Known contacts:{" "}
+                <For each={recipientContacts()}>
+                  {(contact) => (
+                    <a href={`/contacts?contactId=${contact.id}`}>
+                      {contact.displayName}
+                    </a>
+                  )}
+                </For>
+              </span>
+            </Show>
             <Show when={props.message.deliveryStatus === "FAILED"}>
               <span class="error-text">
                 Delivery failed
@@ -256,7 +322,10 @@ export function MessageView(props: {
             </pre>
           }
         >
-          <HtmlBodyFrame html={props.message.htmlBody ?? ""} />
+          <HtmlBodyFrame
+            html={props.message.htmlBody ?? ""}
+            attachments={props.message.attachments}
+          />
         </Show>
       </section>
 

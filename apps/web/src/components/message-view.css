@@ -59,6 +59,21 @@
   word-break: break-word;
 }
 
+.message-view-contact-hint {
+  font-weight: 400;
+  color: var(--accent);
+}
+
+.message-view-contact-hints {
+  display: block;
+  font-size: 12px;
+}
+
+.message-view-contact-hints a {
+  color: var(--accent);
+  margin-right: 6px;
+}
+
 .message-view-header-meta {
   display: flex;
   flex-direction: column;

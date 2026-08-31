@@ -34,6 +34,15 @@ export type UserTemplatePermissionId = Brand<
   "UserTemplatePermissionId"
 >;
 
+// Contacts + CardDAV client (design-docs/specs/design-contacts.md) and the
+// sibling external-mail-account feature, added together, alphabetically
+// ordered within this block.
+export type AddressBookId = Brand<string, "AddressBookId">;
+export type CarddavAccountId = Brand<string, "CarddavAccountId">;
+export type CarddavBookId = Brand<string, "CarddavBookId">;
+export type ContactId = Brand<string, "ContactId">;
+export type ExternalAccountId = Brand<string, "ExternalAccountId">;
+
 /** Shared validation for every branded ID constructor below. IDs are always
  * caller-supplied: the domain layer never generates them, so that entity
  * factories stay pure and deterministic under test. */
@@ -159,4 +168,24 @@ export function createUserTemplatePermissionId(
 
 export function createMailAddressId(value: string): MailAddressId {
   return requireNonEmptyId(value, "mailAddressId") as MailAddressId;
+}
+
+export function createAddressBookId(value: string): AddressBookId {
+  return requireNonEmptyId(value, "addressBookId") as AddressBookId;
+}
+
+export function createCarddavAccountId(value: string): CarddavAccountId {
+  return requireNonEmptyId(value, "carddavAccountId") as CarddavAccountId;
+}
+
+export function createCarddavBookId(value: string): CarddavBookId {
+  return requireNonEmptyId(value, "carddavBookId") as CarddavBookId;
+}
+
+export function createContactId(value: string): ContactId {
+  return requireNonEmptyId(value, "contactId") as ContactId;
+}
+
+export function createExternalAccountId(value: string): ExternalAccountId {
+  return requireNonEmptyId(value, "externalAccountId") as ExternalAccountId;
 }

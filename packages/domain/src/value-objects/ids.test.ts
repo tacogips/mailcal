@@ -1,6 +1,7 @@
 import { describe, expect, test } from "vitest";
 import { ValidationError } from "../errors";
 import {
+  createAddressBookId,
   createApiKeyId,
   createApiKeyScopeId,
   createAttachmentId,
@@ -8,7 +9,11 @@ import {
   createCaldavCalendarId,
   createCalendarEventId,
   createCalendarId,
+  createCarddavAccountId,
+  createCarddavBookId,
+  createContactId,
   createEventLinkId,
+  createExternalAccountId,
   createMailAddressId,
   createMailTemplateId,
   createUserCalendarPermissionId,
@@ -81,5 +86,29 @@ describe("calendar and template ids", () => {
   test.each(constructors)("%s rejects blank input", (_field, create) => {
     expect(() => create("")).toThrow(ValidationError);
     expect(() => create("   ")).toThrow(ValidationError);
+  });
+});
+
+describe("contacts and external-mail ids", () => {
+  const constructors = [
+    ["addressBookId", createAddressBookId],
+    ["carddavAccountId", createCarddavAccountId],
+    ["carddavBookId", createCarddavBookId],
+    ["contactId", createContactId],
+    ["externalAccountId", createExternalAccountId],
+  ] as const;
+
+  test.each(constructors)("%s accepts a non-empty value", (_field, create) => {
+    expect(create("abc")).toBe("abc");
+  });
+
+  test.each(constructors)("%s rejects blank input", (field, create) => {
+    expect(() => create("")).toThrow(ValidationError);
+    expect(() => create("   ")).toThrow(ValidationError);
+    try {
+      create("");
+    } catch (error) {
+      expect((error as ValidationError).field).toBe(field);
+    }
   });
 });

@@ -34,9 +34,18 @@ export function createR2BlobStore(r2: R2BucketLike): BlobStore {
       body: Uint8Array | ReadableStream,
       opts?: { contentType?: string },
     ): Promise<void> {
+      // R2's `put` rejects a `ReadableStream` body that lacks a known
+      // length, and the inbound mail pipeline (Cloudflare Email Routing's
+      // `message.raw`) only ever hands us such a stream. Its size is already
+      // bounded upstream by the 25 MB inbound cap, so buffering it fully
+      // before the call is safe.
+      const value =
+        body instanceof Uint8Array
+          ? body
+          : new Uint8Array(await new Response(body).arrayBuffer());
       await r2.put(
         key,
-        body,
+        value,
         opts?.contentType === undefined
           ? undefined
           : { httpMetadata: { contentType: opts.contentType } },

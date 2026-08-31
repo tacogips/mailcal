@@ -22,6 +22,7 @@ import type {
   ThreadId,
 } from "@mailcal/domain/value-objects/ids";
 import type { MailPermissionFilter } from "../policies/authorization";
+import type { SqlStatement } from "./sql-database";
 
 export { FetchStatus };
 
@@ -101,6 +102,11 @@ export interface InsertMessageInput {
   readonly taggedAt: string;
   /** Spam verdict written in the same atomic batch as the message. */
   readonly spam?: SpamMark;
+  /** Extra statements appended to this call's own `db.batch()`, so a caller
+   * can write another table's row atomically with the message insert -- the
+   * external-mail dedupe ledger is the first user. Empty by default; no
+   * behavior change for a caller that omits it. */
+  readonly extraStatements?: readonly SqlStatement[];
 }
 
 export interface MessageRepository {

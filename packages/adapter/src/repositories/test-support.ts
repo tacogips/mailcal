@@ -88,3 +88,24 @@ export async function seedApiKey(
     [options.id, options.keyHash, `ybm_${options.id}`],
   );
 }
+
+/** Inserts a mail address directly, bypassing the use case layer, so
+ * address-book and contact repository tests can set up their owning
+ * address without dragging in the application package. Assumes the
+ * address's domain has already been seeded via {@link seedDomain}. */
+export async function seedMailAddress(
+  db: SqlDatabase,
+  options: {
+    readonly id: string;
+    readonly domainId: string;
+    readonly localPart: string;
+    readonly address: string;
+  },
+): Promise<void> {
+  await db.execute(
+    `INSERT INTO mail_addresses
+       (id, domain_id, local_part, address, status, created_at, updated_at)
+     VALUES (?, ?, ?, ?, 'ACTIVE', '2026-08-23T00:00:00.000Z', '2026-08-23T00:00:00.000Z')`,
+    [options.id, options.domainId, options.localPart, options.address],
+  );
+}

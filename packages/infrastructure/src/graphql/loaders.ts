@@ -1,7 +1,9 @@
 import type { AppDependencies } from "@mailcal/application/dependencies";
 import type { Viewer } from "@mailcal/application/policies";
+import type { AddressBook } from "@mailcal/domain/entities/address-book";
 import type { Attachment } from "@mailcal/domain/entities/attachment";
 import type { MessageFetchState } from "@mailcal/domain/entities/fetch-state";
+import type { MailAddress } from "@mailcal/domain/entities/mail-address";
 import type { MailDomain } from "@mailcal/domain/entities/mail-domain";
 import type { MessageRecipient } from "@mailcal/domain/entities/message";
 import type { MessageEvent } from "@mailcal/domain/entities/message-event";
@@ -12,9 +14,11 @@ import type { UserMailPermission } from "@mailcal/domain/entities/user-mail-perm
 import type { UserCalendarPermission } from "@mailcal/domain/entities/user-calendar-permission";
 import type { UserTemplatePermission } from "@mailcal/domain/entities/user-template-permission";
 import {
+  type AddressBookId,
   type ApiKeyId,
   createTagId,
   type DomainId,
+  type MailAddressId,
   type MessageId,
   type TagId,
   type UserId,
@@ -100,6 +104,9 @@ export interface RequestLoaders {
     UserId,
     readonly UserCalendarPermission[]
   >;
+  readonly mailAddressById: BatchLoader<MailAddressId, MailAddress | null>;
+  readonly addressBookById: BatchLoader<AddressBookId, AddressBook | null>;
+  readonly contactCountByAddressBook: BatchLoader<AddressBookId, number>;
 }
 
 const EMPTY_ARRAY: readonly never[] = [];
@@ -243,6 +250,49 @@ export function createRequestLoaders(
         return new Map(entries);
       },
       () => EMPTY_ARRAY,
+    ),
+
+    // No batch method on either port (point lookups by primary key), so
+    // each issues one call per key -- still coalesced into the request's
+    // microtask batch by `createBatchLoader`, same reasoning as
+    // `permissionsByUser` above.
+    mailAddressById: createBatchLoader<MailAddressId, MailAddress | null>(
+      async (ids) => {
+        const entries = await Promise.all(
+          ids.map(
+            async (id) =>
+              [id, await deps.mailAddressRepository.findById(id)] as const,
+          ),
+        );
+        return new Map(entries);
+      },
+      () => null,
+    ),
+
+    addressBookById: createBatchLoader<AddressBookId, AddressBook | null>(
+      async (ids) => {
+        const entries = await Promise.all(
+          ids.map(
+            async (id) =>
+              [id, await deps.addressBookRepository.findById(id)] as const,
+          ),
+        );
+        return new Map(entries);
+      },
+      () => null,
+    ),
+
+    contactCountByAddressBook: createBatchLoader<AddressBookId, number>(
+      async (ids) => {
+        const entries = await Promise.all(
+          ids.map(
+            async (id) =>
+              [id, await deps.addressBookRepository.countContacts(id)] as const,
+          ),
+        );
+        return new Map(entries);
+      },
+      () => 0,
     ),
   };
 }

@@ -25,6 +25,17 @@ This directory contains reference materials for system design and implementation
 | DOMPurify | https://github.com/cure53/DOMPurify | HTML mail sanitization |
 | RFC 5322 | https://www.rfc-editor.org/rfc/rfc5322 | Internet Message Format: headers, `Message-ID`, `In-Reply-To`, `References` |
 | RFC 5987 | https://www.rfc-editor.org/rfc/rfc5987 | `Content-Disposition` `filename*` encoding for downloads |
+| RFC 6350 | https://www.rfc-editor.org/rfc/rfc6350 | vCard 4.0 format (contacts model and codec) |
+| RFC 2426 | https://www.rfc-editor.org/rfc/rfc2426 | vCard 3.0 (iCloud's wire format; codec output) |
+| RFC 6352 | https://www.rfc-editor.org/rfc/rfc6352 | CardDAV: addressbook-query, multiget, ctag sync |
+| RFC 6764 | https://www.rfc-editor.org/rfc/rfc6764 | Locating CalDAV/CardDAV services (well-known discovery) |
+| RFC 8620 | https://www.rfc-editor.org/rfc/rfc8620 | JMAP core: session resource, method calls, blob download |
+| RFC 8621 | https://www.rfc-editor.org/rfc/rfc8621 | JMAP for Mail: Mailbox/Email objects and queries |
+| RFC 1939 | https://www.rfc-editor.org/rfc/rfc1939 | POP3: UIDL/RETR fetch protocol |
+| RFC 5321 | https://www.rfc-editor.org/rfc/rfc5321 | SMTP protocol (relay client) |
+| RFC 6409 | https://www.rfc-editor.org/rfc/rfc6409 | Message submission (port 587) |
+| RFC 8314 | https://www.rfc-editor.org/rfc/rfc8314 | Implicit TLS for mail protocols (465/995 posture) |
+| Cloudflare TCP sockets | https://developers.cloudflare.com/workers/runtime-apis/tcp-sockets/ | `cloudflare:sockets` `connect()`, `startTls`, outbound port 25 block |
 | TypeScript Documentation | https://www.typescriptlang.org/docs/ | Official TypeScript documentation |
 | Bun Documentation | https://bun.sh/docs | Official Bun runtime documentation |
 

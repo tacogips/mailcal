@@ -27,6 +27,18 @@ import type { MailTemplateRepository } from "./ports/mail-template-repository";
 import type { TemplateRenderer } from "./ports/template-renderer";
 import type { UserCalendarPermissionRepository } from "./ports/user-calendar-permission-repository";
 import type { UserTemplatePermissionRepository } from "./ports/user-template-permission-repository";
+import type { AddressBookRepository } from "./ports/address-book-repository";
+import type { ContactRepository } from "./ports/contact-repository";
+import type { CarddavAccountRepository, CarddavClient } from "./ports/carddav";
+import type { VcardCodec } from "./ports/vcard-codec";
+import type {
+  ExternalMailAccountRepository,
+  ExternalMessageStateRepository,
+  JmapClient,
+  Pop3Client,
+  SmtpSubmissionClient,
+  TcpDialer,
+} from "./ports/external-mail";
 
 /** Instance-wide self-signup gate. Defaults to `"closed"`: this is a mail
  * server, not a SaaS trial, so an unset value must not leave registration
@@ -80,6 +92,16 @@ export interface AppDependencies {
   readonly templateRenderer: TemplateRenderer;
   readonly icsCodec: IcsCodec;
   readonly caldavClient: CaldavClient;
+  readonly vcardCodec: VcardCodec;
+  readonly carddavClient: CarddavClient;
+  readonly jmapClient: JmapClient;
+  readonly pop3Client: Pop3Client;
+  readonly smtpSubmissionClient: SmtpSubmissionClient;
+  /** Underlies the POP3 and SMTP submission clients; the JMAP client needs
+   * no raw socket since it speaks plain `fetch`. */
+  readonly tcpDialer: TcpDialer;
+  /** Shared as-is with CalDAV and CardDAV: one deployment key encrypts every
+   * third-party credential kind. */
   readonly credentialCipher: CredentialCipher;
 
   readonly mailDomainRepository: MailDomainRepository;
@@ -101,6 +123,11 @@ export interface AppDependencies {
   readonly calendarEventRepository: CalendarEventRepository;
   readonly caldavAccountRepository: CaldavAccountRepository;
   readonly userCalendarPermissionRepository: UserCalendarPermissionRepository;
+  readonly addressBookRepository: AddressBookRepository;
+  readonly contactRepository: ContactRepository;
+  readonly carddavAccountRepository: CarddavAccountRepository;
+  readonly externalMailAccountRepository: ExternalMailAccountRepository;
+  readonly externalMessageStateRepository: ExternalMessageStateRepository;
 
   readonly instanceConfig: InstanceConfig;
 }

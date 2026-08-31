@@ -150,6 +150,30 @@ to no mailbox.
 
 See `design-mail-templates.md`.
 
+## Contacts
+
+Contacts are owned per provisioned mail address: each `mail_addresses` row
+can hold address books whose contacts are visible to whoever holds mail
+permissions on that address, and the cross-address view is the merged set
+over every address the viewer can read -- no separate contact permission
+system exists. CardDAV support is client-side sync with an external server
+(iCloud in practice), mirroring the CalDAV client decision; mailcal never
+serves DAV.
+
+See `design-contacts.md`.
+
+## External mail accounts
+
+External mailboxes are aggregated by binding an external account to one
+managed mail address: fetch pulls new remote messages over JMAP or POP3
+(implicit TLS) through the ordinary ingest pipeline into that mailbox, and
+sending as that address relays through the provider's SMTP submission
+server (465/587 via `cloudflare:sockets`; port 25 is unreachable from
+Workers by platform rule). mailcal is a client of all three protocols and
+serves none of them.
+
+See `design-external-mail.md`.
+
 ## Deployment
 
 `wrangler deploy` publishes the Worker with the D1, R2, `send_email` and
@@ -172,4 +196,6 @@ See `design-deployment.md`.
 | `design-web-client.md` | SolidJS mail client structure |
 | `design-calendar.md` | Calendars, events, recurrence, mentions, CalDAV sync |
 | `design-mail-templates.md` | Template model, rendering, send flow |
+| `design-contacts.md` | Address books, contacts, cross-address view, CardDAV sync |
+| `design-external-mail.md` | External accounts, JMAP/POP3 fetch, SMTP relay |
 | `design-deployment.md` | Bindings, env vars, Cloudflare setup steps |

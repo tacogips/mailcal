@@ -4,6 +4,10 @@ import {
   attachToMessage,
   buildRawMessageBlobKey,
 } from "@mailcal/domain/entities/attachment";
+import {
+  type ExternalMailAccount,
+  isExternalAccountActive,
+} from "@mailcal/domain/entities/external-mail-account";
 import { isMailAddressActive } from "@mailcal/domain/entities/mail-address";
 import { assertCanSendMail } from "@mailcal/domain/entities/mail-domain";
 import {
@@ -26,6 +30,7 @@ import {
   type DomainId,
   createMessageId,
   createThreadId,
+  type MailAddressId,
   type MessageId,
   type TagId,
 } from "@mailcal/domain/value-objects/ids";
@@ -238,18 +243,111 @@ export async function resolveThreadContext(
   };
 }
 
+type OutboundMailInput = Parameters<AppDependencies["mailSender"]["send"]>[0];
+
+/** Non-null only when `mailAddressId`'s external account is `ACTIVE` and has
+ * an SMTP relay configured -- the two conditions under which `deliver`
+ * relays through it instead of `deps.mailSender`. Exported for fetch/send
+ * branch unit tests. */
+export async function resolveExternalSmtpAccount(
+  deps: AppDependencies,
+  mailAddressId: MailAddressId,
+): Promise<ExternalMailAccount | null> {
+  const account =
+    await deps.externalMailAccountRepository.findByMailAddress(mailAddressId);
+  if (
+    account === null ||
+    !isExternalAccountActive(account) ||
+    account.smtp === null
+  ) {
+    return null;
+  }
+  return account;
+}
+
+/** Reconstructs an RFC 5322 source for the SMTP relay branch when `mail.raw`
+ * is absent -- `retrySend` may hand `deliver` a `mail` with no `raw` when the
+ * original blob could not be read back. `deps.mailSender` tolerates that
+ * (providers that accept structured parts build their own MIME), but
+ * `SmtpSubmissionClient.send` always needs actual bytes for `DATA`. */
+function buildFallbackRaw(
+  deps: AppDependencies,
+  message: Message,
+  mail: OutboundMailInput,
+): string {
+  return deps.mimeBuilder.build({
+    from: { address: message.fromAddress, name: message.fromName },
+    to: mail.to.map((address) => ({ address, name: null })),
+    cc: (mail.cc ?? []).map((address) => ({ address, name: null })),
+    bcc: (mail.bcc ?? []).map((address) => ({ address, name: null })),
+    subject: message.subject,
+    ...(message.textBody === null ? {} : { text: message.textBody }),
+    ...(message.htmlBody === null ? {} : { html: message.htmlBody }),
+    messageId: message.rfcMessageId ?? `${message.id}@retry`,
+    ...(message.inReplyTo === null ? {} : { inReplyTo: message.inReplyTo }),
+    references: message.references,
+    date: message.occurredAt,
+    headers: mail.headers ?? new Map(),
+  });
+}
+
+/** Picks the transport for one outbound message: an `ACTIVE` external
+ * account with SMTP configured for `mail.from` relays through its own
+ * provider, with `From`/`MAIL FROM` set to the *external* address, so
+ * replies work and SPF/DKIM are the provider's. Everything else keeps using
+ * the existing `mailSender` -- already resolved once, at composition time,
+ * by `resolveMailSender`'s Email Sending REST API -> `send_email` binding ->
+ * unavailable-sender fallback chain. Checked *before* `mailSender` is
+ * touched at all, so an external account never even reaches that chain. */
+async function deliverMail(
+  deps: AppDependencies,
+  message: Message,
+  mail: OutboundMailInput,
+): Promise<void> {
+  const mailAddress = await deps.mailAddressRepository.findByAddress(mail.from);
+  const account =
+    mailAddress === null
+      ? null
+      : await resolveExternalSmtpAccount(deps, mailAddress.id);
+  if (account === null || account.smtp === null) {
+    await deps.mailSender.send(mail);
+    return;
+  }
+
+  const smtp = account.smtp;
+  const password = await deps.credentialCipher.decrypt(smtp.passwordCiphertext);
+  await deps.smtpSubmissionClient.send(
+    {
+      host: smtp.host,
+      port: smtp.port,
+      security: smtp.security,
+      username: smtp.username,
+      password,
+    },
+    {
+      from: account.externalAddress,
+      to: [...mail.to, ...(mail.cc ?? []), ...(mail.bcc ?? [])],
+      raw: mail.raw ?? buildFallbackRaw(deps, message, mail),
+    },
+  );
+}
+
 /** Delivers `message` and records the outcome. The message row is already
  * persisted by the time this runs, so a failure -- including a Worker
  * eviction between the write and the provider call -- leaves a visible,
- * retryable `QUEUED`/`FAILED` row rather than a silently lost send. */
+ * retryable `QUEUED`/`FAILED` row rather than a silently lost send. Shared
+ * by both transports: `markMessageSent`/`markMessageFailed` bookkeeping
+ * never duplicates between the Cloudflare and SMTP-relay branches, since
+ * both flow through this one function and only `deliverMail` above branches
+ * on the transport. */
 export async function deliver(
   deps: AppDependencies,
   message: Message,
-  mail: Parameters<AppDependencies["mailSender"]["send"]>[0],
+  mail: OutboundMailInput,
 ): Promise<Message> {
   const now = deps.clock.now().toISOString();
   try {
-    await deps.mailSender.send(mail);
+    await deliverMail(deps, message, mail);
   } catch (error) {
     // The provider's own message routinely echoes recipient addresses and
     // subjects; store only its class name so the failure is diagnosable

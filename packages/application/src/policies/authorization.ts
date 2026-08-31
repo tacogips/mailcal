@@ -1,6 +1,7 @@
 import {
   type CalendarCapability,
   Capability,
+  type ContactCapability,
   isGlobalCapability,
   scopesAuthorize,
   scopesAuthorizeGlobal,
@@ -15,7 +16,11 @@ import {
   matchAddressPattern,
 } from "@mailcal/domain/value-objects/address-pattern";
 import type { EmailAddress } from "@mailcal/domain/value-objects/email-address";
-import type { DomainId, UserId } from "@mailcal/domain/value-objects/ids";
+import type {
+  DomainId,
+  MailAddressId,
+  UserId,
+} from "@mailcal/domain/value-objects/ids";
 import { ForbiddenError, UnauthenticatedError } from "../errors";
 import { isAdminViewer, type Viewer } from "./viewer";
 
@@ -414,4 +419,107 @@ export function requireTemplateCapability(
       `This credential is not permitted to perform ${capability} operations`,
     );
   }
+}
+
+/** Identity of an address book's owner, as a contact authorization decision
+ * needs it: the *mail address* the book belongs to, plus its domain. Unlike
+ * `CalendarOwnerRef` (a user's account address), this is always a managed
+ * address -- `MailAddress.domainId` is never null -- so `domainId` carries
+ * no optionality here. */
+export interface ContactBookOwnerRef {
+  readonly mailAddressId: MailAddressId;
+  readonly address: EmailAddress;
+  readonly domainId: DomainId;
+}
+
+/** Maps `CONTACT_READ` -> `MAIL_READ` and `CONTACT_WRITE` -> `MAIL_MANAGE`:
+ * the mail capability a USER viewer's existing permission rules must grant
+ * for the corresponding contact capability to hold. This mapping -- not a
+ * second per-resource permission table -- is the entire mechanism behind
+ * the design doc's "no second permission system" claim for contacts. */
+export function mailCapabilityForContact(
+  capability: ContactCapability,
+): Capability.MailRead | Capability.MailManage {
+  return capability === Capability.ContactRead
+    ? Capability.MailRead
+    : Capability.MailManage;
+}
+
+/** One contact capability check, for either credential kind. A USER viewer
+ * is authorized purely through the mapped mail capability on the book's
+ * owning address; an API-key viewer needs an explicit `CONTACT_READ`/
+ * `CONTACT_WRITE` scope matched by address, exactly like a mail scope. */
+export function authorizesContactCapability(
+  viewer: Viewer,
+  capability: ContactCapability,
+  owner: ContactBookOwnerRef,
+): boolean {
+  if (viewer.kind === "USER") {
+    return authorizesAnyAddress(
+      viewer,
+      mailCapabilityForContact(capability),
+      owner.domainId,
+      [owner.address],
+    );
+  }
+  return scopesAuthorize(viewer.scopes, {
+    capability,
+    domainId: owner.domainId,
+    address: owner.address,
+  });
+}
+
+/** Non-throwing read check. A failing read is reported by its use case as
+ * `NOT_FOUND`, never `FORBIDDEN` -- same probe resistance as mail and
+ * calendar reads. */
+export function authorizesContactRead(
+  viewer: Viewer,
+  owner: ContactBookOwnerRef,
+): boolean {
+  return authorizesContactCapability(viewer, Capability.ContactRead, owner);
+}
+
+export function authorizesContactWrite(
+  viewer: Viewer,
+  owner: ContactBookOwnerRef,
+): boolean {
+  return authorizesContactCapability(viewer, Capability.ContactWrite, owner);
+}
+
+/** Throwing write check. Callers must have already established that the
+ * viewer can *read* the book, so reporting FORBIDDEN here leaks nothing the
+ * caller does not already know. */
+export function requireContactWrite(
+  viewer: Viewer,
+  owner: ContactBookOwnerRef,
+): void {
+  if (!authorizesContactWrite(viewer, owner)) {
+    throw new ForbiddenError(
+      "This credential is not permitted to modify this address book",
+    );
+  }
+}
+
+/** USER-viewer listing filter, reusing `mailPermissionListFilter` under the
+ * mapped mail capability. `null` for an API-key viewer, which instead uses
+ * `readableAddressPatterns`/`scopedDomainIds` under the `CONTACT_*`
+ * capability directly -- the two mechanisms are deliberately independent,
+ * mirroring `mailPermissionListFilter` itself. */
+export function contactPermissionListFilter(
+  viewer: Viewer,
+  capability: ContactCapability,
+): MailPermissionFilter | null {
+  return mailPermissionListFilter(viewer, mailCapabilityForContact(capability));
+}
+
+/** CardDAV accounts are strictly per-user, same reasoning as
+ * `requireCaldavAccountUser`: an API key must not be able to connect,
+ * rotate or delete one, because that would let an agent exfiltrate a
+ * person's iCloud credentials. A suitably scoped key may still trigger
+ * `syncCarddavBook`, which touches no credential of its own. */
+export function requireCarddavAccountUser(viewer: Viewer): UserId {
+  return requireUserViewer(
+    viewer,
+    "CardDAV accounts can only be managed by a signed-in user",
+  ).userId;
 }

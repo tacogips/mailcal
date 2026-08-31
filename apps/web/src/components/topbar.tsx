@@ -54,6 +54,9 @@ export function Topbar(props: {
         <a href="/calendar" class="topbar-link">
           Calendar
         </a>
+        <a href="/contacts" class="topbar-link">
+          Contacts
+        </a>
         <Show when={isAdmin()}>
           <a href="/settings/domains" class="topbar-link">
             Domains

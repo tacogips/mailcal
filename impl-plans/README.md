@@ -198,3 +198,25 @@ Design reference: `design-docs/specs/design-calendar.md`.
 Mail templates (`mail-templates.md`) remains **In Progress**: the backend and
 the `/settings/templates` catalogue are done, but the web integration listed
 at the end of that plan is deferred after the 2026-08-24 checkout incident.
+
+## Contacts and CardDAV (phases 8-10)
+
+| Plan | Status |
+|------|--------|
+| [contacts-domain.md](contacts-domain.md) | Completed |
+| [contacts-application.md](contacts-application.md) | Completed |
+| [contacts-adapter.md](contacts-adapter.md) | Completed |
+| [contacts-graphql.md](contacts-graphql.md) | Completed |
+| [contacts-web.md](contacts-web.md) | Completed |
+
+Design reference: `design-docs/specs/design-contacts.md`.
+
+## External mail accounts: JMAP/POP3 fetch, SMTP relay (phases 8-10)
+
+| Plan | Status |
+|------|--------|
+| [external-mail-core.md](external-mail-core.md) | Completed |
+| [external-mail-adapter.md](external-mail-adapter.md) | Completed |
+| [external-mail-graphql.md](external-mail-graphql.md) | Completed |
+
+Design reference: `design-docs/specs/design-external-mail.md`.

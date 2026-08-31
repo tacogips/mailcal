@@ -14,6 +14,8 @@ export const CAPABILITY_LABELS: Readonly<Record<Capability, string>> = {
   TEMPLATE_DELETE: "Delete templates",
   CALENDAR_READ: "Read calendars",
   CALENDAR_WRITE: "Write calendars",
+  CONTACT_READ: "Read contacts",
+  CONTACT_WRITE: "Write contacts",
   KEY_ADMIN: "Issue and revoke API keys",
 };
 

@@ -12,12 +12,35 @@ import {
   unusedIcsCodec,
 } from "./calendar-fakes";
 import {
+  createFakeContactStores,
+  type FakeContactStores,
+  fakeAddressBookRepository,
+  fakeCarddavAccountRepository,
+  fakeContactRepository,
+  identityVcardCodec,
+  type ScriptedCarddavClient,
+  scriptedCarddavClient,
+} from "./contact-fakes";
+import {
   createFakeTemplateStores,
   type FakeTemplateStores,
   fakeMailTemplateRepository,
   fakeTemplateRenderer,
   fakeUserTemplatePermissionRepository,
 } from "./template-fakes";
+import {
+  createFakeExternalMailStores,
+  type FakeExternalMailStores,
+  fakeExternalMailAccountRepository,
+  fakeExternalMessageStateRepository,
+  recordingTcpDialer,
+  type ScriptedJmapClient,
+  scriptedJmapClient,
+  type ScriptedPop3Client,
+  scriptedPop3Client,
+  type ScriptedSmtpSubmissionClient,
+  scriptedSmtpSubmissionClient,
+} from "./external-mail-fakes";
 import {
   createClassificationRuleRepositoryFake,
   createFakeEventStores,
@@ -63,6 +86,8 @@ import {
 } from "./runtime-fakes";
 
 export * from "./calendar-fakes";
+export * from "./contact-fakes";
+export * from "./external-mail-fakes";
 export * from "./message-repository-fake";
 export * from "./repository-fakes";
 export * from "./runtime-fakes";
@@ -86,7 +111,13 @@ export interface FakeDependencies {
   readonly ruleStores: FakeRuleStores;
   readonly calendarStores: FakeCalendarStores;
   readonly templateStores: FakeTemplateStores;
+  readonly contactStores: FakeContactStores;
   readonly caldavClient: ScriptedCaldavClient;
+  readonly carddavClient: ScriptedCarddavClient;
+  readonly externalMailStores: FakeExternalMailStores;
+  readonly jmapClient: ScriptedJmapClient;
+  readonly pop3Client: ScriptedPop3Client;
+  readonly smtpSubmissionClient: ScriptedSmtpSubmissionClient;
   readonly clock: FixedClock;
   readonly blobs: MemoryBlobStore;
   readonly mailSender: RecordingMailSender;
@@ -105,6 +136,14 @@ export interface CreateFakeDependenciesOptions {
   readonly icsCodec?: AppDependencies["icsCodec"];
   /** Scripts the fake CalDAV client's canned responses. */
   readonly caldav?: Parameters<typeof scriptedCaldavClient>[0];
+  /** Scripts the fake CardDAV client's canned responses. */
+  readonly carddav?: Parameters<typeof scriptedCarddavClient>[0];
+  /** Scripts the fake JMAP client's canned responses. */
+  readonly jmap?: Parameters<typeof scriptedJmapClient>[0];
+  /** Scripts the fake POP3 client's canned responses. */
+  readonly pop3?: Parameters<typeof scriptedPop3Client>[0];
+  /** Scripts the fake SMTP submission client's canned responses. */
+  readonly smtp?: Parameters<typeof scriptedSmtpSubmissionClient>[0];
   /** Set false to simulate a deployment with no MAILCAL_CREDENTIAL_KEY. */
   readonly credentialCipherAvailable?: boolean;
 }
@@ -124,11 +163,17 @@ export function createFakeDependencies(
   // the two tables share `attachments` in D1.
   const calendarStores = createFakeCalendarStores(messageStores.attachments);
   const templateStores = createFakeTemplateStores();
+  const contactStores = createFakeContactStores();
   const calendarPermissions = new Map<
     string,
     import("@mailcal/domain/entities/user-calendar-permission").UserCalendarPermission
   >();
   const caldavClient = scriptedCaldavClient(options.caldav);
+  const carddavClient = scriptedCarddavClient(options.carddav);
+  const externalMailStores = createFakeExternalMailStores();
+  const jmapClient = scriptedJmapClient(options.jmap);
+  const pop3Client = scriptedPop3Client(options.pop3);
+  const smtpSubmissionClient = scriptedSmtpSubmissionClient(options.smtp);
   const clock = fixedClock(now);
   const blobs = memoryBlobStore();
   const mailSender = recordingMailSender();
@@ -150,6 +195,8 @@ export function createFakeDependencies(
     mailSender,
     icsCodec: options.icsCodec ?? unusedIcsCodec(),
     caldavClient,
+    vcardCodec: identityVcardCodec(),
+    carddavClient,
     credentialCipher: plainCredentialCipher({
       available: options.credentialCipherAvailable ?? true,
     }),
@@ -177,6 +224,20 @@ export function createFakeDependencies(
     calendarRepository: fakeCalendarRepository(calendarStores),
     calendarEventRepository: fakeCalendarEventRepository(calendarStores),
     caldavAccountRepository: fakeCaldavAccountRepository(calendarStores),
+    addressBookRepository: fakeAddressBookRepository(
+      contactStores,
+      stores.mailAddresses,
+    ),
+    contactRepository: fakeContactRepository(contactStores),
+    carddavAccountRepository: fakeCarddavAccountRepository(contactStores),
+    externalMailAccountRepository:
+      fakeExternalMailAccountRepository(externalMailStores),
+    externalMessageStateRepository:
+      fakeExternalMessageStateRepository(externalMailStores),
+    jmapClient,
+    pop3Client,
+    smtpSubmissionClient,
+    tcpDialer: recordingTcpDialer(),
     sessionRepository: fakeSessionRepository(stores),
     emailAuthChallengeRepository: fakeEmailAuthChallengeRepository(stores),
     instanceConfig: {
@@ -193,7 +254,13 @@ export function createFakeDependencies(
     ruleStores,
     calendarStores,
     templateStores,
+    contactStores,
     caldavClient,
+    carddavClient,
+    externalMailStores,
+    jmapClient,
+    pop3Client,
+    smtpSubmissionClient,
     clock,
     blobs,
     mailSender,

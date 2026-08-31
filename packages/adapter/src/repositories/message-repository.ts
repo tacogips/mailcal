@@ -428,6 +428,12 @@ export function createMessageRepository(db: SqlDatabase): MessageRepository {
           ],
         });
       }
+      // Appended last, after this call's own statements, so a caller can
+      // land another table's write atomically with the message insert --
+      // the external-mail dedupe ledger (`buildSaveStatement`) is the first
+      // user. Empty by default: a caller that omits it sees no behavior
+      // change.
+      statements.push(...(input.extraStatements ?? []));
       await db.batch(statements);
     },
 

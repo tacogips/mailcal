@@ -5,7 +5,12 @@ import {
   createCryptoRandomSource,
   createSha256TokenHasher,
 } from "@mailcal/adapter/crypto";
+import { createAddressBookRepository } from "@mailcal/adapter/repositories/address-book-repository";
 import { createCaldavClient } from "@mailcal/adapter/caldav/caldav-client";
+import { createCarddavAccountRepository } from "@mailcal/adapter/repositories/carddav-account-repository";
+import { createCarddavClient } from "@mailcal/adapter/carddav/carddav-client";
+import { createContactRepository } from "@mailcal/adapter/repositories/contact-repository";
+import { createVcardCodec } from "@mailcal/adapter/vcard/vcard-codec";
 import { createCredentialCipher } from "@mailcal/adapter/crypto/credential-cipher";
 import { createDohResolver } from "@mailcal/adapter/dns/doh-resolver";
 import { createIcsCodec } from "@mailcal/adapter/ics/ics-codec";
@@ -30,17 +35,25 @@ import { createMailTemplateRepository } from "@mailcal/adapter/repositories/mail
 import { createUserCalendarPermissionRepository } from "@mailcal/adapter/repositories/user-calendar-permission-repository";
 import { createUserTemplatePermissionRepository } from "@mailcal/adapter/repositories/user-template-permission-repository";
 import { createEtaTemplateRenderer } from "@mailcal/adapter/templates/eta-renderer";
+import { createExternalMailAccountRepository } from "@mailcal/adapter/repositories/external-mail-account-repository";
+import { createExternalMessageStateRepository } from "@mailcal/adapter/repositories/external-message-state-repository";
 import { createFileLinkRepository } from "@mailcal/adapter/repositories/file-link-repository";
+import { createJmapClient } from "@mailcal/adapter/jmap/jmap-client";
 import { createMessageEventRepository } from "@mailcal/adapter/repositories/message-event-repository";
 import { createMailAddressRepository } from "@mailcal/adapter/repositories/mail-address-repository";
 import { createMailDomainRepository } from "@mailcal/adapter/repositories/mail-domain-repository";
 import { createMessageRepository } from "@mailcal/adapter/repositories/message-repository";
+import { createPop3Client } from "@mailcal/adapter/pop3/pop3-client";
+import { createSmtpSubmissionClient } from "@mailcal/adapter/smtp/smtp-client";
 import { createTagRepository } from "@mailcal/adapter/repositories/tag-repository";
+import { createCloudflareTcpDialer } from "@mailcal/adapter/tcp/cloudflare-tcp-dialer";
+import { createNodeTcpDialer } from "@mailcal/adapter/tcp/node-tcp-dialer";
 import { createUserMailPermissionRepository } from "@mailcal/adapter/repositories/user-mail-permission-repository";
 import { createD1Database } from "@mailcal/adapter/sql/d1";
 import { createLibsqlDatabase } from "@mailcal/adapter/sql/libsql";
 import type { AppDependencies } from "@mailcal/application/dependencies";
 import type { BlobStore } from "@mailcal/application/ports/blob-store";
+import type { TcpDialer } from "@mailcal/application/ports/external-mail";
 import type { MailSender } from "@mailcal/application/ports/mail-sender";
 import type { Clock } from "@mailcal/application/ports/runtime-ports";
 import type { SqlDatabase } from "@mailcal/application/ports/sql-database";
@@ -49,6 +62,7 @@ import {
   DEFAULT_FILE_LINK_MAX_TTL_SECONDS,
   DEFAULT_SPAM_THRESHOLD,
   DEFAULT_SQLITE_URL,
+  type ExternalMailRuntime,
 } from "./config";
 
 /** Thrown when the config selects a backend without the binding or
@@ -122,6 +136,43 @@ function resolveBlobs(config: BuildDependenciesConfig): BlobStore {
   return createMemoryBlobStore();
 }
 
+/** Cloudflare Workers sets `navigator.userAgent` to this exact string --
+ * the platform's own documented, synchronous way to detect workerd without
+ * touching a runtime-specific import (`cloudflare:sockets` only resolves
+ * inside `dial()`, well after this check). Bun and Node both expose a
+ * `navigator` too, but with a different `userAgent`, so the fallback below
+ * is "node" everywhere else. */
+export function detectExternalMailRuntime(): ExternalMailRuntime {
+  return typeof navigator !== "undefined" &&
+    navigator.userAgent === "Cloudflare-Workers"
+    ? "cloudflare"
+    : "node";
+}
+
+/** `config.runtime` wins when set; otherwise the runtime is feature-detected
+ * via {@link detectExternalMailRuntime}, so a plain `bun run` and `wrangler
+ * dev`/Miniflare each get a working `TcpDialer` with no required config.
+ * Split out from {@link resolveTcpDialer} so the decision itself -- as
+ * opposed to the dialer construction, which touches real sockets once
+ * `dial()` runs -- is directly unit-testable. */
+export function resolveExternalMailRuntime(
+  config: BuildDependenciesConfig,
+): ExternalMailRuntime {
+  return config.runtime ?? detectExternalMailRuntime();
+}
+
+/** Picks the `TcpDialer` external mail's POP3/SMTP clients dial through.
+ * Both `createCloudflareTcpDialer` and `createNodeTcpDialer` are safe to
+ * *import* on every runtime by their own design (the former only touches
+ * `cloudflare:sockets` inside `dial()`; the latter's `node:net`/`node:tls`
+ * imports are satisfied under workerd by the `nodejs_compat` flag
+ * `apps/api` already sets) -- only the *call* below is runtime-gated. */
+function resolveTcpDialer(config: BuildDependenciesConfig): TcpDialer {
+  return resolveExternalMailRuntime(config) === "cloudflare"
+    ? createCloudflareTcpDialer()
+    : createNodeTcpDialer();
+}
+
 /** Composition root.
  *
  * Resolves the selected SQL and blob backends, builds every repository over
@@ -135,6 +186,7 @@ export function buildDependencies(
 ): AppDependencies {
   const db = resolveDb(config);
   const blobs = resolveBlobs(config);
+  const tcpDialer = resolveTcpDialer(config);
 
   return {
     db,
@@ -153,7 +205,20 @@ export function buildDependencies(
     // SERVICE_UNAVAILABLE, while calendars and events keep working.
     icsCodec: createIcsCodec(),
     caldavClient: createCaldavClient(),
+    // CardDAV shares the same cipher instance as CalDAV, not a re-derived
+    // one: both are AES-256-GCM under the one `MAILCAL_CREDENTIAL_KEY`, so
+    // an unset key degrades both features identically rather than needing
+    // two independent checks.
     credentialCipher: createCredentialCipher(config.credentialKey ?? null),
+    vcardCodec: createVcardCodec(),
+    carddavClient: createCarddavClient({ fetchImpl: fetch }),
+    // External mail shares the same cipher instance too: one deployment key
+    // covers every third-party credential kind, CalDAV/CardDAV/JMAP/POP3/SMTP
+    // alike.
+    jmapClient: createJmapClient({ fetchImpl: fetch }),
+    pop3Client: createPop3Client(tcpDialer),
+    smtpSubmissionClient: createSmtpSubmissionClient(tcpDialer),
+    tcpDialer,
 
     mailDomainRepository: createMailDomainRepository(db),
     mailAddressRepository: createMailAddressRepository(db),
@@ -174,6 +239,11 @@ export function buildDependencies(
     calendarRepository: createCalendarRepository(db),
     calendarEventRepository: createCalendarEventRepository(db),
     caldavAccountRepository: createCaldavAccountRepository(db),
+    addressBookRepository: createAddressBookRepository(db),
+    contactRepository: createContactRepository(db),
+    carddavAccountRepository: createCarddavAccountRepository(db),
+    externalMailAccountRepository: createExternalMailAccountRepository(db),
+    externalMessageStateRepository: createExternalMessageStateRepository(db),
     sessionRepository: createSessionRepository(db),
     emailAuthChallengeRepository: createEmailAuthChallengeRepository(db),
 

@@ -3,11 +3,28 @@ import DOMPurify from "dompurify";
 /**
  * HTML mail is hostile input by definition.
  *
- * Two independent layers protect the reader, because either alone has known
- * gaps: this sanitizer strips scripting constructs, and the component that
- * renders the result puts it in an iframe with an empty `sandbox` attribute
- * -- no `allow-scripts`, no `allow-same-origin` -- so even a sanitizer
- * bypass has no script execution and no access to the session cookie.
+ * Layers work together, because any one alone has known gaps:
+ *
+ * 1. This sanitizer strips scripting constructs (`script`, event handlers,
+ *    `javascript:` URLs, forms, embeds) and enforces a tag/attribute
+ *    allowlist limited to presentation.
+ * 2. The component that renders the result puts it in a sandboxed iframe.
+ *    The sandbox grants `allow-same-origin` -- solely so the parent can
+ *    measure the frame's content height for auto-sizing -- but withholds
+ *    `allow-scripts`, so even a sanitizer bypass gets no script execution.
+ *    Without script execution the frame content cannot reach the parent
+ *    DOM, cookies, or storage, regardless of what origin it runs at.
+ * 3. The document itself carries a restrictive CSP
+ *    (`default-src 'none'`, a gated `img-src`, `style-src 'unsafe-inline'`).
+ *
+ * `<style>` elements are allowed through (`FORCE_BODY: true` keeps ones a
+ * mail client places in `<head>`, which DOMPurify otherwise discards)
+ * because the frame's CSP makes that safe: `style-src 'unsafe-inline'`
+ * permits inline rules but lists no host or `'self'`, so it blocks
+ * `@import`-ing a remote stylesheet, and any `url()` reference inside a
+ * style block is subject to the same gated `img-src` as an `<img src>` --
+ * blocked until the reader opts in to remote images, never a script. A
+ * style sheet can therefore only affect presentation inside the frame.
  *
  * Remote images are additionally gated, because they are not an XSS problem
  * but a privacy one: loading them on open confirms to a sender that the
@@ -22,9 +39,11 @@ const ALLOWED_TAGS = [
   "a",
   "abbr",
   "b",
+  "big",
   "blockquote",
   "br",
   "caption",
+  "center",
   "code",
   "col",
   "colgroup",
@@ -35,6 +54,7 @@ const ALLOWED_TAGS = [
   "em",
   "figcaption",
   "figure",
+  "font",
   "h1",
   "h2",
   "h3",
@@ -53,6 +73,7 @@ const ALLOWED_TAGS = [
   "small",
   "span",
   "strong",
+  "style",
   "sub",
   "sup",
   "table",
@@ -62,6 +83,7 @@ const ALLOWED_TAGS = [
   "th",
   "thead",
   "tr",
+  "tt",
   "u",
   "ul",
 ];
@@ -69,27 +91,52 @@ const ALLOWED_TAGS = [
 const ALLOWED_ATTR = [
   "align",
   "alt",
+  "bgcolor",
   "border",
   "cellpadding",
   "cellspacing",
   "class",
+  "color",
   "colspan",
   "dir",
+  "face",
   "height",
   "href",
+  "hspace",
+  "lang",
+  "nowrap",
   "rowspan",
+  "size",
   "span",
   "src",
   "style",
   "title",
   "valign",
+  "vspace",
   "width",
 ];
+
+/** Every allowed attribute except `href` and `src`, which are the two DOMPurify
+ * actually needs to run a URI-scheme check against. DOMPurify's attribute
+ * validator applies `ALLOWED_URI_REGEXP` to the *value* of any attribute
+ * that is not in its internal URI-safe set (not just conventional URI
+ * attributes), so an unrelated value like `color="#ff0000"` or `face="Arial"`
+ * would otherwise be rejected for not looking like `https:`/`mailto:`/etc.
+ * Declaring the rest of the allowlist via `ADD_URI_SAFE_ATTR` opts them out
+ * of that check -- it has no bearing on navigation or resource loading. */
+const URI_SAFE_ATTR = ALLOWED_ATTR.filter(
+  (attr) => attr !== "href" && attr !== "src",
+);
 
 export interface SanitizeMailHtmlOptions {
   /** When false (the default), remote image sources are parked on
    * {@link BLOCKED_SRC_ATTRIBUTE} instead of being loaded. */
   readonly loadRemoteImages?: boolean;
+  /** Resolved inline (`cid:`) image sources, keyed by
+   * {@link normalizeContentId}. An `<img src="cid:...">` whose normalized
+   * reference is present here is rewritten to the mapped `data:` URI; one
+   * that is absent has its `src` removed rather than left dangling. */
+  readonly inlineImages?: ReadonlyMap<string, string>;
 }
 
 function isRemoteSource(value: string): boolean {
@@ -97,6 +144,26 @@ function isRemoteSource(value: string): boolean {
   // `cid:` references an inline part of this same message and `data:` is
   // self-contained; neither reaches a third party, so neither is gated.
   return !trimmed.startsWith("cid:") && !trimmed.startsWith("data:");
+}
+
+/** Normalizes a MIME Content-ID / `cid:` reference so the two forms a
+ * message uses for the same image can be matched against each other:
+ * headers usually carry `<abc@example>`, while `<img src>` references it as
+ * `cid:abc@example`. Trims whitespace, strips one leading `cid:` prefix
+ * (case-insensitive), and strips one surrounding `<...>` pair. */
+export function normalizeContentId(value: string): string {
+  let normalized = value.trim();
+  if (normalized.toLowerCase().startsWith("cid:")) {
+    normalized = normalized.slice(4).trim();
+  }
+  if (
+    normalized.length >= 2 &&
+    normalized.startsWith("<") &&
+    normalized.endsWith(">")
+  ) {
+    normalized = normalized.slice(1, -1).trim();
+  }
+  return normalized;
 }
 
 /** Sanitizes an HTML mail body.
@@ -115,6 +182,7 @@ export function sanitizeMailHtml(
   };
 
   const loadRemoteImages = options.loadRemoteImages === true;
+  const inlineImages = options.inlineImages ?? new Map<string, string>();
 
   purify.removeAllHooks?.();
   purify.addHook?.("afterSanitizeAttributes", (node: Element) => {
@@ -125,8 +193,23 @@ export function sanitizeMailHtml(
       node.setAttribute("target", "_blank");
       node.setAttribute("rel", "noopener noreferrer nofollow");
     }
+    if (node.tagName === "IMG") {
+      const cidSrc = node.getAttribute("src");
+      if (cidSrc?.trim().toLowerCase().startsWith("cid:")) {
+        const resolved = inlineImages.get(normalizeContentId(cidSrc));
+        if (resolved !== undefined) {
+          node.setAttribute("src", resolved);
+        } else {
+          // An unresolvable `cid:` would otherwise render as a broken-image
+          // icon; dropping `src` leaves just the alt text.
+          node.removeAttribute("src");
+        }
+      }
+    }
     if (node.tagName === "IMG" && !loadRemoteImages) {
       const src = node.getAttribute("src");
+      // A `cid:` source resolved above is now a `data:` URI (or removed),
+      // so `isRemoteSource` already treats it as non-remote here.
       if (src !== null && isRemoteSource(src)) {
         node.setAttribute(BLOCKED_SRC_ATTRIBUTE, src);
         node.removeAttribute("src");
@@ -142,8 +225,13 @@ export function sanitizeMailHtml(
     // `javascript:` and friends never survive; `cid:` must, since it
     // references this message's own inline parts.
     ALLOWED_URI_REGEXP: /^(?:https?:|mailto:|tel:|cid:|data:image\/)/i,
-    FORBID_TAGS: ["script", "style", "iframe", "object", "embed", "form"],
+    ADD_URI_SAFE_ATTR: URI_SAFE_ATTR,
+    FORBID_TAGS: ["script", "iframe", "object", "embed", "form"],
     FORBID_ATTR: ["srcset", "formaction", "ping"],
+    // Mail HTML often wraps its body in a full document, with `<style>`
+    // blocks living in `<head>`. DOMPurify normally discards head content;
+    // forcing everything through as body content keeps those style blocks.
+    FORCE_BODY: true,
   });
 
   purify.removeAllHooks?.();

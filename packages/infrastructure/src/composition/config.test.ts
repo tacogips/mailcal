@@ -1,8 +1,10 @@
 import { createCredentialCipher } from "@mailcal/adapter/crypto/credential-cipher";
-import { describe, expect, test } from "vitest";
+import { afterEach, describe, expect, test } from "vitest";
 import {
   buildDependencies,
   BuildDependenciesError,
+  detectExternalMailRuntime,
+  resolveExternalMailRuntime,
 } from "./build-dependencies";
 import {
   CredentialKeyConfigurationError,
@@ -207,6 +209,15 @@ describe("buildDependencies", () => {
     expect(deps.instanceConfig.signupMode).toBe("closed");
     expect(deps.instanceConfig.publicOrigin).toBeNull();
     expect(deps.instanceConfig.spamThreshold).toBe(DEFAULT_SPAM_THRESHOLD);
+    // External mail's whole port surface is wired even with no
+    // MAILCAL_CREDENTIAL_KEY -- the cipher (not a missing field) is what
+    // gates its mutations, exactly like CalDAV.
+    expect(deps.tcpDialer).toBeDefined();
+    expect(deps.jmapClient).toBeDefined();
+    expect(deps.pop3Client).toBeDefined();
+    expect(deps.smtpSubmissionClient).toBeDefined();
+    expect(deps.externalMailAccountRepository).toBeDefined();
+    expect(deps.externalMessageStateRepository).toBeDefined();
   });
 
   test("installs the unavailable mail sender without a verified sender", async () => {
@@ -272,6 +283,65 @@ describe("buildDependencies", () => {
     ],
   ])("throws for %s", (_label, config) => {
     expect(() => buildDependencies(config)).toThrow(BuildDependenciesError);
+  });
+});
+
+describe("external mail runtime selection", () => {
+  const originalNavigator = globalThis.navigator;
+
+  /** Stands in for a Workers isolate: `navigator.userAgent` is the
+   * platform's own documented, synchronous tell -- see
+   * `detectExternalMailRuntime`'s doc comment. */
+  function setWorkersNavigator(): void {
+    Object.defineProperty(globalThis, "navigator", {
+      value: { userAgent: "Cloudflare-Workers" },
+      configurable: true,
+    });
+  }
+
+  afterEach(() => {
+    Object.defineProperty(globalThis, "navigator", {
+      value: originalNavigator,
+      configurable: true,
+    });
+  });
+
+  test("detects node outside a Workers isolate -- the vitest/Bun environment this test runs in", () => {
+    expect(detectExternalMailRuntime()).toBe("node");
+  });
+
+  test("detects cloudflare from navigator.userAgent, mirroring wrangler dev/Miniflare", () => {
+    setWorkersNavigator();
+    expect(detectExternalMailRuntime()).toBe("cloudflare");
+  });
+
+  const minimalConfig = {
+    sqlBackend: "sqlite",
+    blobBackend: "memory",
+  } as const;
+
+  test("boots a plain bun run with the node dialer selected, with no config", () => {
+    expect(resolveExternalMailRuntime(minimalConfig)).toBe("node");
+  });
+
+  test("boots wrangler dev/Miniflare with the cloudflare dialer selected, with no config", () => {
+    setWorkersNavigator();
+    expect(resolveExternalMailRuntime(minimalConfig)).toBe("cloudflare");
+  });
+
+  test("an explicit config.runtime overrides detection either way", () => {
+    setWorkersNavigator();
+    expect(
+      resolveExternalMailRuntime({ ...minimalConfig, runtime: "node" }),
+    ).toBe("node");
+
+    Object.defineProperty(globalThis, "navigator", {
+      value: originalNavigator,
+      configurable: true,
+    });
+    expect(
+      resolveExternalMailRuntime({ ...minimalConfig, runtime: "cloudflare" }),
+    ).toBe("cloudflare");
   });
 });
 

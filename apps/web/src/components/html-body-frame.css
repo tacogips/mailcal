@@ -20,7 +20,10 @@
 .html-body-iframe {
   display: block;
   width: 100%;
-  min-height: 320px;
+  /* Height is driven by the inline style the component sets from the
+     measured frame content; this is only a floor for before that first
+     measurement lands. */
+  min-height: 120px;
   border: 0;
   background: #fff;
 }

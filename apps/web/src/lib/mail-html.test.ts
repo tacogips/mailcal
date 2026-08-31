@@ -3,6 +3,7 @@ import {
   BLOCKED_SRC_ATTRIBUTE,
   buildMailFrameDocument,
   hasBlockedImages,
+  normalizeContentId,
   sanitizeMailHtml,
 } from "./mail-html";
 
@@ -17,16 +18,45 @@ describe("sanitizeMailHtml", () => {
 
   test.each([
     ["a script element", "<p>ok</p><script>alert(1)</script>"],
-    ["an inline style element", "<style>body{display:none}</style><p>ok</p>"],
     ["an iframe", '<iframe src="https://evil.com"></iframe><p>ok</p>'],
     ["an object", "<object data=x></object><p>ok</p>"],
+    ["an embed", '<embed src="https://evil.com"><p>ok</p>'],
     ["a form", '<form action="https://evil.com"><input></form><p>ok</p>'],
   ])("removes %s", (_label, input) => {
     const html = sanitizeMailHtml(input);
     expect(html).toContain("ok");
-    for (const tag of ["<script", "<style", "<iframe", "<object", "<form"]) {
+    for (const tag of ["<script", "<iframe", "<object", "<embed", "<form"]) {
       expect(html).not.toContain(tag);
     }
+  });
+
+  test("preserves a <style> element instead of stripping it", () => {
+    const html = sanitizeMailHtml("<style>body{color:red}</style><p>ok</p>");
+    expect(html).toContain("<style>body{color:red}</style>");
+    expect(html).toContain("<p>ok</p>");
+  });
+
+  test("preserves a <style> block placed in <head> of a full document", () => {
+    // Mail HTML frequently arrives as a complete document. DOMPurify
+    // discards `<head>` content by default; `FORCE_BODY: true` is what
+    // keeps this style block alive.
+    const html = sanitizeMailHtml(
+      "<html><head><style>.promo{color:#f00}</style></head>" +
+        '<body><p class="promo">ok</p></body></html>',
+    );
+    expect(html).toContain("<style>.promo{color:#f00}</style>");
+    expect(html).toContain('<p class="promo">ok</p>');
+  });
+
+  test("preserves legacy presentational tags and attributes", () => {
+    const html = sanitizeMailHtml(
+      '<center><font color="#ff0000" face="Arial">hi</font></center>' +
+        '<table><tr><td bgcolor="#eeeeee">cell</td></tr></table>',
+    );
+    expect(html).toContain("<center>");
+    expect(html).toContain('color="#ff0000"');
+    expect(html).toContain('face="Arial"');
+    expect(html).toContain('bgcolor="#eeeeee"');
   });
 
   test.each([
@@ -90,9 +120,10 @@ describe("sanitizeMailHtml", () => {
       expect(hasBlockedImages(html)).toBe(false);
     });
 
-    test("leaves a cid: reference alone -- it never reaches a third party", () => {
+    test("removes an unresolved cid: reference instead of gating it -- it never reaches a third party, but an unresolved reference would just render as a broken-image icon", () => {
       const html = sanitizeMailHtml('<img src="cid:logo@example.com">');
-      expect(html).toContain('src="cid:logo@example.com"');
+      expect(html).not.toMatch(/(^|\s)src=/);
+      expect(html).not.toContain(BLOCKED_SRC_ATTRIBUTE);
       expect(hasBlockedImages(html)).toBe(false);
     });
 
@@ -112,8 +143,50 @@ describe("sanitizeMailHtml", () => {
     });
   });
 
+  describe("inline cid: images", () => {
+    test("rewrites a cid: src to the mapped data URI", () => {
+      const html = sanitizeMailHtml('<img src="cid:abc@x">', {
+        inlineImages: new Map([["abc@x", "data:image/png;base64,AAAA"]]),
+      });
+      expect(html).toContain('src="data:image/png;base64,AAAA"');
+    });
+
+    test("matches case-insensitively on the cid: prefix", () => {
+      const html = sanitizeMailHtml('<img src="CID:abc@x">', {
+        inlineImages: new Map([["abc@x", "data:image/png;base64,AAAA"]]),
+      });
+      expect(html).toContain('src="data:image/png;base64,AAAA"');
+    });
+
+    test("removes the src when no inline image matches", () => {
+      const html = sanitizeMailHtml('<img src="cid:missing@x">', {
+        inlineImages: new Map([["abc@x", "data:image/png;base64,AAAA"]]),
+      });
+      expect(html).not.toMatch(/(^|\s)src=/);
+    });
+
+    test("a resolved cid: image is not parked as a blocked remote image", () => {
+      const html = sanitizeMailHtml('<img src="cid:abc@x">', {
+        inlineImages: new Map([["abc@x", "data:image/png;base64,AAAA"]]),
+      });
+      expect(hasBlockedImages(html)).toBe(false);
+    });
+  });
+
   test("handles an empty body without throwing", () => {
     expect(sanitizeMailHtml("")).toBe("");
+  });
+});
+
+describe("normalizeContentId", () => {
+  test.each([
+    ["a bracketed Content-ID header value", "<abc@x>", "abc@x"],
+    ["a cid: URI reference", "cid:abc@x", "abc@x"],
+    ["a value with surrounding whitespace", " abc@x ", "abc@x"],
+    ["an uppercase CID: prefix", "CID:abc@x", "abc@x"],
+    ["a bracketed value with a cid: prefix", "cid:<abc@x>", "abc@x"],
+  ])("normalizes %s", (_label, input, expected) => {
+    expect(normalizeContentId(input)).toBe(expected);
   });
 });
 
